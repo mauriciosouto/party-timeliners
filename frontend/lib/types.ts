@@ -4,5 +4,6 @@ export type TimelineEvent = {
   year: number;
   description: string;
   image?: string;
+  wikipediaUrl?: string;
 };
 

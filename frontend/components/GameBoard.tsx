@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import type { TimelineEvent } from "@/lib/types";
-import { INITIAL_TIMELINE, EVENT_POOL } from "@/lib/mockEvents";
+import { INITIAL_TIMELINE } from "@/lib/mockEvents";
 import { Timeline, parseSlotIndexFromId } from "@/components/Timeline";
 import { EventCard } from "@/components/EventCard";
 import { formatYear } from "@/lib/format";
+import { getNextEvent } from "@/src/services/EventService";
 
 const DRAGGABLE_ID = "current-card";
 
@@ -28,11 +29,29 @@ function getCorrectInsertIndex(timeline: TimelineEvent[], event: TimelineEvent) 
 
 export default function GameBoard() {
   const [timeline, setTimeline] = useState<TimelineEvent[]>(INITIAL_TIMELINE);
-  const [deckIndex, setDeckIndex] = useState(0);
+  const [currentEvent, setCurrentEvent] = useState<TimelineEvent | null>(null);
+  const [placedCount, setPlacedCount] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [score, setScore] = useState(0);
 
-  const currentEvent = EVENT_POOL[deckIndex] ?? null;
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const next = await getNextEvent();
+      if (!cancelled) {
+        setCurrentEvent(next);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const loadNextEvent = async () => {
+    const next = await getNextEvent();
+    setCurrentEvent(next);
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     if (!currentEvent) return;
@@ -94,11 +113,11 @@ export default function GameBoard() {
       });
     }
 
-    // Next mock event.
-    setDeckIndex((i) => i + 1);
+    setPlacedCount((c) => c + 1);
+    void loadNextEvent();
   };
 
-  const placedEventsCount = timeline.length - INITIAL_TIMELINE.length;
+  const placedEventsCount = placedCount;
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-sky-50 via-indigo-50 to-fuchsia-50 text-zinc-900">
@@ -117,7 +136,7 @@ export default function GameBoard() {
               Score: {score}
             </div>
             <div className="px-3 py-1 text-zinc-200">
-              Events placed: {placedEventsCount} / {EVENT_POOL.length}
+              Events placed: {placedEventsCount}
             </div>
           </div>
         </div>
