@@ -1,3 +1,8 @@
+"use client";
+
+import { useDraggable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
+import type { CSSProperties } from "react";
 import type { TimelineEvent } from "@/lib/types";
 import { formatYear } from "@/lib/format";
 
@@ -13,6 +18,14 @@ type EventCardProps = {
    */
   showYear?: boolean;
   className?: string;
+  /**
+   * If true, the card becomes a dnd-kit draggable source.
+   */
+  draggable?: boolean;
+  /**
+   * Optional id to use for the draggable item. Defaults to event.id.
+   */
+  draggableId?: string;
 };
 
 export function EventCard({
@@ -21,8 +34,28 @@ export function EventCard({
   showYear = true,
   className,
 }: EventCardProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: event.id,
+    });
+
+  const style: CSSProperties | undefined = transform
+    ? {
+        transform: CSS.Translate.toString(transform),
+        boxShadow: isDragging
+          ? "0 20px 40px rgba(0,0,0,0.18)"
+          : "0 10px 25px rgba(0,0,0,0.08)",
+        scale: isDragging ? 1.02 : 1,
+        zIndex: isDragging ? 50 : 1,
+      }
+    : undefined;
+
   return (
     <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
       className={`rounded-2xl border border-zinc-200 bg-white/90 px-4 py-3 text-left shadow-sm backdrop-blur-sm ${className ?? ""}`}
     >
       <div className="flex items-center justify-between gap-3">
