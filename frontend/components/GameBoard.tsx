@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
-import { DndContext, type DragEndEvent, useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
+import { useState } from "react";
+import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import type { TimelineEvent } from "@/lib/types";
 import { INITIAL_TIMELINE, EVENT_POOL } from "@/lib/mockEvents";
 import { Timeline, parseSlotIndexFromId } from "@/components/Timeline";
@@ -27,55 +26,6 @@ function getCorrectInsertIndex(timeline: TimelineEvent[], event: TimelineEvent) 
   return i;
 }
 
-function isCorrectPlacement(
-  timeline: TimelineEvent[],
-  event: TimelineEvent,
-  chosenIndex: number,
-) {
-  const correctIndex = getCorrectInsertIndex(timeline, event);
-  return chosenIndex === correctIndex;
-}
-
-type DraggableEventCardProps = {
-  event: TimelineEvent;
-};
-
-function DraggableEventCard({ event }: DraggableEventCardProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id: DRAGGABLE_ID,
-    });
-
-  const style: CSSProperties = {
-    transform: transform ? CSS.Translate.toString(transform) : undefined,
-    boxShadow: isDragging
-      ? "0 20px 40px rgba(0,0,0,0.18)"
-      : "0 10px 25px rgba(0,0,0,0.08)",
-    scale: isDragging ? 1.02 : 1,
-    zIndex: isDragging ? 50 : 1,
-  };
-
-  return (
-    <button
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      className="w-full max-w-lg touch-none rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-fuchsia-500 p-[1px] transition-transform"
-    >
-      <EventCard
-        event={event}
-        label="Place this event"
-        showYear={false}
-        className="bg-white/95"
-      />
-      <div className="mt-1 px-4 pb-2 text-right text-[10px] font-medium text-zinc-500">
-        Drag onto the timeline
-      </div>
-    </button>
-  );
-}
-
 export default function GameBoard() {
   const [timeline, setTimeline] = useState<TimelineEvent[]>(INITIAL_TIMELINE);
   const [deckIndex, setDeckIndex] = useState(0);
@@ -93,32 +43,58 @@ export default function GameBoard() {
     );
     if (slotIndex == null) return;
 
-    const correctIndex = getCorrectInsertIndex(timeline, currentEvent);
-    const correct = isCorrectPlacement(timeline, currentEvent, slotIndex);
+    console.log("onEventPlaced(position)", slotIndex);
+
+    const previous = slotIndex > 0 ? timeline[slotIndex - 1] : null;
+    const next = slotIndex < timeline.length ? timeline[slotIndex] : null;
+
+    let isCorrect = false;
+
+    if (!previous && next) {
+      // Placed at the start.
+      isCorrect = currentEvent.year <= next.year;
+    } else if (previous && !next) {
+      // Placed at the end.
+      isCorrect = previous.year <= currentEvent.year;
+    } else if (previous && next) {
+      // Placed between two events.
+      isCorrect =
+        previous.year <= currentEvent.year &&
+        currentEvent.year <= next.year;
+    } else {
+      // Empty timeline fallback.
+      isCorrect = true;
+    }
 
     const newTimeline = [...timeline];
-    newTimeline.splice(correctIndex, 0, currentEvent);
-    setTimeline(newTimeline);
 
-    if (correct) {
+    if (isCorrect) {
+      // Insert at the chosen slot when placement is valid.
+      newTimeline.splice(slotIndex, 0, currentEvent);
+      setTimeline(newTimeline);
+
       setScore((s) => s + 1);
       setFeedback({
         type: "correct",
         message: "Nice! You placed the event correctly in time.",
-        detail: `${currentEvent.title} belongs ${formatYear(
-          currentEvent.year,
-        )}.`,
+        detail: `${currentEvent.title} fits between the surrounding years.`,
       });
     } else {
+      // Insert at the correct chronological position when invalid.
+      const correctIndex = getCorrectInsertIndex(timeline, currentEvent);
+      newTimeline.splice(correctIndex, 0, currentEvent);
+      setTimeline(newTimeline);
+
       setFeedback({
         type: "incorrect",
-        message: "Close! The correct position has been revealed on the timeline.",
+        message: "Not quite. The event has been moved to its correct position.",
         detail: `${currentEvent.title} belongs ${formatYear(
           currentEvent.year,
         )}.`,
       });
     }
 
+    // Next mock event.
     setDeckIndex((i) => i + 1);
   };
 
@@ -174,7 +150,19 @@ export default function GameBoard() {
             </div>
 
             {currentEvent ? (
-              <DraggableEventCard event={currentEvent} />
+              <div>
+                <EventCard
+                  event={currentEvent}
+                  label="Place this event"
+                  showYear={false}
+                  draggable
+                  draggableId={DRAGGABLE_ID}
+                  className="bg-white/95"
+                />
+                <div className="mt-1 text-right text-[10px] font-medium text-zinc-500">
+                  Drag the card onto the timeline slots above.
+                </div>
+              </div>
             ) : (
               <div className="flex flex-col items-start gap-2 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/80 px-4 py-3 text-sm text-zinc-700">
                 <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">

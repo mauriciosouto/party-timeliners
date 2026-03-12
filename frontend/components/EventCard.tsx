@@ -1,5 +1,3 @@
-"use client";
-
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import type { CSSProperties } from "react";
@@ -33,29 +31,32 @@ export function EventCard({
   label,
   showYear = true,
   className,
+  draggable,
+  draggableId,
 }: EventCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
-      id: event.id,
+      id: draggableId ?? event.id,
     });
 
-  const style: CSSProperties | undefined = transform
-    ? {
-        transform: CSS.Translate.toString(transform),
-        boxShadow: isDragging
-          ? "0 20px 40px rgba(0,0,0,0.18)"
-          : "0 10px 25px rgba(0,0,0,0.08)",
-        scale: isDragging ? 1.02 : 1,
-        zIndex: isDragging ? 50 : 1,
-      }
-    : undefined;
+  const style: CSSProperties | undefined =
+    draggable && transform
+      ? {
+          transform: CSS.Translate.toString(transform),
+          boxShadow: isDragging
+            ? "0 20px 40px rgba(0,0,0,0.18)"
+            : "0 10px 25px rgba(0,0,0,0.08)",
+          scale: isDragging ? 1.02 : 1,
+          zIndex: isDragging ? 50 : 1,
+        }
+      : undefined;
 
   return (
     <div
-      ref={setNodeRef}
+      ref={draggable ? setNodeRef : undefined}
       style={style}
-      {...listeners}
-      {...attributes}
+      {...(draggable ? listeners : {})}
+      {...(draggable ? attributes : {})}
       className={`rounded-2xl border border-zinc-200 bg-white/90 px-4 py-3 text-left shadow-sm backdrop-blur-sm ${className ?? ""}`}
     >
       <div className="flex items-center justify-between gap-3">

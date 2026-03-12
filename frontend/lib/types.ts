@@ -3,5 +3,6 @@ export type TimelineEvent = {
   title: string;
   year: number;
   description: string;
+  image?: string;
 };
 
