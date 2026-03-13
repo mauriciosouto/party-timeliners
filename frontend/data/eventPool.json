@@ -1,0 +1,2455 @@
+[
+  {
+    "id": "Q30931",
+    "title": "Die Another Day",
+    "type": "Film",
+    "displayTitle": "Die Another Day (Film)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Die_Another_Day"
+  },
+  {
+    "id": "Q31148",
+    "title": "The Double Man",
+    "type": "Film",
+    "displayTitle": "The Double Man (Film)",
+    "year": 1967,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Double_Man_(1967_film)"
+  },
+  {
+    "id": "Q31198",
+    "title": "Tell Me a Riddle",
+    "type": "Film",
+    "displayTitle": "Tell Me a Riddle (Film)",
+    "year": 1980,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Tell_Me_a_Riddle_(film)"
+  },
+  {
+    "id": "Q39422",
+    "title": "My Forbidden Past",
+    "type": "Film",
+    "displayTitle": "My Forbidden Past (Film)",
+    "year": 1951,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Robert%20Mitchum%20in%20My%20Forbidden%20Past%20trailer.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/My_Forbidden_Past"
+  },
+  {
+    "id": "Q39571",
+    "title": "My Neighbor Totoro",
+    "type": "Film",
+    "displayTitle": "My Neighbor Totoro (Film)",
+    "year": 1988,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Tonari%20no%20Totoro%20title%20%28green%29.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/My_Neighbor_Totoro"
+  },
+  {
+    "id": "Q24151",
+    "title": "Alligator II – The Mutation",
+    "type": "Film",
+    "displayTitle": "Alligator II – The Mutation (Film)",
+    "year": 1991,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Alligator_II:_The_Mutation"
+  },
+  {
+    "id": "Q24154",
+    "title": "Van Diemen's Land",
+    "type": "Film",
+    "displayTitle": "Van Diemen's Land (Film)",
+    "year": 2009,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Van_Diemen%27s_Land_(film)"
+  },
+  {
+    "id": "Q24196",
+    "title": "The Hidden Face",
+    "type": "Film",
+    "displayTitle": "The Hidden Face (Film)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Hidden_Face_(film)"
+  },
+  {
+    "id": "Q24258",
+    "title": "Visions of Light",
+    "type": "Film",
+    "displayTitle": "Visions of Light (Film)",
+    "year": 1992,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Visions_of_Light"
+  },
+  {
+    "id": "Q24340",
+    "title": "Anna Karamazoff",
+    "type": "Film",
+    "displayTitle": "Anna Karamazoff (Film)",
+    "year": 1991,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Anna_Karamazoff"
+  },
+  {
+    "id": "Q24515",
+    "title": "Shaolin",
+    "type": "Film",
+    "displayTitle": "Shaolin (Film)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Shaolin_(film)"
+  },
+  {
+    "id": "Q24585",
+    "title": "July 14",
+    "type": "Film",
+    "displayTitle": "July 14 (Film)",
+    "year": 1932,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Bastille_Day_(1933_film)"
+  },
+  {
+    "id": "Q31212",
+    "title": "The Seventh Victim",
+    "type": "Film",
+    "displayTitle": "The Seventh Victim (Film)",
+    "year": 1943,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Seventh-victim-poster%20one%20sheet.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Seventh_Victim"
+  },
+  {
+    "id": "Q31540",
+    "title": "Assassination Games",
+    "type": "Film",
+    "displayTitle": "Assassination Games (Film)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Assassination_Games"
+  },
+  {
+    "id": "Q31786",
+    "title": "More Than a Miracle",
+    "type": "Film",
+    "displayTitle": "More Than a Miracle (Film)",
+    "year": 1967,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/More_Than_a_Miracle"
+  },
+  {
+    "id": "Q31791",
+    "title": "The Company Men",
+    "type": "Film",
+    "displayTitle": "The Company Men (Film)",
+    "year": 2010,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Affleck09TheCompanyMen%20-%20Crop.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Company_Men"
+  },
+  {
+    "id": "Q32011",
+    "title": "On the Town",
+    "type": "Film",
+    "displayTitle": "On the Town (Film)",
+    "year": 1949,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/On%20the%20Town%20%281949%20poster%29%20crop.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/On_the_Town_(film)"
+  },
+  {
+    "id": "Q32217",
+    "title": "Soldier Boyz",
+    "type": "Film",
+    "displayTitle": "Soldier Boyz (Film)",
+    "year": 1995,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Soldier_Boyz"
+  },
+  {
+    "id": "Q32228",
+    "title": "The Nutty Professor",
+    "type": "Film",
+    "displayTitle": "The Nutty Professor (Film)",
+    "year": 1963,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Der%20verr%C3%BCckte%20Professor%201963%20Logo.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Nutty_Professor_(1963_film)"
+  },
+  {
+    "id": "Q32241",
+    "title": "Incident at Loch Ness",
+    "type": "Film",
+    "displayTitle": "Incident at Loch Ness (Film)",
+    "year": 2004,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Incident_at_Loch_Ness"
+  },
+  {
+    "id": "Q27128",
+    "title": "The Hawk's Trail",
+    "type": "Film",
+    "displayTitle": "The Hawk's Trail (Film)",
+    "year": 1919,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Hawk%27s_Trail"
+  },
+  {
+    "id": "Q27149",
+    "title": "The King and I",
+    "type": "Film",
+    "displayTitle": "The King and I (Film)",
+    "year": 1956,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_King_and_I_(1956_film)"
+  },
+  {
+    "id": "Q27178",
+    "title": "Hamlet",
+    "type": "Film",
+    "displayTitle": "Hamlet (Film)",
+    "year": 1948,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/London%20Film%20Museum%20-%20DSCF4108%20%285755438458%29.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Hamlet_(1948_film)"
+  },
+  {
+    "id": "Q32780",
+    "title": "My Boss",
+    "type": "Film",
+    "displayTitle": "My Boss (Film)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/My_Boss"
+  },
+  {
+    "id": "Q32790",
+    "title": "Red Sun",
+    "type": "Film",
+    "displayTitle": "Red Sun (Film)",
+    "year": 1971,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Red_Sun"
+  },
+  {
+    "id": "Q32910",
+    "title": "Domino",
+    "type": "Film",
+    "displayTitle": "Domino (Film)",
+    "year": 2005,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Domino_(2005_film)"
+  },
+  {
+    "id": "Q33109",
+    "title": "Be Like Others",
+    "type": "Film",
+    "displayTitle": "Be Like Others (Film)",
+    "year": 2008,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Be_Like_Others"
+  },
+  {
+    "id": "Q33131",
+    "title": "Nothing like the Holidays",
+    "type": "Film",
+    "displayTitle": "Nothing like the Holidays (Film)",
+    "year": 2008,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Nothing_like_the_Holidays"
+  },
+  {
+    "id": "Q33139",
+    "title": "To Die like a Man",
+    "type": "Film",
+    "displayTitle": "To Die like a Man (Film)",
+    "year": 2009,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/To_Die_like_a_Man"
+  },
+  {
+    "id": "Q33148",
+    "title": "Dead like Me: Life After Death",
+    "type": "Film",
+    "displayTitle": "Dead like Me: Life After Death (Film)",
+    "year": 2009,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Dead_like_Me:_Life_After_Death"
+  },
+  {
+    "id": "Q33189",
+    "title": "Wolfhound",
+    "type": "Film",
+    "displayTitle": "Wolfhound (Film)",
+    "year": 2006,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Wolfhound_(2006_film)"
+  },
+  {
+    "id": "Q33191",
+    "title": "People Like Us",
+    "type": "Film",
+    "displayTitle": "People Like Us (Film)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/People_Like_Us_(2012_film)"
+  },
+  {
+    "id": "Q372",
+    "title": "We Live in Public",
+    "type": "Film",
+    "displayTitle": "We Live in Public (Film)",
+    "year": 2009,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/We_Live_in_Public"
+  },
+  {
+    "id": "Q593",
+    "title": "A Gang Story",
+    "type": "Film",
+    "displayTitle": "A Gang Story (Film)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/A_Gang_Story"
+  },
+  {
+    "id": "Q595",
+    "title": "The Intouchables",
+    "type": "Film",
+    "displayTitle": "The Intouchables (Film)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Intouchables"
+  },
+  {
+    "id": "Q1365",
+    "title": "Swept Away",
+    "type": "Film",
+    "displayTitle": "Swept Away (Film)",
+    "year": 1974,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/MelatoGianniniTravolti1974WP.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Swept_Away_(1974_film)"
+  },
+  {
+    "id": "Q4338113",
+    "title": "Principles of Economics",
+    "type": "Book",
+    "displayTitle": "Principles of Economics (Book)",
+    "year": 1871,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Principles_of_Economics_(Menger_book)"
+  },
+  {
+    "id": "Q672556",
+    "title": "Boxer Protocol",
+    "type": "Book",
+    "displayTitle": "Boxer Protocol (Book)",
+    "year": 1901,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Chinaboxerprotocolsignature.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Boxer_Protocol"
+  },
+  {
+    "id": "Q643996",
+    "title": "Industrial Culture Handbook",
+    "type": "Book",
+    "displayTitle": "Industrial Culture Handbook (Book)",
+    "year": 1983,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Industrial_Culture_Handbook"
+  },
+  {
+    "id": "Q1219497",
+    "title": "Seven Wise Masters",
+    "type": "Book",
+    "displayTitle": "Seven Wise Masters (Book)",
+    "year": 1696,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Seven_Wise_Masters"
+  },
+  {
+    "id": "Q7983555",
+    "title": "Wernigerode Armorial",
+    "type": "Book",
+    "displayTitle": "Wernigerode Armorial (Book)",
+    "year": 1486,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Wernigeroder%20Wappenbuch%20024.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Wernigerode_Armorial"
+  },
+  {
+    "id": "Q20088196",
+    "title": "The Feminead: or, Female Genius",
+    "type": "Book",
+    "displayTitle": "The Feminead: or, Female Genius (Book)",
+    "year": 1751,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Feminead"
+  },
+  {
+    "id": "Q89609216",
+    "title": "Our Political Nature",
+    "type": "Book",
+    "displayTitle": "Our Political Nature (Book)",
+    "year": 2013,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Our_Political_Nature"
+  },
+  {
+    "id": "Q89679663",
+    "title": "The Jews of Silence",
+    "type": "Book",
+    "displayTitle": "The Jews of Silence (Book)",
+    "year": 1966,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Jews_of_Silence"
+  },
+  {
+    "id": "Q85720601",
+    "title": "18th Abduction",
+    "type": "Book",
+    "displayTitle": "18th Abduction (Book)",
+    "year": 2019,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/18th_Abduction"
+  },
+  {
+    "id": "Q85751888",
+    "title": "Chicago by Night",
+    "type": "Book",
+    "displayTitle": "Chicago by Night (Book)",
+    "year": 1991,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Chicago_by_Night"
+  },
+  {
+    "id": "Q85755715",
+    "title": "Dark Continent: Europe's Twentieth Century",
+    "type": "Book",
+    "displayTitle": "Dark Continent: Europe's Twentieth Century (Book)",
+    "year": 1998,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Dark_Continent:_Europe%27s_Twentieth_Century"
+  },
+  {
+    "id": "Q85806045",
+    "title": "Tesoro de la lengua guaraní",
+    "type": "Book",
+    "displayTitle": "Tesoro de la lengua guaraní (Book)",
+    "year": 1639,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Tesoro%20de%20la%20Lengua%20Guaran%C3%AD%200005.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Tesoro_de_la_lengua_guaran%C3%AD"
+  },
+  {
+    "id": "Q85807319",
+    "title": "The Great Gamble",
+    "type": "Book",
+    "displayTitle": "The Great Gamble (Book)",
+    "year": 2009,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Great_Gamble"
+  },
+  {
+    "id": "Q85807563",
+    "title": "The Invisible Government",
+    "type": "Book",
+    "displayTitle": "The Invisible Government (Book)",
+    "year": 1964,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Invisible_Government"
+  },
+  {
+    "id": "Q85847362",
+    "title": "Stranger Than Fanfiction",
+    "type": "Book",
+    "displayTitle": "Stranger Than Fanfiction (Book)",
+    "year": 2017,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Chris%20Colfer%20The%20Enchantress%20Returns.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Stranger_Than_Fanfiction"
+  },
+  {
+    "id": "Q96176183",
+    "title": "Divers voyages et missions du père Alexandre de Rhodes",
+    "type": "Book",
+    "displayTitle": "Divers voyages et missions du père Alexandre de Rhodes (Book)",
+    "year": 1653,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Divers%20voyages%20et%20missions%20du%20p%C3%A8re%20Alexandre%20de%20Rhodes.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Divers_voyages_et_missions_du_p%C3%A8re_Alexandre_de_Rhodes"
+  },
+  {
+    "id": "Q96377282",
+    "title": "Endless Frontier: Vannevar Bush, Engineer of the American Century",
+    "type": "Book",
+    "displayTitle": "Endless Frontier: Vannevar Bush, Engineer of the American Century (Book)",
+    "year": 1997,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Endless_Frontier:_Vannevar_Bush,_Engineer_of_the_American_Century"
+  },
+  {
+    "id": "Q100328725",
+    "title": "Vers Tombouctou : L'Afrique des explorateurs II",
+    "type": "Book",
+    "displayTitle": "Vers Tombouctou : L'Afrique des explorateurs II (Book)",
+    "year": 1994,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Vers_Tombouctou_:_L%27Afrique_des_explorateurs_II"
+  },
+  {
+    "id": "Q96238220",
+    "title": "Les Belges dans l'Afrique centrale",
+    "type": "Book",
+    "displayTitle": "Les Belges dans l'Afrique centrale (Book)",
+    "year": 1884,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Les%20Belges%20dans%20l%E2%80%99Afrique%20centrale.%20Elephants.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Les_Belges_dans_l%27Afrique_Centrale"
+  },
+  {
+    "id": "Q84067734",
+    "title": "The Last Faust",
+    "type": "Book",
+    "displayTitle": "The Last Faust (Book)",
+    "year": 2019,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Last_Faust_(book)"
+  },
+  {
+    "id": "Q84929144",
+    "title": "Guia pelas Colleccões do Museu Paulista",
+    "type": "Book",
+    "displayTitle": "Guia pelas Colleccões do Museu Paulista (Book)",
+    "year": 1907,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Guia_pelas_Collecc%C3%B5es_do_Museu_Paulista"
+  },
+  {
+    "id": "Q103484804",
+    "title": "Atomic Spy",
+    "type": "Book",
+    "displayTitle": "Atomic Spy (Book)",
+    "year": 2020,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Klaus%20Fuchs%20-%20police%20photograph.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Atomic_Spy_(book)"
+  },
+  {
+    "id": "Q103842662",
+    "title": "Uncertainty",
+    "type": "Book",
+    "displayTitle": "Uncertainty (Book)",
+    "year": 1992,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Uncertainty_(book)"
+  },
+  {
+    "id": "Q103842664",
+    "title": "Beyond Uncertainty",
+    "type": "Book",
+    "displayTitle": "Beyond Uncertainty (Book)",
+    "year": 2009,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Beyond_Uncertainty"
+  },
+  {
+    "id": "Q103896193",
+    "title": "Intellectual Mastery of Nature",
+    "type": "Book",
+    "displayTitle": "Intellectual Mastery of Nature (Book)",
+    "year": 1987,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Intellectual%20Mastery%20of%20Nature%201987%20volume%20one%20cover.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Intellectual_Mastery_of_Nature"
+  },
+  {
+    "id": "Q104040233",
+    "title": "Chronici Zelandiae",
+    "type": "Book",
+    "displayTitle": "Chronici Zelandiae (Book)",
+    "year": 1634,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Jacob%20van%20den%20Eynde%20Chronici%20Zelandiae%20cover.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Chronici_Zelandiae"
+  },
+  {
+    "id": "Q97628119",
+    "title": "Einstein's Unfinished Symphony",
+    "type": "Book",
+    "displayTitle": "Einstein's Unfinished Symphony (Book)",
+    "year": 2000,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Einstein%27s_Unfinished_Symphony"
+  },
+  {
+    "id": "Q91147264",
+    "title": "Baby’s Own Aesop",
+    "type": "Book",
+    "displayTitle": "Baby’s Own Aesop (Book)",
+    "year": 1887,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Crane%20title.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Baby%E2%80%99s_Own_Aesop"
+  },
+  {
+    "id": "Q91242328",
+    "title": "Trishanku",
+    "type": "Book",
+    "displayTitle": "Trishanku (Book)",
+    "year": 1945,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Trishanku_(book)"
+  },
+  {
+    "id": "Q91674109",
+    "title": "Reasons for not eating animal food",
+    "type": "Book",
+    "displayTitle": "Reasons for not eating animal food (Book)",
+    "year": 1814,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Reasonsfornoteatinganimalfoodpageone.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Reasons_for_Not_Eating_Animal_Food"
+  },
+  {
+    "id": "Q102079161",
+    "title": "Paul Revere and the World He Lived In",
+    "type": "Book",
+    "displayTitle": "Paul Revere and the World He Lived In (Book)",
+    "year": 1942,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Paul_Revere_and_the_World_He_Lived_In"
+  },
+  {
+    "id": "Q102079241",
+    "title": "The Stranger Diaries",
+    "type": "Book",
+    "displayTitle": "The Stranger Diaries (Book)",
+    "year": 2018,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Stranger_Diaries"
+  },
+  {
+    "id": "Q86396441",
+    "title": "Guia da Secção Histórica do Museu Paulista",
+    "type": "Book",
+    "displayTitle": "Guia da Secção Histórica do Museu Paulista (Book)",
+    "year": 1937,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Guia_da_Sec%C3%A7%C3%A3o_Hist%C3%B3rica_do_Museu_Paulista"
+  },
+  {
+    "id": "Q96376508",
+    "title": "Dollhouse",
+    "type": "Book",
+    "displayTitle": "Dollhouse (Book)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Dollhouse_(book)"
+  },
+  {
+    "id": "Q96395127",
+    "title": "Nazis, Islamists, and the Making of the Modern Middle East",
+    "type": "Book",
+    "displayTitle": "Nazis, Islamists, and the Making of the Modern Middle East (Book)",
+    "year": 2014,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Cover%20Nazis%20Islamist.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Nazis,_Islamists,_and_the_Making_of_the_Modern_Middle_East"
+  },
+  {
+    "id": "Q97671349",
+    "title": "Half-light",
+    "type": "Book",
+    "displayTitle": "Half-light (Book)",
+    "year": 2017,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Half-light:_Collected_Poems_1965%E2%80%932016"
+  },
+  {
+    "id": "Q97686061",
+    "title": "A Tribute for the Negro",
+    "type": "Book",
+    "displayTitle": "A Tribute for the Negro (Book)",
+    "year": 1848,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/A%20Tribute%20for%20the%20Negro%20-%20frontispiece.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/A_Tribute_for_the_Negro"
+  },
+  {
+    "id": "Q85755629",
+    "title": "Daniel Airlie",
+    "type": "Book",
+    "displayTitle": "Daniel Airlie (Book)",
+    "year": 1937,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Daniel_Airlie"
+  },
+  {
+    "id": "Q85758747",
+    "title": "Einstein's Unfinished Revolution",
+    "type": "Book",
+    "displayTitle": "Einstein's Unfinished Revolution (Book)",
+    "year": 2019,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Einstein%27s_Unfinished_Revolution"
+  },
+  {
+    "id": "Q97277128",
+    "title": "Tunes of Glory",
+    "type": "Book",
+    "displayTitle": "Tunes of Glory (Book)",
+    "year": 1956,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Tunes_of_Glory_(novel)"
+  },
+  {
+    "id": "Q102079323",
+    "title": "The Ten Principal Upanishads",
+    "type": "Book",
+    "displayTitle": "The Ten Principal Upanishads (Book)",
+    "year": 1938,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Ten_Principal_Upanishads"
+  },
+  {
+    "id": "Q102036074",
+    "title": "Himmler's War",
+    "type": "Book",
+    "displayTitle": "Himmler's War (Book)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Himmler%27s_War"
+  },
+  {
+    "id": "Q105760244",
+    "title": "Walking with the Comrades",
+    "type": "Book",
+    "displayTitle": "Walking with the Comrades (Book)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Walking_with_the_Comrades"
+  },
+  {
+    "id": "Q105830204",
+    "title": "Richard Rorty: Contemporary American Thinkers",
+    "type": "Book",
+    "displayTitle": "Richard Rorty: Contemporary American Thinkers (Book)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Richard_Rorty:_Contemporary_American_Thinkers"
+  },
+  {
+    "id": "Q97738511",
+    "title": "This Divided Island",
+    "type": "Book",
+    "displayTitle": "This Divided Island (Book)",
+    "year": 2014,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/This_Divided_Island"
+  },
+  {
+    "id": "Q98139864",
+    "title": "The History of Gold Coast and Asante",
+    "type": "Book",
+    "displayTitle": "The History of Gold Coast and Asante (Book)",
+    "year": 1895,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_History_of_the_Gold_Coast_and_Asante"
+  },
+  {
+    "id": "Q105667410",
+    "title": "Die Vereinigten Staaten von Gross-Österreich",
+    "type": "Book",
+    "displayTitle": "Die Vereinigten Staaten von Gross-Österreich (Book)",
+    "year": 1906,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Die_Vereinigten_staaten_von_Gross-%C3%96sterreich"
+  },
+  {
+    "id": "Q105683498",
+    "title": "Islam and Modernism (book)",
+    "type": "Book",
+    "displayTitle": "Islam and Modernism (book) (Book)",
+    "year": 1990,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Islam_and_Modernism"
+  },
+  {
+    "id": "Q105726726",
+    "title": "Haunts",
+    "type": "Book",
+    "displayTitle": "Haunts (Book)",
+    "year": 1994,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Haunts_(Wraith:_The_Oblivion)"
+  },
+  {
+    "id": "Q102079185",
+    "title": "China Statistical Yearbook",
+    "type": "Book",
+    "displayTitle": "China Statistical Yearbook (Book)",
+    "year": 1982,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/China_Statistical_Yearbook"
+  },
+  {
+    "id": "Q102079192",
+    "title": "China Publishers' Yearbook",
+    "type": "Book",
+    "displayTitle": "China Publishers' Yearbook (Book)",
+    "year": 1980,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/China_Publishers%27_Yearbook"
+  },
+  {
+    "id": "Q104476183",
+    "title": "Nicotine",
+    "type": "Book",
+    "displayTitle": "Nicotine (Book)",
+    "year": 2016,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Nicotine_(novel)"
+  },
+  {
+    "id": "Q97221803",
+    "title": "Royal Chronicle of the North",
+    "type": "Book",
+    "displayTitle": "Royal Chronicle of the North (Book)",
+    "year": 1807,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/%E0%B8%9E%E0%B8%87%E0%B8%A8%E0%B8%B2%E0%B8%A7%E0%B8%94%E0%B8%B2%E0%B8%A3%E0%B9%80%E0%B8%AB%E0%B8%99%E0%B8%B7%E0%B8%AD%20-%20%E0%B9%92%E0%B9%94%E0%B9%91%E0%B9%92.pdf",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Thai_Northern_Chronicle"
+  },
+  {
+    "id": "Q211858",
+    "title": "DK: King of Swing",
+    "type": "Video game",
+    "displayTitle": "DK: King of Swing (Video game)",
+    "year": 2005,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/DK_King_of_Swing"
+  },
+  {
+    "id": "Q229436",
+    "title": "3D Dot Game Heroes",
+    "type": "Video game",
+    "displayTitle": "3D Dot Game Heroes (Video game)",
+    "year": 2009,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/3D_Dot_Game_Heroes"
+  },
+  {
+    "id": "Q229447",
+    "title": "3D Monster Maze",
+    "type": "Video game",
+    "displayTitle": "3D Monster Maze (Video game)",
+    "year": 1982,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/3D_Monster_Maze"
+  },
+  {
+    "id": "Q229648",
+    "title": "3 Skulls of the Toltecs",
+    "type": "Video game",
+    "displayTitle": "3 Skulls of the Toltecs (Video game)",
+    "year": 1996,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/3_Skulls_of_the_Toltecs"
+  },
+  {
+    "id": "Q233753",
+    "title": "Clubhouse Games",
+    "type": "Video game",
+    "displayTitle": "Clubhouse Games (Video game)",
+    "year": 2005,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Clubhouse_Games"
+  },
+  {
+    "id": "Q235710",
+    "title": "Futurama",
+    "type": "Video game",
+    "displayTitle": "Futurama (Video game)",
+    "year": 2003,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Futurama_(video_game)"
+  },
+  {
+    "id": "Q237484",
+    "title": "Crysis",
+    "type": "Video game",
+    "displayTitle": "Crysis (Video game)",
+    "year": 2007,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Crysis_(video_game)"
+  },
+  {
+    "id": "Q239201",
+    "title": "Sub Command",
+    "type": "Video game",
+    "displayTitle": "Sub Command (Video game)",
+    "year": 2001,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Sub_Command"
+  },
+  {
+    "id": "Q239288",
+    "title": "Q239288",
+    "type": "Video game",
+    "displayTitle": "Q239288 (Video game)",
+    "year": 2010,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/StarCraft_II:_Wings_of_Liberty"
+  },
+  {
+    "id": "Q239889",
+    "title": "Hitman: Blood Money",
+    "type": "Video game",
+    "displayTitle": "Hitman: Blood Money (Video game)",
+    "year": 2006,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Hitman:_Blood_Money"
+  },
+  {
+    "id": "Q240143",
+    "title": "Maniac Mansion",
+    "type": "Video game",
+    "displayTitle": "Maniac Mansion (Video game)",
+    "year": 1987,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Maniac_Mansion"
+  },
+  {
+    "id": "Q241377",
+    "title": "Archlord",
+    "type": "Video game",
+    "displayTitle": "Archlord (Video game)",
+    "year": 2005,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/ArchLord"
+  },
+  {
+    "id": "Q244030",
+    "title": "Diablo III",
+    "type": "Video game",
+    "displayTitle": "Diablo III (Video game)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Diablo_III"
+  },
+  {
+    "id": "Q244033",
+    "title": "Diablo II",
+    "type": "Video game",
+    "displayTitle": "Diablo II (Video game)",
+    "year": 2000,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Diablo_II"
+  },
+  {
+    "id": "Q244140",
+    "title": "Angband",
+    "type": "Video game",
+    "displayTitle": "Angband (Video game)",
+    "year": 1990,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Angband.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Angband_(video_game)"
+  },
+  {
+    "id": "Q244187",
+    "title": "Moria",
+    "type": "Video game",
+    "displayTitle": "Moria (Video game)",
+    "year": 1983,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Moria-like-game.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Moria_(1983_video_game)"
+  },
+  {
+    "id": "Q244503",
+    "title": "eRepublik",
+    "type": "Video game",
+    "displayTitle": "eRepublik (Video game)",
+    "year": 2008,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/ERepublik"
+  },
+  {
+    "id": "Q332697",
+    "title": "Terraria",
+    "type": "Video game",
+    "displayTitle": "Terraria (Video game)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Terraria"
+  },
+  {
+    "id": "Q333367",
+    "title": "PlanetSide 2",
+    "type": "Video game",
+    "displayTitle": "PlanetSide 2 (Video game)",
+    "year": 2012,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/E3%202013%20%289082478203%29.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/PlanetSide_2"
+  },
+  {
+    "id": "Q333813",
+    "title": "ÜberSoldier",
+    "type": "Video game",
+    "displayTitle": "ÜberSoldier (Video game)",
+    "year": 2006,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/%C3%9CberSoldier"
+  },
+  {
+    "id": "Q334809",
+    "title": "MicroBot",
+    "type": "Video game",
+    "displayTitle": "MicroBot (Video game)",
+    "year": 2010,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/MicroBot"
+  },
+  {
+    "id": "Q335056",
+    "title": "Q335056",
+    "type": "Video game",
+    "displayTitle": "Q335056 (Video game)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Panzer_Dragoon_Orta"
+  },
+  {
+    "id": "Q335929",
+    "title": "Soul Sacrifice",
+    "type": "Video game",
+    "displayTitle": "Soul Sacrifice (Video game)",
+    "year": 2013,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Soul_Sacrifice_(video_game)"
+  },
+  {
+    "id": "Q335946",
+    "title": "MIDI Maze",
+    "type": "Video game",
+    "displayTitle": "MIDI Maze (Video game)",
+    "year": 1987,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/MIDI_Maze"
+  },
+  {
+    "id": "Q336100",
+    "title": "Tales of Destiny",
+    "type": "Video game",
+    "displayTitle": "Tales of Destiny (Video game)",
+    "year": 1997,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Tales_of_Destiny"
+  },
+  {
+    "id": "Q336177",
+    "title": "EVE Online",
+    "type": "Video game",
+    "displayTitle": "EVE Online (Video game)",
+    "year": 2003,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/EVE%20Online%20-%20Caldari%20Freighters.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Eve_Online"
+  },
+  {
+    "id": "Q337865",
+    "title": "Far Cry",
+    "type": "Video game",
+    "displayTitle": "Far Cry (Video game)",
+    "year": 2004,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Far_Cry_(video_game)"
+  },
+  {
+    "id": "Q337995",
+    "title": "Mushihimesama",
+    "type": "Video game",
+    "displayTitle": "Mushihimesama (Video game)",
+    "year": 2004,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Mushihimesama"
+  },
+  {
+    "id": "Q338486",
+    "title": "Street Fighter X Tekken",
+    "type": "Video game",
+    "displayTitle": "Street Fighter X Tekken (Video game)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Street_Fighter_X_Tekken"
+  },
+  {
+    "id": "Q338586",
+    "title": "Universal Hero",
+    "type": "Video game",
+    "displayTitle": "Universal Hero (Video game)",
+    "year": 1986,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Universal_Hero"
+  },
+  {
+    "id": "Q339056",
+    "title": "Incubation: Time Is Running Out",
+    "type": "Video game",
+    "displayTitle": "Incubation: Time Is Running Out (Video game)",
+    "year": 1997,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Incubation:_Time_Is_Running_Out"
+  },
+  {
+    "id": "Q339222",
+    "title": "Blast Corps",
+    "type": "Video game",
+    "displayTitle": "Blast Corps (Video game)",
+    "year": 1997,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Blast_Corps"
+  },
+  {
+    "id": "Q339348",
+    "title": "Q339348",
+    "type": "Video game",
+    "displayTitle": "Q339348 (Video game)",
+    "year": 1992,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Abandoned_Places:_A_Time_for_Heroes"
+  },
+  {
+    "id": "Q339485",
+    "title": "Dragon Quest Swords",
+    "type": "Video game",
+    "displayTitle": "Dragon Quest Swords (Video game)",
+    "year": 2007,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Dragon_Quest_Swords"
+  },
+  {
+    "id": "Q339571",
+    "title": "X-Men 2: Clone Wars",
+    "type": "Video game",
+    "displayTitle": "X-Men 2: Clone Wars (Video game)",
+    "year": 1995,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/X-Men_2:_Clone_Wars"
+  },
+  {
+    "id": "Q339814",
+    "title": "Asphalt 5",
+    "type": "Video game",
+    "displayTitle": "Asphalt 5 (Video game)",
+    "year": 2009,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Asphalt_5"
+  },
+  {
+    "id": "Q339957",
+    "title": "Ace Combat X: Skies of Deception",
+    "type": "Video game",
+    "displayTitle": "Ace Combat X: Skies of Deception (Video game)",
+    "year": 2006,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Ace_Combat_X:_Skies_of_Deception"
+  },
+  {
+    "id": "Q340141",
+    "title": "Ace of Aces",
+    "type": "Video game",
+    "displayTitle": "Ace of Aces (Video game)",
+    "year": 1986,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Ace_of_Aces_(video_game)"
+  },
+  {
+    "id": "Q341091",
+    "title": "Achtung, die Kurve!",
+    "type": "Video game",
+    "displayTitle": "Achtung, die Kurve! (Video game)",
+    "year": 1995,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Achtung,_die_Kurve!"
+  },
+  {
+    "id": "Q343033",
+    "title": "ActRaiser",
+    "type": "Video game",
+    "displayTitle": "ActRaiser (Video game)",
+    "year": 1990,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/ActRaiser"
+  },
+  {
+    "id": "Q343120",
+    "title": "Act of War: Direct Action",
+    "type": "Video game",
+    "displayTitle": "Act of War: Direct Action (Video game)",
+    "year": 2005,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Act_of_War:_Direct_Action"
+  },
+  {
+    "id": "Q207786",
+    "title": "Tamagotchi",
+    "type": "Video game",
+    "displayTitle": "Tamagotchi (Video game)",
+    "year": 1996,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Tamagotchi%200124%20ubt.jpeg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Tamagotchi"
+  },
+  {
+    "id": "Q211229",
+    "title": "Black Mesa",
+    "type": "Video game",
+    "displayTitle": "Black Mesa (Video game)",
+    "year": 2020,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Black_Mesa_(video_game)"
+  },
+  {
+    "id": "Q6336",
+    "title": "Everything That Happens Will Happen Today",
+    "type": "Music album",
+    "displayTitle": "Everything That Happens Will Happen Today (Music album)",
+    "year": 2008,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Everything_That_Happens_Will_Happen_Today"
+  },
+  {
+    "id": "Q8360",
+    "title": "(What's the Story) Morning Glory?",
+    "type": "Music album",
+    "displayTitle": "(What's the Story) Morning Glory? (Music album)",
+    "year": 1995,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/(What%27s_the_Story)_Morning_Glory%3F"
+  },
+  {
+    "id": "Q11632",
+    "title": "The Freewheelin' Bob Dylan",
+    "type": "Music album",
+    "displayTitle": "The Freewheelin' Bob Dylan (Music album)",
+    "year": 1963,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Freewheelin%27_Bob_Dylan"
+  },
+  {
+    "id": "Q13171",
+    "title": "A Thousand Suns",
+    "type": "Music album",
+    "displayTitle": "A Thousand Suns (Music album)",
+    "year": 2010,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/A_Thousand_Suns"
+  },
+  {
+    "id": "Q13172",
+    "title": "Living Things",
+    "type": "Music album",
+    "displayTitle": "Living Things (Music album)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Living_Things_(Linkin_Park_album)"
+  },
+  {
+    "id": "Q14016",
+    "title": "Doorie",
+    "type": "Music album",
+    "displayTitle": "Doorie (Music album)",
+    "year": 2006,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Doorie"
+  },
+  {
+    "id": "Q45786",
+    "title": "The Circus",
+    "type": "Music album",
+    "displayTitle": "The Circus (Music album)",
+    "year": 2008,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Circus_(Take_That_album)"
+  },
+  {
+    "id": "Q45787",
+    "title": "Diana Ross Presents The Jackson 5",
+    "type": "Music album",
+    "displayTitle": "Diana Ross Presents The Jackson 5 (Music album)",
+    "year": 1969,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Diana_Ross_Presents_The_Jackson_5"
+  },
+  {
+    "id": "Q45818",
+    "title": "Fireworks",
+    "type": "Music album",
+    "displayTitle": "Fireworks (Music album)",
+    "year": 1987,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Fireworks_(Bonfire_album)"
+  },
+  {
+    "id": "Q46465",
+    "title": "Victory",
+    "type": "Music album",
+    "displayTitle": "Victory (Music album)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Victory_(Modern_Talking_album)"
+  },
+  {
+    "id": "Q46515",
+    "title": "Bang Bang",
+    "type": "Music album",
+    "displayTitle": "Bang Bang (Music album)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Bang_Bang_(Dal_Shabet_album)"
+  },
+  {
+    "id": "Q46653",
+    "title": "Sóknardalr",
+    "type": "Music album",
+    "displayTitle": "Sóknardalr (Music album)",
+    "year": 1997,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/S%C3%B3knardalr"
+  },
+  {
+    "id": "Q47701",
+    "title": "Dirty Bass",
+    "type": "Music album",
+    "displayTitle": "Dirty Bass (Music album)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Dirty_Bass"
+  },
+  {
+    "id": "Q47935",
+    "title": "Planet Punk",
+    "type": "Music album",
+    "displayTitle": "Planet Punk (Music album)",
+    "year": 1995,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Planet_Punk"
+  },
+  {
+    "id": "Q47947",
+    "title": "Le Frisur",
+    "type": "Music album",
+    "displayTitle": "Le Frisur (Music album)",
+    "year": 1996,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Le_Frisur"
+  },
+  {
+    "id": "Q58114",
+    "title": "Auswärtsspiel",
+    "type": "Music album",
+    "displayTitle": "Auswärtsspiel (Music album)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Ausw%C3%A4rtsspiel"
+  },
+  {
+    "id": "Q151714",
+    "title": "American Idiot",
+    "type": "Music album",
+    "displayTitle": "American Idiot (Music album)",
+    "year": 2004,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/American_Idiot"
+  },
+  {
+    "id": "Q151790",
+    "title": "Don't Stop the Music",
+    "type": "Music album",
+    "displayTitle": "Don't Stop the Music (Music album)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Don%27t_Stop_the_Music_(Robyn_album)"
+  },
+  {
+    "id": "Q151827",
+    "title": "Celebration Day",
+    "type": "Music album",
+    "displayTitle": "Celebration Day (Music album)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Celebration_Day_(film)"
+  },
+  {
+    "id": "Q151880",
+    "title": "Confessions on a Dance Floor",
+    "type": "Music album",
+    "displayTitle": "Confessions on a Dance Floor (Music album)",
+    "year": 2005,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Logo%20COADF.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Confessions_on_a_Dance_Floor"
+  },
+  {
+    "id": "Q192346",
+    "title": "Ima nade",
+    "type": "Music album",
+    "displayTitle": "Ima nade (Music album)",
+    "year": 1988,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Ima_nade"
+  },
+  {
+    "id": "Q192349",
+    "title": "Među zvezdama",
+    "type": "Music album",
+    "displayTitle": "Među zvezdama (Music album)",
+    "year": 1977,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Me%C4%91u_zvezdama"
+  },
+  {
+    "id": "Q192351",
+    "title": "Tragovi",
+    "type": "Music album",
+    "displayTitle": "Tragovi (Music album)",
+    "year": 1990,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Tragovi"
+  },
+  {
+    "id": "Q192441",
+    "title": "YU zlato",
+    "type": "Music album",
+    "displayTitle": "YU zlato (Music album)",
+    "year": 1976,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/YU_zlato"
+  },
+  {
+    "id": "Q192755",
+    "title": "Blackout",
+    "type": "Music album",
+    "displayTitle": "Blackout (Music album)",
+    "year": 2007,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Britney%20Spears%20-%20Blackout%20Logo.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Blackout_(Britney_Spears_album)"
+  },
+  {
+    "id": "Q193477",
+    "title": "A Night at the Opera",
+    "type": "Music album",
+    "displayTitle": "A Night at the Opera (Music album)",
+    "year": 1975,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/A_Night_at_the_Opera_(Queen_album)"
+  },
+  {
+    "id": "Q193490",
+    "title": "Queen",
+    "type": "Music album",
+    "displayTitle": "Queen (Music album)",
+    "year": 1973,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/LP%20Label%20Queen.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Queen_(Queen_album)"
+  },
+  {
+    "id": "Q193950",
+    "title": "B'Day",
+    "type": "Music album",
+    "displayTitle": "B'Day (Music album)",
+    "year": 2006,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Beyonce%20-%20BDay.svg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/B%27Day"
+  },
+  {
+    "id": "Q194323",
+    "title": "15 Again",
+    "type": "Music album",
+    "displayTitle": "15 Again (Music album)",
+    "year": 2006,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/15_Again"
+  },
+  {
+    "id": "Q194335",
+    "title": "15 Big Ones",
+    "type": "Music album",
+    "displayTitle": "15 Big Ones (Music album)",
+    "year": 1976,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/15_Big_Ones"
+  },
+  {
+    "id": "Q194790",
+    "title": "Trout Mask Replica",
+    "type": "Music album",
+    "displayTitle": "Trout Mask Replica (Music album)",
+    "year": 1969,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Trout_Mask_Replica"
+  },
+  {
+    "id": "Q194791",
+    "title": "Awfully Deep",
+    "type": "Music album",
+    "displayTitle": "Awfully Deep (Music album)",
+    "year": 2005,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Awfully_Deep"
+  },
+  {
+    "id": "Q195055",
+    "title": "Au-delà du délire",
+    "type": "Music album",
+    "displayTitle": "Au-delà du délire (Music album)",
+    "year": 1974,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Au-del%C3%A0_du_d%C3%A9lire"
+  },
+  {
+    "id": "Q195252",
+    "title": "Dig, Lazarus, Dig!!!",
+    "type": "Music album",
+    "displayTitle": "Dig, Lazarus, Dig!!! (Music album)",
+    "year": 2008,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Dig,_Lazarus,_Dig!!!"
+  },
+  {
+    "id": "Q195399",
+    "title": "Wild Ones",
+    "type": "Music album",
+    "displayTitle": "Wild Ones (Music album)",
+    "year": 2012,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Flo%20Rida%20-Wild%20Ones%20logo.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Wild_Ones_(Flo_Rida_album)"
+  },
+  {
+    "id": "Q195456",
+    "title": "H.N.I.C. 3",
+    "type": "Music album",
+    "displayTitle": "H.N.I.C. 3 (Music album)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/H.N.I.C._3"
+  },
+  {
+    "id": "Q195481",
+    "title": "The Bumpy Johnson Album",
+    "type": "Music album",
+    "displayTitle": "The Bumpy Johnson Album (Music album)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Bumpy_Johnson_Album"
+  },
+  {
+    "id": "Q195544",
+    "title": "Squeeze",
+    "type": "Music album",
+    "displayTitle": "Squeeze (Music album)",
+    "year": 1978,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Squeeze_(Squeeze_album)"
+  },
+  {
+    "id": "Q195653",
+    "title": "The Good, the Bad & the Live",
+    "type": "Music album",
+    "displayTitle": "The Good, the Bad & the Live (Music album)",
+    "year": 1990,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Good,_the_Bad_%26_the_Live"
+  },
+  {
+    "id": "Q195701",
+    "title": "Theatre of Fate",
+    "type": "Music album",
+    "displayTitle": "Theatre of Fate (Music album)",
+    "year": 1989,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Theatre_of_Fate"
+  },
+  {
+    "id": "Q195731",
+    "title": "Tuskegee",
+    "type": "Music album",
+    "displayTitle": "Tuskegee (Music album)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Tuskegee_(album)"
+  },
+  {
+    "id": "Q195733",
+    "title": "Uncaged",
+    "type": "Music album",
+    "displayTitle": "Uncaged (Music album)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Uncaged"
+  },
+  {
+    "id": "Q196141",
+    "title": "Il mondo nuovo",
+    "type": "Music album",
+    "displayTitle": "Il mondo nuovo (Music album)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Il_mondo_nuovo_(album)"
+  },
+  {
+    "id": "Q196272",
+    "title": "Where Are You My Brothers?",
+    "type": "Music album",
+    "displayTitle": "Where Are You My Brothers? (Music album)",
+    "year": 2003,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Where_Are_You_My_Brothers%3F"
+  },
+  {
+    "id": "Q197518",
+    "title": "...To Be Loved: The Best of Papa Roach",
+    "type": "Music album",
+    "displayTitle": "...To Be Loved: The Best of Papa Roach (Music album)",
+    "year": 2010,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/...To_Be_Loved:_The_Best_of_Papa_Roach"
+  },
+  {
+    "id": "Q197623",
+    "title": "Q197623",
+    "type": "Music album",
+    "displayTitle": "Q197623 (Music album)",
+    "year": 2006,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Blood_of_the_Dragon_(album)"
+  },
+  {
+    "id": "Q197960",
+    "title": "Bad as Me",
+    "type": "Music album",
+    "displayTitle": "Bad as Me (Music album)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Bad_as_Me"
+  },
+  {
+    "id": "Q198077",
+    "title": "Somewhere Else",
+    "type": "Music album",
+    "displayTitle": "Somewhere Else (Music album)",
+    "year": 2007,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Somewhere_Else_(Marillion_album)"
+  },
+  {
+    "id": "Q198609",
+    "title": "Genuine",
+    "type": "Music album",
+    "displayTitle": "Genuine (Music album)",
+    "year": 2000,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Genuine_(Stacie_Orrico_album)"
+  },
+  {
+    "id": "Q198697",
+    "title": "Europe",
+    "type": "Music album",
+    "displayTitle": "Europe (Music album)",
+    "year": 1983,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Europe_(Europe_album)"
+  },
+  {
+    "id": "Q198713",
+    "title": "The Final Countdown",
+    "type": "Music album",
+    "displayTitle": "The Final Countdown (Music album)",
+    "year": 1986,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Final_Countdown_(album)"
+  },
+  {
+    "id": "Q14669",
+    "title": "Rust in Peace",
+    "type": "Music album",
+    "displayTitle": "Rust in Peace (Music album)",
+    "year": 1990,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Rust_in_Peace"
+  },
+  {
+    "id": "Q15612",
+    "title": "Oxygen",
+    "type": "Music album",
+    "displayTitle": "Oxygen (Music album)",
+    "year": 2001,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Oxygen_(Avalon_album)"
+  },
+  {
+    "id": "Q15614",
+    "title": "Oxygen",
+    "type": "Music album",
+    "displayTitle": "Oxygen (Music album)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Oxygen_(Baptiste_Giabiconi_album)"
+  },
+  {
+    "id": "Q15645",
+    "title": "Oxygen",
+    "type": "Music album",
+    "displayTitle": "Oxygen (Music album)",
+    "year": 1996,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Oxygen_(Varga_album)"
+  },
+  {
+    "id": "Q15647",
+    "title": "Oxygen",
+    "type": "Music album",
+    "displayTitle": "Oxygen (Music album)",
+    "year": 1998,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Oxygen_(Wild_Orchid_album)"
+  },
+  {
+    "id": "Q115468",
+    "title": "Poupée de cire, poupée de son",
+    "type": "Song",
+    "displayTitle": "Poupée de cire, poupée de son (Song)",
+    "year": 1965,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Eurovision%20Song%20Contest%201965%20-%20Serge%20Gainsbourg%2C%20France%20Gall%20%26%20Mario%20del%20Monaco.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Poup%C3%A9e_de_cire,_poup%C3%A9e_de_son"
+  },
+  {
+    "id": "Q116082",
+    "title": "Freedom",
+    "type": "Song",
+    "displayTitle": "Freedom (Song)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Freedom_(Nicki_Minaj_song)"
+  },
+  {
+    "id": "Q116535",
+    "title": "Tomorrow",
+    "type": "Song",
+    "displayTitle": "Tomorrow (Song)",
+    "year": 1994,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Tomorrow_(Silverchair_song)"
+  },
+  {
+    "id": "Q117707",
+    "title": "Shake Your Body",
+    "type": "Song",
+    "displayTitle": "Shake Your Body (Song)",
+    "year": 1979,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Shake%20Your%20Body%20%28Down%20to%20the%20Ground%29%20by%20The%20Jacksons%20US%20vinyl%20A-side.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Shake_Your_Body_(Down_to_the_Ground)"
+  },
+  {
+    "id": "Q119693",
+    "title": "Poppin'",
+    "type": "Song",
+    "displayTitle": "Poppin' (Song)",
+    "year": 2006,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Poppin%27_(Chris_Brown_song)"
+  },
+  {
+    "id": "Q121816",
+    "title": "Take It Off",
+    "type": "Song",
+    "displayTitle": "Take It Off (Song)",
+    "year": 2010,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Take_It_Off_(Kesha_song)"
+  },
+  {
+    "id": "Q123701",
+    "title": "My Love",
+    "type": "Song",
+    "displayTitle": "My Love (Song)",
+    "year": 1983,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/My_Love_(Lionel_Richie_song)"
+  },
+  {
+    "id": "Q126149",
+    "title": "The Way We Were",
+    "type": "Song",
+    "displayTitle": "The Way We Were (Song)",
+    "year": 1974,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Way_We_Were_(song)"
+  },
+  {
+    "id": "Q127752",
+    "title": "Glass of Water",
+    "type": "Song",
+    "displayTitle": "Glass of Water (Song)",
+    "year": 2008,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Glass_of_Water"
+  },
+  {
+    "id": "Q128491",
+    "title": "What the Water Gave Me",
+    "type": "Song",
+    "displayTitle": "What the Water Gave Me (Song)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/What_the_Water_Gave_Me_(song)"
+  },
+  {
+    "id": "Q128984",
+    "title": "When Love & Hate Collide",
+    "type": "Song",
+    "displayTitle": "When Love & Hate Collide (Song)",
+    "year": 1995,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/When_Love_%26_Hate_Collide"
+  },
+  {
+    "id": "Q129158",
+    "title": "We Belong Together",
+    "type": "Song",
+    "displayTitle": "We Belong Together (Song)",
+    "year": 2005,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/We_Belong_Together"
+  },
+  {
+    "id": "Q129400",
+    "title": "Stranded (Haiti Mon Amour)",
+    "type": "Song",
+    "displayTitle": "Stranded (Haiti Mon Amour) (Song)",
+    "year": 2010,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Stranded_(Haiti_Mon_Amour)"
+  },
+  {
+    "id": "Q129720",
+    "title": "Razom nas bahato, nas ne podolaty",
+    "type": "Song",
+    "displayTitle": "Razom nas bahato, nas ne podolaty (Song)",
+    "year": 2004,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Razom_nas_bahato"
+  },
+  {
+    "id": "Q129739",
+    "title": "Roll It Gal",
+    "type": "Song",
+    "displayTitle": "Roll It Gal (Song)",
+    "year": 2007,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Roll_It_Gal"
+  },
+  {
+    "id": "Q130163",
+    "title": "Do It like a Dude",
+    "type": "Song",
+    "displayTitle": "Do It like a Dude (Song)",
+    "year": 2010,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Do_It_like_a_Dude"
+  },
+  {
+    "id": "Q130826",
+    "title": "Criminal",
+    "type": "Song",
+    "displayTitle": "Criminal (Song)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Criminal_(Britney_Spears_song)"
+  },
+  {
+    "id": "Q133755",
+    "title": "Beauty and a Beat",
+    "type": "Song",
+    "displayTitle": "Beauty and a Beat (Song)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Beauty_and_a_Beat"
+  },
+  {
+    "id": "Q140567",
+    "title": "Feuer frei!",
+    "type": "Song",
+    "displayTitle": "Feuer frei! (Song)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Feuer_frei!"
+  },
+  {
+    "id": "Q147945",
+    "title": "Work It Out",
+    "type": "Song",
+    "displayTitle": "Work It Out (Song)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Work_It_Out_(Beyonc%C3%A9_song)"
+  },
+  {
+    "id": "Q149047",
+    "title": "Me, Myself and I",
+    "type": "Song",
+    "displayTitle": "Me, Myself and I (Song)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Me,_Myself_and_I_(Beyonc%C3%A9_song)"
+  },
+  {
+    "id": "Q149402",
+    "title": "Get Me Bodied",
+    "type": "Song",
+    "displayTitle": "Get Me Bodied (Song)",
+    "year": 2007,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Get_Me_Bodied"
+  },
+  {
+    "id": "Q149498",
+    "title": "Suga Mama",
+    "type": "Song",
+    "displayTitle": "Suga Mama (Song)",
+    "year": 2007,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Suga_Mama"
+  },
+  {
+    "id": "Q151755",
+    "title": "Some Might Say",
+    "type": "Song",
+    "displayTitle": "Some Might Say (Song)",
+    "year": 1995,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Some_Might_Say"
+  },
+  {
+    "id": "Q153202",
+    "title": "Con te partirò",
+    "type": "Song",
+    "displayTitle": "Con te partirò (Song)",
+    "year": 1995,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Con_te_partir%C3%B2"
+  },
+  {
+    "id": "Q208016",
+    "title": "Tiến Quân Ca",
+    "type": "Song",
+    "displayTitle": "Tiến Quân Ca (Song)",
+    "year": 1944,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Ti%E1%BA%BFn_qu%C3%A2n_ca"
+  },
+  {
+    "id": "Q221166",
+    "title": "Who Says",
+    "type": "Song",
+    "displayTitle": "Who Says (Song)",
+    "year": 2010,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Who%20says%20logo%20png%20by%20edithionsbylaw-d3l024h.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Who_Says_(Selena_Gomez_%26_the_Scene_song)"
+  },
+  {
+    "id": "Q224173",
+    "title": "30 Minutes",
+    "type": "Song",
+    "displayTitle": "30 Minutes (Song)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/30_Minutes_(song)"
+  },
+  {
+    "id": "Q246583",
+    "title": "Not Gonna Get Us",
+    "type": "Song",
+    "displayTitle": "Not Gonna Get Us (Song)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Not_Gonna_Get_Us"
+  },
+  {
+    "id": "Q263085",
+    "title": "Crockett's Theme",
+    "type": "Song",
+    "displayTitle": "Crockett's Theme (Song)",
+    "year": 1987,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Crockett%27s_Theme"
+  },
+  {
+    "id": "Q263957",
+    "title": "I Can Transform Ya",
+    "type": "Song",
+    "displayTitle": "I Can Transform Ya (Song)",
+    "year": 2009,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/I_Can_Transform_Ya"
+  },
+  {
+    "id": "Q264053",
+    "title": "Princes of the Universe",
+    "type": "Song",
+    "displayTitle": "Princes of the Universe (Song)",
+    "year": 1986,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Princes_of_the_Universe"
+  },
+  {
+    "id": "Q264286",
+    "title": "Girl Gone Wild",
+    "type": "Song",
+    "displayTitle": "Girl Gone Wild (Song)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Girl_Gone_Wild"
+  },
+  {
+    "id": "Q265696",
+    "title": "Breakin'... There's No Stopping Us",
+    "type": "Song",
+    "displayTitle": "Breakin'... There's No Stopping Us (Song)",
+    "year": 1984,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Breakin%27..._There%27s_No_Stopping_Us"
+  },
+  {
+    "id": "Q266214",
+    "title": "Calling All Girls",
+    "type": "Song",
+    "displayTitle": "Calling All Girls (Song)",
+    "year": 1982,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Queen-calling%20all%20girls.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Calling_All_Girls"
+  },
+  {
+    "id": "Q625333",
+    "title": "It's Alright",
+    "type": "Song",
+    "displayTitle": "It's Alright (Song)",
+    "year": 2006,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/It%27s_Alright_(Ricky_Martin_song)"
+  },
+  {
+    "id": "Q635446",
+    "title": "Say It Right",
+    "type": "Song",
+    "displayTitle": "Say It Right (Song)",
+    "year": 2006,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Say_It_Right"
+  },
+  {
+    "id": "Q637068",
+    "title": "The Great Beyond",
+    "type": "Song",
+    "displayTitle": "The Great Beyond (Song)",
+    "year": 1999,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Great_Beyond"
+  },
+  {
+    "id": "Q638360",
+    "title": "From Sarah with Love",
+    "type": "Song",
+    "displayTitle": "From Sarah with Love (Song)",
+    "year": 2001,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/From_Sarah_with_Love"
+  },
+  {
+    "id": "Q640295",
+    "title": "Back Off Boogaloo",
+    "type": "Song",
+    "displayTitle": "Back Off Boogaloo (Song)",
+    "year": 1972,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Back_Off_Boogaloo"
+  },
+  {
+    "id": "Q641217",
+    "title": "Gravity",
+    "type": "Song",
+    "displayTitle": "Gravity (Song)",
+    "year": 2003,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Gravity_(Maaya_Sakamoto_song)"
+  },
+  {
+    "id": "Q645322",
+    "title": "This Is a Call",
+    "type": "Song",
+    "displayTitle": "This Is a Call (Song)",
+    "year": 1995,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/This_Is_a_Call"
+  },
+  {
+    "id": "Q645342",
+    "title": "Where Them Girls At",
+    "type": "Song",
+    "displayTitle": "Where Them Girls At (Song)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Where_Them_Girls_At"
+  },
+  {
+    "id": "Q646976",
+    "title": "(Shake, Shake, Shake) Shake Your Booty",
+    "type": "Song",
+    "displayTitle": "(Shake, Shake, Shake) Shake Your Booty (Song)",
+    "year": 1976,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/(Shake,_Shake,_Shake)_Shake_Your_Booty"
+  },
+  {
+    "id": "Q647300",
+    "title": "Cough/Cool",
+    "type": "Song",
+    "displayTitle": "Cough/Cool (Song)",
+    "year": 1977,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Cough/Cool"
+  },
+  {
+    "id": "Q672515",
+    "title": "Party Rock Anthem",
+    "type": "Song",
+    "displayTitle": "Party Rock Anthem (Song)",
+    "year": 2010,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Party_Rock_Anthem"
+  },
+  {
+    "id": "Q950244",
+    "title": "Shout",
+    "type": "Song",
+    "displayTitle": "Shout (Song)",
+    "year": 1984,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Shout_(Tears_for_Fears_song)"
+  },
+  {
+    "id": "Q1003996",
+    "title": "Friends Will Be Friends",
+    "type": "Song",
+    "displayTitle": "Friends Will Be Friends (Song)",
+    "year": 1986,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Friends_Will_Be_Friends"
+  },
+  {
+    "id": "Q1033415",
+    "title": "Hammer to Fall",
+    "type": "Song",
+    "displayTitle": "Hammer to Fall (Song)",
+    "year": 1983,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Hammer%20To%20Fall%20Queen.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Hammer_to_Fall"
+  },
+  {
+    "id": "Q3749707",
+    "title": "Rockin' in the Free World",
+    "type": "Song",
+    "displayTitle": "Rockin' in the Free World (Song)",
+    "year": 1989,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Rockin%27_in_the_Free_World"
+  },
+  {
+    "id": "Q179715",
+    "title": "I Wanna Go",
+    "type": "Song",
+    "displayTitle": "I Wanna Go (Song)",
+    "year": 2011,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/I%20Wanna%20Go%20Logo.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/I_Wanna_Go"
+  },
+  {
+    "id": "Q186991",
+    "title": "Sakura no Ki ni Narō",
+    "type": "Song",
+    "displayTitle": "Sakura no Ki ni Narō (Song)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Sakura_no_Ki_ni_Nar%C5%8D"
+  },
+  {
+    "id": "Q188766",
+    "title": "Judas",
+    "type": "Song",
+    "displayTitle": "Judas (Song)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Judas_(Lady_Gaga_song)"
+  },
+  {
+    "id": "Q189007",
+    "title": "Just Dance",
+    "type": "Song",
+    "displayTitle": "Just Dance (Song)",
+    "year": 2008,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Just_Dance_(song)"
+  },
+  {
+    "id": "Q190960",
+    "title": "LoveGame",
+    "type": "Song",
+    "displayTitle": "LoveGame (Song)",
+    "year": 2009,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/LoveGame"
+  },
+  {
+    "id": "Q35622",
+    "title": "WWE SmackDown",
+    "type": "TV series",
+    "displayTitle": "WWE SmackDown (TV series)",
+    "year": 1999,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/WWE_SmackDown"
+  },
+  {
+    "id": "Q48777",
+    "title": "The Waltons",
+    "type": "TV series",
+    "displayTitle": "The Waltons (TV series)",
+    "year": 1972,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Waltons%201972.JPG",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Waltons"
+  },
+  {
+    "id": "Q59642",
+    "title": "Fred Basset",
+    "type": "TV series",
+    "displayTitle": "Fred Basset (TV series)",
+    "year": 1963,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Fred_Basset"
+  },
+  {
+    "id": "Q177153",
+    "title": "Die Alpensaga",
+    "type": "TV series",
+    "displayTitle": "Die Alpensaga (TV series)",
+    "year": 1976,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Die_Alpensaga"
+  },
+  {
+    "id": "Q181492",
+    "title": "Mockingbird Lane",
+    "type": "TV series",
+    "displayTitle": "Mockingbird Lane (TV series)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Mockingbird_Lane"
+  },
+  {
+    "id": "Q126631",
+    "title": "Hannah Montana",
+    "type": "TV series",
+    "displayTitle": "Hannah Montana (TV series)",
+    "year": 2006,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Hannah_Montana"
+  },
+  {
+    "id": "Q19655",
+    "title": "The Young Turks",
+    "type": "TV series",
+    "displayTitle": "The Young Turks (TV series)",
+    "year": 2002,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Ana%20Kasparian%20and%20Cenk%20Uygur%20hosting%20The%20Young%20Turks%20%2826942061744%29.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Young_Turks"
+  },
+  {
+    "id": "Q127261",
+    "title": "Urban Legends",
+    "type": "TV series",
+    "displayTitle": "Urban Legends (TV series)",
+    "year": 2007,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Urban_Legends_(TV_series)"
+  },
+  {
+    "id": "Q177233",
+    "title": "Kabaret Starszych Panów",
+    "type": "TV series",
+    "displayTitle": "Kabaret Starszych Panów (TV series)",
+    "year": 1958,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Kabaret_Starszych_Pan%C3%B3w"
+  },
+  {
+    "id": "Q247643",
+    "title": "Elementary",
+    "type": "TV series",
+    "displayTitle": "Elementary (TV series)",
+    "year": 2013,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Elementary_(TV_series)"
+  },
+  {
+    "id": "Q18754",
+    "title": "WWE Raw",
+    "type": "TV series",
+    "displayTitle": "WWE Raw (TV series)",
+    "year": 1993,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/WWE%20Raw%20stage%20July%2025%2C%202016-August%2015%2C%202016.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/WWE_Raw"
+  },
+  {
+    "id": "Q23577",
+    "title": "Dexter",
+    "type": "TV series",
+    "displayTitle": "Dexter (TV series)",
+    "year": 2007,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Dexter%20Logo.svg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Dexter_(TV_series)"
+  },
+  {
+    "id": "Q219942",
+    "title": "Sonny with a Chance",
+    "type": "TV series",
+    "displayTitle": "Sonny with a Chance (TV series)",
+    "year": 2010,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Sonny_with_a_Chance"
+  },
+  {
+    "id": "Q223261",
+    "title": "Final Destination",
+    "type": "TV series",
+    "displayTitle": "Final Destination (TV series)",
+    "year": 1999,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Final_Destination"
+  },
+  {
+    "id": "Q638487",
+    "title": "Georgia Championship Wrestling",
+    "type": "TV series",
+    "displayTitle": "Georgia Championship Wrestling (TV series)",
+    "year": 1970,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Georgia_Championship_Wrestling"
+  },
+  {
+    "id": "Q640760",
+    "title": "Yo Gabba Gabba!",
+    "type": "TV series",
+    "displayTitle": "Yo Gabba Gabba! (TV series)",
+    "year": 2024,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Yo_Gabba_Gabba!"
+  },
+  {
+    "id": "Q659653",
+    "title": "Jessie",
+    "type": "TV series",
+    "displayTitle": "Jessie (TV series)",
+    "year": 2011,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Jessie%20Cast.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Jessie_(2011_TV_series)"
+  },
+  {
+    "id": "Q724491",
+    "title": "The Little Mole",
+    "type": "TV series",
+    "displayTitle": "The Little Mole (TV series)",
+    "year": 1957,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Andrew%20Feustel%20s%20rodinou%20.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Little_Mole"
+  },
+  {
+    "id": "Q638191",
+    "title": "Revelations",
+    "type": "TV series",
+    "displayTitle": "Revelations (TV series)",
+    "year": 2005,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Revelations_(2005_TV_series)"
+  },
+  {
+    "id": "Q806482",
+    "title": "Bangkok Hilton",
+    "type": "TV series",
+    "displayTitle": "Bangkok Hilton (TV series)",
+    "year": 1989,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Bangkok_Hilton"
+  },
+  {
+    "id": "Q810855",
+    "title": "Batman and Robin",
+    "type": "TV series",
+    "displayTitle": "Batman and Robin (TV series)",
+    "year": 1949,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Batman_and_Robin_(serial)"
+  },
+  {
+    "id": "Q831105",
+    "title": "The Enchanted Pencil",
+    "type": "TV series",
+    "displayTitle": "The Enchanted Pencil (TV series)",
+    "year": 1964,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Sculpture%20of%20main%20characters%20from%20cartoon%20%27Zaczarowany%20o%C5%82%C3%B3wek%27%2C%20%C5%81%C3%B3d%C5%BA%20Culture%20Center.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Zaczarowany_o%C5%82%C3%B3wek"
+  },
+  {
+    "id": "Q832913",
+    "title": "Való Világ",
+    "type": "TV series",
+    "displayTitle": "Való Világ (TV series)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Val%C3%B3_Vil%C3%A1g"
+  },
+  {
+    "id": "Q1193339",
+    "title": "Secret Smile",
+    "type": "TV series",
+    "displayTitle": "Secret Smile (TV series)",
+    "year": 2005,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Secret_Smile"
+  },
+  {
+    "id": "Q1198595",
+    "title": "The Flying Cestmír",
+    "type": "TV series",
+    "displayTitle": "The Flying Cestmír (TV series)",
+    "year": 1984,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/L%C3%A9taj%C3%ADc%C3%AD_%C4%8Cestm%C3%ADr"
+  },
+  {
+    "id": "Q35718",
+    "title": "WWE Main Event",
+    "type": "TV series",
+    "displayTitle": "WWE Main Event (TV series)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/WWE_Main_Event"
+  },
+  {
+    "id": "Q35752",
+    "title": "WWE Superstars",
+    "type": "TV series",
+    "displayTitle": "WWE Superstars (TV series)",
+    "year": 2009,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/SuperstarsuniversalWWEHDset%20%28cropped%29.JPG",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/WWE_Superstars"
+  },
+  {
+    "id": "Q72085",
+    "title": "ECW on TNN",
+    "type": "TV series",
+    "displayTitle": "ECW on TNN (TV series)",
+    "year": 1999,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/ECW_on_TNN"
+  },
+  {
+    "id": "Q919728",
+    "title": "The Phantom",
+    "type": "TV series",
+    "displayTitle": "The Phantom (TV series)",
+    "year": 2009,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Phantom_(miniseries)"
+  },
+  {
+    "id": "Q923497",
+    "title": "Walking with Cavemen",
+    "type": "TV series",
+    "displayTitle": "Walking with Cavemen (TV series)",
+    "year": 2003,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Walking_with_Cavemen"
+  },
+  {
+    "id": "Q924889",
+    "title": "The Power of Nightmares",
+    "type": "TV series",
+    "displayTitle": "The Power of Nightmares (TV series)",
+    "year": 2004,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Power_of_Nightmares"
+  },
+  {
+    "id": "Q926778",
+    "title": "ZingZillas",
+    "type": "TV series",
+    "displayTitle": "ZingZillas (TV series)",
+    "year": 2010,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/ZingZillas"
+  },
+  {
+    "id": "Q929924",
+    "title": "Miś Uszatek",
+    "type": "TV series",
+    "displayTitle": "Miś Uszatek (TV series)",
+    "year": 1975,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Muzeum%20dobranocek%20w%20rzeszowie%207.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Teddy_Drop_Ear"
+  },
+  {
+    "id": "Q930003",
+    "title": "Choujuu Sentai Liveman",
+    "type": "TV series",
+    "displayTitle": "Choujuu Sentai Liveman (TV series)",
+    "year": 1988,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Choujyu_Sentai_Liveman"
+  },
+  {
+    "id": "Q825946",
+    "title": "Good Morning America",
+    "type": "TV series",
+    "displayTitle": "Good Morning America (TV series)",
+    "year": 1975,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Canal%20St%206th%20Av%20td%20%282018-11-07%29%2011%20-%20Duarte%20Square%2C%20One%20Hudson%20Square.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Good_Morning_America"
+  },
+  {
+    "id": "Q672175",
+    "title": "Borgia",
+    "type": "TV series",
+    "displayTitle": "Borgia (TV series)",
+    "year": 2011,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Borgia_(TV_series)"
+  },
+  {
+    "id": "Q703888",
+    "title": "Arrêt sur images",
+    "type": "TV series",
+    "displayTitle": "Arrêt sur images (TV series)",
+    "year": 2007,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Arr%C3%AAt_sur_images"
+  },
+  {
+    "id": "Q711291",
+    "title": "Kasou Taishou",
+    "type": "TV series",
+    "displayTitle": "Kasou Taishou (TV series)",
+    "year": 1979,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Kasou_Taishou"
+  },
+  {
+    "id": "Q714753",
+    "title": "The Prisoner",
+    "type": "TV series",
+    "displayTitle": "The Prisoner (TV series)",
+    "year": 1967,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Prisoner"
+  },
+  {
+    "id": "Q776675",
+    "title": "WWE ECW",
+    "type": "TV series",
+    "displayTitle": "WWE ECW (TV series)",
+    "year": 2006,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/WWECWHD.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/WWE_ECW"
+  },
+  {
+    "id": "Q948696",
+    "title": "The Closer",
+    "type": "TV series",
+    "displayTitle": "The Closer (TV series)",
+    "year": 2005,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/The_Closer"
+  },
+  {
+    "id": "Q715726",
+    "title": "Let's trim our hair in accordance with the socialist lifestyle",
+    "type": "TV series",
+    "displayTitle": "Let's trim our hair in accordance with the socialist lifestyle (TV series)",
+    "year": 2004,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Let%27s_trim_our_hair_in_accordance_with_the_socialist_lifestyle"
+  },
+  {
+    "id": "Q720838",
+    "title": "Strangers 6",
+    "type": "TV series",
+    "displayTitle": "Strangers 6 (TV series)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Strangers_6"
+  },
+  {
+    "id": "Q591029",
+    "title": "Ninpuu Sentai Hurricaneger",
+    "type": "TV series",
+    "displayTitle": "Ninpuu Sentai Hurricaneger (TV series)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Ninpuu_Sentai_Hurricaneger"
+  },
+  {
+    "id": "Q594716",
+    "title": "I Love New York 2",
+    "type": "TV series",
+    "displayTitle": "I Love New York 2 (TV series)",
+    "year": 2007,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/I_Love_New_York_season_2"
+  },
+  {
+    "id": "Q608711",
+    "title": "Plebania",
+    "type": "TV series",
+    "displayTitle": "Plebania (TV series)",
+    "year": 2000,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Plebania"
+  },
+  {
+    "id": "Q610525",
+    "title": "Love It or List It",
+    "type": "TV series",
+    "displayTitle": "Love It or List It (TV series)",
+    "year": 2008,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Love_It_or_List_It"
+  },
+  {
+    "id": "Q614433",
+    "title": "Deep Love",
+    "type": "TV series",
+    "displayTitle": "Deep Love (TV series)",
+    "year": 2002,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Deep_Love"
+  },
+  {
+    "id": "Q625859",
+    "title": "Happy Together",
+    "type": "TV series",
+    "displayTitle": "Happy Together (TV series)",
+    "year": 1999,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Happy_Together_(South_Korean_TV_series)"
+  },
+  {
+    "id": "Q665424",
+    "title": "Reguły Gry",
+    "type": "TV series",
+    "displayTitle": "Reguły Gry (TV series)",
+    "year": 2012,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Regu%C5%82y_gry"
+  },
+  {
+    "id": "Q722609",
+    "title": "MARC standards",
+    "type": "Scientific discovery",
+    "displayTitle": "MARC standards (Scientific discovery)",
+    "year": 1965,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/MARC_standards"
+  },
+  {
+    "id": "Q161733",
+    "title": "criminology",
+    "type": "Scientific discovery",
+    "displayTitle": "criminology (Scientific discovery)",
+    "year": 1900,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/SNA%20segment.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Criminology"
+  },
+  {
+    "id": "Q169411",
+    "title": "Unified Modeling Language",
+    "type": "Scientific discovery",
+    "displayTitle": "Unified Modeling Language (Scientific discovery)",
+    "year": 1995,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Unified_Modeling_Language"
+  },
+  {
+    "id": "Q7162",
+    "title": "genetics",
+    "type": "Scientific discovery",
+    "displayTitle": "genetics (Scientific discovery)",
+    "year": 1900,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Gene.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Genetics"
+  },
+  {
+    "id": "Q483130",
+    "title": "geographic information system",
+    "type": "Scientific discovery",
+    "displayTitle": "geographic information system (Scientific discovery)",
+    "year": 1962,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/TSP%20Deutschland%203.png",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Geographic_information_system"
+  },
+  {
+    "id": "Q485669",
+    "title": "telematics",
+    "type": "Scientific discovery",
+    "displayTitle": "telematics (Scientific discovery)",
+    "year": 1978,
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Telematics"
+  },
+  {
+    "id": "Q840545",
+    "title": "sports medicine",
+    "type": "Scientific discovery",
+    "displayTitle": "sports medicine (Scientific discovery)",
+    "year": 1929,
+    "image": "http://commons.wikimedia.org/wiki/Special:FilePath/Bishop%20Loughlin%20Games%20-%20Armory%20-%20Track%20%26%20Field%20%2811609407975%29.jpg",
+    "wikipediaUrl": "https://en.wikipedia.org/wiki/Sports_medicine"
+  }
+]
