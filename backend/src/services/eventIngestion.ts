@@ -501,14 +501,14 @@ async function fetchAllCategories(): Promise<IngestedEvent[]> {
     const label = typeLabel(categoryKey);
     try {
       if (categoryKey === "celebrityBirths") {
-        console.log(`[events] Cargando categoría: ${label} (${PHASE1_RUNS_PER_CATEGORY} rangos)...`);
+        console.log(`[events] Loading category: ${label} (${PHASE1_RUNS_PER_CATEGORY} ranges)...`);
         const ranges = getYearRanges(1950, MAX_YEAR);
         const phase1Sparqls = ranges.map(([a, b]) => getCelebrityBirthQueryPhase1(a, b));
         const events = await fetchCategoryTwoPhaseWithRuns(phase1Sparqls, "person", label);
         all.push(...events);
         console.log(`[events] ${label}: ${events.length} eventos`);
       } else if (categoryKey === "historicalEvents") {
-        console.log(`[events] Cargando categoría: ${label} (por tipo, ${PHASE1_RUNS_PER_CATEGORY} rangos)...`);
+        console.log(`[events] Loading category: ${label} (by type, ${PHASE1_RUNS_PER_CATEGORY} ranges)...`);
         let total = 0;
         const ranges = getYearRanges(1914, MAX_YEAR);
         for (const typeQid of HISTORICAL_EVENT_TYPE_QIDS) {
@@ -522,7 +522,7 @@ async function fetchAllCategories(): Promise<IngestedEvent[]> {
         }
         console.log(`[events] ${label}: ${total} eventos`);
       } else {
-        console.log(`[events] Cargando categoría: ${label} (${PHASE1_RUNS_PER_CATEGORY} rangos)...`);
+        console.log(`[events] Loading category: ${label} (${PHASE1_RUNS_PER_CATEGORY} ranges)...`);
         const minYear = CATEGORY_MIN_YEAR[categoryKey] ?? 1900;
         const ranges = getYearRanges(minYear, MAX_YEAR);
         const phase1Sparqls = ranges.map(([a, b]) => buildCategoryQueryPhase1(qid, a, b));

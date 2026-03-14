@@ -48,7 +48,7 @@ export function Lobby({
             onClick={copyInviteLink}
             className="rounded-lg border border-violet-300 bg-violet-50 px-3 py-1.5 text-sm font-medium text-violet-700 hover:bg-violet-100"
           >
-            {copied ? "¡Copiado!" : "Copiar enlace de invitación"}
+            {copied ? "Copied!" : "Copy invite link"}
           </button>
         </div>
         <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
@@ -91,7 +91,7 @@ export function Lobby({
 
           {!wsReady && (
             <p className="mt-3 text-sm text-amber-600">
-              {roomState.players.length > 0 ? "Reconectando…" : "Conectando…"}
+              {roomState.players.length > 0 ? "Reconnecting…" : "Connecting…"}
             </p>
           )}
 
@@ -105,7 +105,7 @@ export function Lobby({
                 type="button"
                 onClick={onClearRoomError}
                 className="shrink-0 rounded p-1 text-amber-600 hover:bg-amber-100 hover:text-amber-900"
-                aria-label="Cerrar"
+                aria-label="Close"
               >
                 ×
               </button>

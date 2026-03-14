@@ -45,11 +45,11 @@ export function JoinForm({ roomId, onJoined }: JoinFormProps) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 p-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg ring-1 ring-zinc-200/60">
-        <h1 className="text-xl font-bold text-zinc-900">Unirse a la sala</h1>
+        <h1 className="text-xl font-bold text-zinc-900">Join room</h1>
         {roomInfo && (
           <p className="mt-1 text-sm text-zinc-600">
             <span className="font-medium">{roomInfo.name}</span>
-            <span className="text-zinc-500"> · Anfitrión: {roomInfo.hostNickname}</span>
+            <span className="text-zinc-500"> · Host: {roomInfo.hostNickname}</span>
           </p>
         )}
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">

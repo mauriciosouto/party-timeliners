@@ -99,7 +99,7 @@ describe("roomService (integration)", () => {
   it("startGame fails with one player", () => {
     const { roomId, playerId } = createRoom("Host");
     const result = startGame(roomId, playerId);
-    expect(result).toEqual({ error: "Se necesitan al menos 2 jugadores para iniciar. Espera a que se una otro participante." });
+    expect(result).toEqual({ error: "At least 2 players are required to start. Wait for another player to join." });
   });
 
   it("startGame succeeds with two players and sets status playing", () => {
@@ -242,6 +242,6 @@ describe("roomService (integration)", () => {
 
     const result = rematchRoom(roomId, hostId);
     expect("error" in result).toBe(true);
-    expect((result as { error: string }).error).toContain("2 jugadores");
+    expect((result as { error: string }).error).toContain("2 players");
   });
 });

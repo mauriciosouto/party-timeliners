@@ -266,7 +266,7 @@ export function startGame(roomId: string, playerId: string): RoomState | { error
     .prepare("SELECT COUNT(*) as c FROM room_players WHERE room_id = ? AND connected = 1")
     .get(roomId) as { c: number };
   if (playerCount.c < 2 || connectedCount.c < 2)
-    return { error: "Se necesitan al menos 2 jugadores para iniciar. Espera a que se una otro participante." };
+    return { error: "At least 2 players are required to start. Wait for another player to join." };
 
   const events = db.prepare("SELECT * FROM events").all() as EventRecord[];
   if (events.length < 2) return { error: "Not enough events in pool. Run seed first." };
@@ -691,7 +691,7 @@ export function rematchRoom(roomId: string, playerId: string): RoomState | { err
   if (playerCount.c < 2 || connectedCount.c < 2)
     return {
       error:
-        "Se necesitan al menos 2 jugadores para la revancha. Espera a que se una otro participante.",
+        "At least 2 players are required for a rematch. Wait for another player to join.",
     };
 
   db.transaction(() => {

@@ -175,7 +175,7 @@ export function RoomGameBoard({
       );
       const validRange = 0 <= (slotIndex ?? -1) && (slotIndex ?? -1) <= timeline.length;
       if (slotIndex == null || !validRange) {
-        setDropHint("Suelta la carta en un espacio entre eventos (zona «drop»)");
+        setDropHint("Drop the card in a space between events (drop zone)");
         setTimeout(() => setDropHint(null), 3000);
         return;
       }
@@ -205,19 +205,19 @@ export function RoomGameBoard({
             <p className="mt-0.5 text-xs text-zinc-500 md:text-sm">
               {isEnded
                 ? winner
-                  ? `Partida terminada — ${winner.nickname} gana`
-                  : "Partida terminada — Empate"
+                  ? `Game over — ${winner.nickname} wins`
+                  : "Game over — Tie"
                 : isMyTurn
-                  ? "Tu turno — coloca la carta en la línea"
+                  ? "Your turn — place the card on the timeline"
                   : currentTurnPlayer
-                    ? `Esperando a ${currentTurnPlayer.nickname}…`
-                    : "Cargando…"}
+                    ? `Waiting for ${currentTurnPlayer.nickname}…`
+                    : "Loading…"}
             </p>
             {!isEnded && isMyTurn && turnTimeLimitSeconds != null && secondsLeft != null && (
               <div className="mt-2 w-full max-w-xs">
                 <div className="flex justify-between text-xs text-zinc-500">
                   <span>{secondsLeft}s</span>
-                  <span>Límite: {turnTimeLimitSeconds}s</span>
+                  <span>Limit: {turnTimeLimitSeconds}s</span>
                 </div>
                 <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-200">
                   <div
@@ -236,7 +236,7 @@ export function RoomGameBoard({
               onClick={onEndGame}
               className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100"
             >
-              Terminar partida
+              End game
             </button>
           )}
         </div>
@@ -247,10 +247,10 @@ export function RoomGameBoard({
         {isEnded && (
           <section className="rounded-2xl border border-amber-200 bg-amber-50/95 px-4 py-4 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-800">
-              Resultado final
+              Final result
             </h2>
             <p className="mt-2 text-lg font-semibold text-amber-900">
-              {winner ? `${winner.nickname} gana` : "Empate"}
+              {winner ? `${winner.nickname} wins` : "Tie"}
             </p>
             <ul className="mt-3 space-y-2">
               {roomState.players
@@ -262,7 +262,7 @@ export function RoomGameBoard({
                   >
                     <span className="font-medium text-zinc-900">
                       {p.nickname}
-                      {p.playerId === playerId && " (tú)"}
+                      {p.playerId === playerId && " (you)"}
                     </span>
                     <span className="text-zinc-600">{p.score} pts</span>
                   </li>
@@ -276,7 +276,7 @@ export function RoomGameBoard({
             <section className="flex flex-1 flex-col gap-3 overflow-hidden rounded-2xl bg-white/90 p-4 shadow-md ring-1 ring-zinc-200/60">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
-                  Línea de tiempo
+                  Timeline
                 </h2>
               </div>
               <div className="min-h-[140px] overflow-x-auto overflow-y-visible">
@@ -297,7 +297,7 @@ export function RoomGameBoard({
                   type="button"
                   onClick={onClearRoomError}
                   className="shrink-0 rounded p-1 text-amber-600 hover:bg-amber-100 hover:text-amber-900"
-                  aria-label="Cerrar"
+                  aria-label="Close"
                 >
                   ×
                 </button>
@@ -310,14 +310,14 @@ export function RoomGameBoard({
                   onClick={onCloseRoom}
                   className="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium text-zinc-700 hover:bg-zinc-50"
                 >
-                  Terminar
+                  End
                 </button>
               ) : (
                 <Link
                   href="/"
                   className="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium text-zinc-700 hover:bg-zinc-50"
                 >
-                  Terminar juego
+                  End game
                 </Link>
               )}
               {isHost && (
@@ -326,12 +326,12 @@ export function RoomGameBoard({
                   onClick={onRematch}
                   className="rounded-lg bg-violet-600 px-4 py-3 font-medium text-white hover:bg-violet-700"
                 >
-                  Revancha
+                  Rematch
                 </button>
               )}
               {!isHost && (
                 <p className="text-sm text-zinc-500">
-                  El host puede iniciar una revancha
+                  The host can start a rematch
                 </p>
               )}
             </section>
@@ -348,18 +348,18 @@ export function RoomGameBoard({
               >
                 {placeResult.correct ? (
                   <>
-                    <div className="text-xs font-semibold uppercase tracking-wide">Correcto</div>
-                    <p>Tu puntaje: {placeResult.score}</p>
+                    <div className="text-xs font-semibold uppercase tracking-wide">Correct</div>
+                    <p>Your score: {placeResult.score}</p>
                   </>
                 ) : placeResult.gameEnded ? (
                   <>
-                    <div className="text-xs font-semibold uppercase tracking-wide">Partida terminada</div>
-                    <p>Puntaje final: {placeResult.score}</p>
+                    <div className="text-xs font-semibold uppercase tracking-wide">Game over</div>
+                    <p>Final score: {placeResult.score}</p>
                   </>
                 ) : (
                   <>
-                    <div className="text-xs font-semibold uppercase tracking-wide">No sumas puntos — sigue la partida</div>
-                    <p>Tu puntaje: {placeResult.score}</p>
+                    <div className="text-xs font-semibold uppercase tracking-wide">No points — game continues</div>
+                    <p>Your score: {placeResult.score}</p>
                   </>
                 )}
               </section>
@@ -375,7 +375,7 @@ export function RoomGameBoard({
                   type="button"
                   onClick={onClearPlaceError}
                   className="shrink-0 rounded p-1 text-amber-600 hover:bg-amber-100 hover:text-amber-900"
-                  aria-label="Cerrar"
+                  aria-label="Close"
                 >
                   ×
                 </button>
@@ -394,10 +394,10 @@ export function RoomGameBoard({
             <section className="flex flex-1 flex-col gap-3 overflow-hidden rounded-2xl bg-white/90 p-4 shadow-md ring-1 ring-zinc-200/60">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
-                  Línea de tiempo
+                  Timeline
                 </h2>
                 <p className="text-[11px] text-zinc-400">
-                  {isMyTurn ? "Suelta la carta entre eventos" : "Observa la línea de tiempo"}
+                  {isMyTurn ? "Drop the card between events" : "Watch the timeline"}
                 </p>
               </div>
               <div className="min-h-[140px] overflow-x-auto overflow-y-visible">
@@ -413,15 +413,15 @@ export function RoomGameBoard({
 
             <section className="flex flex-shrink-0 flex-col gap-3 rounded-2xl bg-white/90 p-4 shadow-md ring-1 ring-zinc-200/60">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
-                Tu evento
+                Your event
               </h2>
               {!wsReady ? (
                 <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 text-sm text-zinc-400">
-                  Conectando…
+                  Connecting…
                 </div>
               ) : loadingCard ? (
                 <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 text-sm text-zinc-400">
-                  Cargando carta…
+                  Loading card…
                 </div>
               ) : isMyTurn && currentEvent ? (
                 <div className="flex justify-center md:justify-start">
@@ -436,7 +436,7 @@ export function RoomGameBoard({
                 </div>
               ) : (
                 <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/80 text-center text-sm text-zinc-500">
-                  {isMyTurn ? "Cargando…" : "Espera tu turno"}
+                  {isMyTurn ? "Loading…" : "Wait for your turn"}
                 </div>
               )}
             </section>
@@ -446,7 +446,7 @@ export function RoomGameBoard({
 
         <aside className="flex w-56 flex-shrink-0 flex-col gap-3 rounded-2xl bg-white/90 p-4 shadow-md ring-1 ring-zinc-200/60">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
-            Participantes
+            Players
           </h2>
           <ul className="space-y-2">
             {roomState.players
@@ -464,7 +464,7 @@ export function RoomGameBoard({
                     <div className="flex min-w-0 items-center justify-between gap-2">
                       <span className="truncate font-medium text-zinc-900">
                         {p.nickname}
-                        {p.playerId === playerId && " (tú)"}
+                        {p.playerId === playerId && " (you)"}
                       </span>
                       <span className="flex-shrink-0 text-sm font-medium text-zinc-600">
                         {score} pts
