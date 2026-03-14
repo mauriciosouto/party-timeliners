@@ -68,39 +68,39 @@ Connect then send JSON messages:
 
 ## Testing
 
-Tests use [Vitest](https://vitest.dev/): **unit tests** (lógica pura) e **integration tests** (room service con SQLite).
+Tests use [Vitest](https://vitest.dev/): **unit tests** (pure logic) and **integration tests** (room service with SQLite).
 
-### Cómo ejecutar
+### How to run
 
-| Script | Descripción |
+| Script | Description |
 |--------|-------------|
-| `npm run test` | Todos los tests (unit + integración). |
-| `npm run test:coverage` | Tests + coverage (terminal + `coverage/` con HTML y `lcov.info`). |
-| `npm run test:watch` | Modo watch: re-ejecuta al guardar. |
-| `npm run test:coverage:integration` | Solo tests de integración con coverage. |
+| `npm run test` | Run all tests (unit + integration). |
+| `npm run test:coverage` | Tests + coverage (terminal + `coverage/` with HTML and `lcov.info`). |
+| `npm run test:watch` | Watch mode: re-runs on file save. |
+| `npm run test:coverage:integration` | Integration tests only, with coverage. |
 
-Desde la raíz del repo: `cd backend` y luego el comando anterior.
+From the repo root: `cd backend` then run the command above.
 
-### Coverage en GitHub
+### Coverage on GitHub
 
-El workflow [../.github/workflows/test.yml](../.github/workflows/test.yml) corre en cada push y en cada PR:
+The workflow [../.github/workflows/test.yml](../.github/workflows/test.yml) runs on every push and pull request:
 
-- **Estado del job** en la pestaña *Actions* (pass/fail).
-- **Artifact *coverage-report***: en cada run podés descargar el ZIP con la carpeta `coverage/`; al abrir `index.html` en el navegador ves el reporte completo.
-- **Codecov (opcional):** para un badge de coverage y el diff en PRs, conectá el repo en [codecov.io](https://codecov.io) y añadí el token en *Settings → Secrets* como `CODECOV_TOKEN`.
+- **Job status** in the *Actions* tab (pass/fail).
+- **Artifact *coverage-report***: in each run you can download the ZIP with the `coverage/` folder; open `index.html` in your browser to view the full report.
+- **Codecov (optional):** for a coverage badge and diff on PRs, connect the repo at [codecov.io](https://codecov.io) and add the token in *Settings → Secrets* as `CODECOV_TOKEN`.
 
-### Qué cubren los tests
+### What's covered
 
-| Área | Archivo | Descripción |
-|------|---------|-------------|
+| Area | File | Description |
+|------|------|-------------|
 | Event quality | `src/game/eventQuality.test.ts` | `isGoodEvent`, `filterGoodEvents` |
 | Timeline | `src/game/timeline.test.ts` | `isValidPosition`, `findCorrectPosition`, `isCorrectPlacement` |
 | Validation | `src/game/validation.test.ts` | `validatePlace`, `getNextTurnPlayerId` |
 | Deck | `src/game/deck.test.ts` | `shuffle`, `buildDeck` |
 | Event ingestion | `src/services/eventIngestion.test.ts` | `mergeWithExistingPool` |
-| Room (integración) | `src/services/roomService.integration.test.ts` | createRoom, joinRoom, startGame, placeEvent, endGame, rematch con BD real |
+| Room (integration) | `src/services/roomService.integration.test.ts` | createRoom, joinRoom, startGame, placeEvent, endGame, rematch with real DB |
 
-Los tests de integración usan `test-data/integration.db`; siembran la tabla `events` y limpian las tablas de sala entre tests.
+Integration tests use `test-data/integration.db`; they seed the `events` table and clear room tables between tests.
 
 ## Env
 

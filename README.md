@@ -204,26 +204,26 @@ Server: `http://localhost:3001` (or `PORT`). WebSocket: `ws://localhost:3001/ws`
 
 The backend includes **unit tests** and **integration tests** ([Vitest](https://vitest.dev/)).
 
-| Comando | Descripción |
+| Command | Description |
 |--------|-------------|
-| `cd backend && npm run test` | Ejecuta todos los tests (unit + integración). |
-| `cd backend && npm run test:coverage` | Igual + reporte de coverage en terminal y en `backend/coverage/` (HTML + lcov). |
-| `cd backend && npm run test:watch` | Modo watch: vuelve a correr tests al guardar. |
+| `cd backend && npm run test` | Run all tests (unit + integration). |
+| `cd backend && npm run test:coverage` | Same + coverage report in terminal and in `backend/coverage/` (HTML + lcov). |
+| `cd backend && npm run test:watch` | Watch mode: re-runs tests on file save. |
 
-**Qué se prueba**
+**What's tested**
 
-- **Unit:** lógica de juego (event quality, timeline, validación de jugada, deck), merge del pool de eventos.
-- **Integración:** sala, unirse, iniciar partida, colocar evento, terminar partida, revancha (con SQLite real).
+- **Unit:** Game logic (event quality, timeline, place validation, deck), event pool merge.
+- **Integration:** Create room, join, start game, place event, end game, rematch (with real SQLite).
 
-**Coverage en GitHub**
+**Coverage on GitHub**
 
-En cada push y en cada PR, [GitHub Actions](.github/workflows/test.yml) ejecuta los tests con coverage:
+On every push and pull request, [GitHub Actions](.github/workflows/test.yml) runs tests with coverage:
 
-1. **Resultado del job** — En la pestaña *Actions* ves si los tests pasan o fallan.
-2. **Descargar reporte** — En cada run podés bajar el artifact *coverage-report* (carpeta `coverage/`); al descomprimir, abrí `index.html` en el navegador para ver el reporte completo.
-3. **Badge y resumen en PRs (opcional)** — Si conectás el repo con [Codecov](https://codecov.io) y añadís `CODECOV_TOKEN` en los secrets del repo, el workflow sube el coverage y podés usar un badge en el README y ver el diff de coverage en cada PR.
+1. **Job result** — In the *Actions* tab you can see whether tests pass or fail.
+2. **Download report** — In each run you can download the *coverage-report* artifact (the `coverage/` folder); unzip it and open `index.html` in your browser to view the full report.
+3. **Badge and PR summary (optional)** — If you connect the repo to [Codecov](https://codecov.io) and add `CODECOV_TOKEN` to the repo secrets, the workflow uploads coverage and you can add a badge to the README and see coverage diff on each PR.
 
-Ver [backend/README.md](backend/README.md#testing) para más detalle y scripts opcionales.
+See [backend/README.md](backend/README.md#testing) for more detail and optional scripts.
 
 ### Deployment
 
