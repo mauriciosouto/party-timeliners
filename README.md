@@ -195,6 +195,6 @@ Please keep the game simple, fast, and accessible; avoid adding account requirem
 
 ## License
 
-<!-- TODO: Add license (e.g. MIT, Apache-2.0) -->
+This project is licensed under the [MIT License](LICENSE).
 
-*License placeholder. Choose a license and add it here and in a `LICENSE` file.*
+Historical event data used in the game may be sourced from external projects, including [Wikidata](https://www.wikidata.org/) (CC0) and [Wikipedia](https://www.wikipedia.org/) (Creative Commons Attribution-ShareAlike). Those materials are subject to their respective licenses.
