@@ -16,6 +16,8 @@ export function isGoodEvent(event: Event): boolean {
 
   if (!event.wikipediaUrl) return false;
 
+  if (!event.image) return false;
+
   // Filtra títulos que parecen rangos tipo "1990–91"
   if (RANGE_REGEX.test(title)) return false;
 

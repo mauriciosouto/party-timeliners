@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import type { TimelineEvent } from "@/lib/types";
-import { INITIAL_TIMELINE } from "@/lib/mockEvents";
 import { Timeline, parseSlotIndexFromId } from "@/components/Timeline";
 import { EventCard } from "@/components/EventCard";
 import { formatYear } from "@/lib/format";
@@ -27,30 +26,53 @@ function getCorrectInsertIndex(timeline: TimelineEvent[], event: TimelineEvent) 
   return i;
 }
 
+function generateRoomId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return `local-${crypto.randomUUID()}`;
+  }
+  return `local-${Date.now()}`;
+}
+
 export default function GameBoard() {
-  const [timeline, setTimeline] = useState<TimelineEvent[]>(INITIAL_TIMELINE);
+  const [roomId] = useState(generateRoomId);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [currentEvent, setCurrentEvent] = useState<TimelineEvent | null>(null);
   const [placedCount, setPlacedCount] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [score, setScore] = useState(0);
+  const [lastPlacedId, setLastPlacedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const placedCardRef = useRef<HTMLDivElement | null>(null);
 
+  // Each game/room starts with one random event from the pool as the timeline seed, then the first card to place.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const next = await getNextEvent();
-      if (!cancelled) {
-        setCurrentEvent(next);
+      setLoading(true);
+      const initialEvent = await getNextEvent(roomId);
+      if (cancelled) return;
+      if (initialEvent) {
+        setTimeline([initialEvent]);
       }
+      const firstCard = await getNextEvent(roomId);
+      if (!cancelled) {
+        setCurrentEvent(firstCard);
+      }
+      setLoading(false);
     };
     void load();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [roomId]);
+
+  const [loadingNextCard, setLoadingNextCard] = useState(false);
 
   const loadNextEvent = async () => {
-    const next = await getNextEvent();
+    setLoadingNextCard(true);
+    const next = await getNextEvent(roomId);
     setCurrentEvent(next);
+    setLoadingNextCard(false);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -62,7 +84,9 @@ export default function GameBoard() {
     );
     if (slotIndex == null) return;
 
-    console.log("onEventPlaced(position)", slotIndex);
+    // Clear the placed card immediately and show loading until the next one arrives
+    setCurrentEvent(null);
+    setLoadingNextCard(true);
 
     const previous = slotIndex > 0 ? timeline[slotIndex - 1] : null;
     const next = slotIndex < timeline.length ? timeline[slotIndex] : null;
@@ -70,28 +94,23 @@ export default function GameBoard() {
     let isCorrect = false;
 
     if (!previous && next) {
-      // Placed at the start.
       isCorrect = currentEvent.year <= next.year;
     } else if (previous && !next) {
-      // Placed at the end.
       isCorrect = previous.year <= currentEvent.year;
     } else if (previous && next) {
-      // Placed between two events.
       isCorrect =
         previous.year <= currentEvent.year &&
         currentEvent.year <= next.year;
     } else {
-      // Empty timeline fallback.
       isCorrect = true;
     }
 
     const newTimeline = [...timeline];
 
     if (isCorrect) {
-      // Insert at the chosen slot when placement is valid.
       newTimeline.splice(slotIndex, 0, currentEvent);
       setTimeline(newTimeline);
-
+      setLastPlacedId(currentEvent.id);
       setScore((s) => s + 1);
       setFeedback({
         type: "correct",
@@ -99,11 +118,10 @@ export default function GameBoard() {
         detail: `${currentEvent.title} fits between the surrounding years.`,
       });
     } else {
-      // Insert at the correct chronological position when invalid.
       const correctIndex = getCorrectInsertIndex(timeline, currentEvent);
       newTimeline.splice(correctIndex, 0, currentEvent);
       setTimeline(newTimeline);
-
+      setLastPlacedId(currentEvent.id);
       setFeedback({
         type: "incorrect",
         message: "Not quite. The event has been moved to its correct position.",
@@ -117,78 +135,109 @@ export default function GameBoard() {
     void loadNextEvent();
   };
 
-  const placedEventsCount = placedCount;
+  useEffect(() => {
+    if (!lastPlacedId) return;
+    const t = setTimeout(() => {
+      placedCardRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }, 600);
+    const t2 = setTimeout(() => setLastPlacedId(null), 1200);
+    return () => {
+      clearTimeout(t);
+      clearTimeout(t2);
+    };
+  }, [lastPlacedId]);
+
+  const setPlacedCardRef = (el: HTMLDivElement | null) => {
+    placedCardRef.current = el;
+  };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-sky-50 via-indigo-50 to-fuchsia-50 text-zinc-900">
-      <header className="border-b border-white/60 bg-white/70 px-4 py-3 shadow-sm backdrop-blur">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 via-white to-slate-100 text-zinc-900">
+      {/* Top: Game title + room */}
+      <header className="flex-shrink-0 border-b border-zinc-200/80 bg-white/90 px-4 py-4 shadow-sm backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-zinc-900">
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900 md:text-2xl">
               Party Timeliners
             </h1>
-            <p className="text-xs text-zinc-500">
-              Drag each event into the shared history timeline.
+            <p className="mt-0.5 text-xs text-zinc-500 md:text-sm">
+              Local single-player · Place each event on the timeline
             </p>
           </div>
-          <div className="flex items-center gap-3 rounded-full bg-zinc-900 text-xs font-medium text-white shadow-sm">
-            <div className="rounded-full bg-gradient-to-r from-sky-400 to-fuchsia-500 px-3 py-1">
+          <div className="flex items-center gap-2 rounded-2xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-lg">
+            <span className="rounded-full bg-emerald-500/90 px-2 py-0.5 text-xs font-bold">
               Score: {score}
-            </div>
-            <div className="px-3 py-1 text-zinc-200">
-              Events placed: {placedEventsCount}
-            </div>
+            </span>
+            <span className="text-zinc-300">·</span>
+            <span className="text-zinc-200">Placed: {placedCount}</span>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-5">
+      {/* Middle: Scrollable horizontal timeline */}
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6">
         <DndContext onDragEnd={handleDragEnd}>
-          <section className="flex flex-col gap-3 rounded-3xl bg-white/80 p-4 shadow-sm">
+          <section className="flex flex-1 flex-col gap-3 overflow-hidden rounded-2xl bg-white/90 p-4 shadow-md ring-1 ring-zinc-200/60">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-zinc-900">Timeline</h2>
-              <p className="text-[11px] text-zinc-500">
-                Horizontal scroll supported. Earlier events appear to the left.
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
+                Timeline
+              </h2>
+              <p className="text-[11px] text-zinc-400">
+                Scroll horizontally · Drop between cards
               </p>
             </div>
-            <div className="overflow-x-auto pb-2">
-              <div className="min-w-max pr-4">
-                <Timeline events={timeline} />
-              </div>
+            <div className="min-h-[140px] overflow-x-auto overflow-y-visible">
+              {loading ? (
+                <div className="flex min-h-[120px] items-center justify-center text-sm text-zinc-400">
+                  Loading timeline…
+                </div>
+              ) : (
+                <Timeline
+                  events={timeline}
+                  lastPlacedId={lastPlacedId}
+                  onPlacedCardRef={setPlacedCardRef}
+                />
+              )}
             </div>
           </section>
 
-          <section className="mt-3 flex flex-col gap-3 rounded-3xl bg-white/80 p-4 shadow-sm">
+          {/* Bottom: Current card to place */}
+          <section className="flex flex-shrink-0 flex-col gap-3 rounded-2xl bg-white/90 p-4 shadow-md ring-1 ring-zinc-200/60">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-zinc-900">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
                 Your event
               </h2>
-              <p className="text-[11px] text-zinc-500">
-                Drag the card above and drop it between two events.
+              <p className="text-[11px] text-zinc-400">
+                Drag the card into a drop zone on the timeline
               </p>
             </div>
 
-            {currentEvent ? (
-              <div>
+            {loading ? (
+              <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 text-sm text-zinc-400">
+                Loading card…
+              </div>
+            ) : loadingNextCard ? (
+              <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 text-sm text-zinc-400">
+                Loading next event…
+              </div>
+            ) : currentEvent ? (
+              <div className="flex justify-center md:justify-start">
                 <EventCard
                   event={currentEvent}
-                  label="Place this event"
                   showYear={false}
+                  revealed={false}
                   draggable
                   draggableId={DRAGGABLE_ID}
-                  className="bg-white/95"
+                  className="touch-manipulation"
                 />
-                <div className="mt-1 text-right text-[10px] font-medium text-zinc-500">
-                  Drag the card onto the timeline slots above.
-                </div>
               </div>
             ) : (
-              <div className="flex flex-col items-start gap-2 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/80 px-4 py-3 text-sm text-zinc-700">
+              <div className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/80 px-6 py-8 text-center">
                 <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                  Prototype complete
+                  Round complete
                 </span>
-                <p className="text-sm">
-                  You have placed all available events for this prototype round.
+                <p className="text-sm text-zinc-600">
+                  You’ve placed all events for this round.
                 </p>
               </div>
             )}
@@ -197,31 +246,26 @@ export default function GameBoard() {
 
         {feedback && (
           <section
-            className={`mt-2 flex flex-col gap-1 rounded-2xl border px-4 py-3 text-sm shadow-sm ${
+            className={`flex flex-col gap-1 rounded-2xl border px-4 py-3 text-sm shadow-sm ${
               feedback.type === "correct"
-                ? "border-emerald-200 bg-emerald-50/90 text-emerald-900"
-                : "border-rose-200 bg-rose-50/90 text-rose-900"
+                ? "border-emerald-200 bg-emerald-50/95 text-emerald-900"
+                : "border-amber-200 bg-amber-50/95 text-amber-900"
             }`}
           >
             <div className="text-xs font-semibold uppercase tracking-wide">
-              {feedback.type === "correct" ? "Correct placement" : "Not quite"}
+              {feedback.type === "correct" ? "Correct" : "Moved to correct spot"}
             </div>
             <p>{feedback.message}</p>
             {feedback.detail && (
-              <p className="text-xs opacity-80">{feedback.detail}</p>
+              <p className="text-xs opacity-90">{feedback.detail}</p>
             )}
           </section>
         )}
 
-        <section className="mt-3 text-[11px] text-zinc-500">
-          <p>
-            This is a local single-player prototype. In later phases we&apos;ll
-            connect to real Wikipedia data, multiplayer rooms, and Durable
-            Objects.
-          </p>
-        </section>
+        <p className="text-center text-[11px] text-zinc-400">
+          Local single-player prototype · Events from Wikipedia/Wikidata
+        </p>
       </main>
     </div>
   );
 }
-

@@ -1,4 +1,9 @@
 /* eslint-disable no-console */
+/**
+ * @deprecated Event ingestion and pool refresh live on the backend.
+ * Use: cd backend && npm run refresh-events (or POST /api/admin/refresh-events).
+ * This script is kept only for one-off export to JSON if needed.
+ */
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -23,8 +28,8 @@ const EVENT_CATEGORIES: Record<string, string> = {
 
 const WIKIDATA_ENDPOINT = "https://query.wikidata.org/sparql";
 const CURRENT_YEAR = new Date().getUTCFullYear();
-const CATEGORY_LIMIT = 60;
-const CELEBRITY_BIRTH_LIMIT = 80;
+const CATEGORY_LIMIT = 120;
+const CELEBRITY_BIRTH_LIMIT = 120;
 const TARGET_POOL_SIZE = 300;
 
 type Binding = {
@@ -123,6 +128,24 @@ function parseYear(raw: string | undefined): number | null {
   return year;
 }
 
+const THUMBNAIL_WIDTH = 300;
+
+/** Mirrors lib/imageUtils: normalize filename and build Commons thumbnail URL. */
+function getWikimediaThumbnail(imageName: string, width = THUMBNAIL_WIDTH): string {
+  let name = (imageName ?? "").trim();
+  if (!name) return "";
+  const filePathMatch = name.match(/FilePath\/([^?#]+)/i);
+  if (filePathMatch) {
+    name = decodeURIComponent(filePathMatch[1]);
+  }
+  if (name.startsWith("File:")) {
+    name = name.slice(5).trim();
+  }
+  if (!name) return "";
+  const encoded = encodeURIComponent(name);
+  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=${width}`;
+}
+
 function normalizeBindings(
   bindings: Binding[],
   typeLabel: string,
@@ -136,6 +159,12 @@ function normalizeBindings(
     const title = (b[labelKey] as { value?: string } | undefined)?.value?.trim();
     if (!entity || !title) continue;
 
+    const rawImage = b.image?.value?.trim();
+    if (!rawImage) continue;
+
+    const image = getWikimediaThumbnail(rawImage);
+    if (!image) continue;
+
     const id = entity.split("/").pop() ?? entity;
     const year = parseYear(b.date?.value);
     if (year == null || year > CURRENT_YEAR) continue;
@@ -146,7 +175,7 @@ function normalizeBindings(
       type: typeLabel,
       displayTitle: `${title} (${typeLabel})`,
       year,
-      image: b.image?.value,
+      image,
       wikipediaUrl: b.article?.value,
     });
   }
@@ -163,6 +192,7 @@ function isGoodEvent(event: Event): boolean {
   if (typeof year !== "number" || Number.isNaN(year)) return false;
   if (year > CURRENT_YEAR) return false;
   if (!event.wikipediaUrl) return false;
+  if (!event.image) return false;
   if (RANGE_REGEX.test(title)) return false;
   if (YEAR_IN_TITLE_REGEX.test(title)) return false;
 

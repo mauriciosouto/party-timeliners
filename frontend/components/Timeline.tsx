@@ -3,7 +3,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { useMemo } from "react";
 import type { TimelineEvent } from "@/lib/types";
-import { formatYear } from "@/lib/format";
+import { EventCard } from "@/components/EventCard";
 
 export const SLOT_ID_PREFIX = "slot-";
 
@@ -11,7 +11,9 @@ export function makeSlotId(index: number): string {
   return `${SLOT_ID_PREFIX}${index}`;
 }
 
-export function parseSlotIndexFromId(id: string | null | undefined): number | null {
+export function parseSlotIndexFromId(
+  id: string | null | undefined,
+): number | null {
   if (!id || !id.startsWith(SLOT_ID_PREFIX)) return null;
   const raw = id.slice(SLOT_ID_PREFIX.length);
   const value = Number.parseInt(raw, 10);
@@ -30,51 +32,72 @@ function TimelineSlot({ index }: TimelineSlotProps) {
   return (
     <div
       ref={setNodeRef}
-      className={`relative flex min-w-[140px] flex-col items-center justify-between gap-2 rounded-2xl border border-dashed border-zinc-300/80 bg-white/60 px-3 py-2 text-xs shadow-sm transition-colors ${
-        isOver
-          ? "border-indigo-400 bg-indigo-50/80"
-          : "hover:border-zinc-400/80"
-      }`}
+      className={`
+        flex min-h-[48px] min-w-[40px] flex-shrink-0 flex-col items-center justify-center
+        rounded-lg border-2 border-dashed transition-all duration-200
+        touch-manipulation
+        ${
+          isOver
+            ? "border-violet-400 bg-violet-100/80 scale-105 shadow-md"
+            : "border-zinc-300/80 bg-zinc-100/50 hover:border-violet-300 hover:bg-violet-50/80"
+        }
+      `}
     >
-      <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-400">
-        Drop here
+      <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">
+        drop
       </span>
     </div>
   );
 }
 
-type TimelineProps = {
+export type TimelineProps = {
   events: TimelineEvent[];
+  /** Id of the event that was just placed (triggers flip + scroll) */
+  lastPlacedId?: string | null;
+  /** Ref callback for the card that was just placed (for scrollIntoView) */
+  onPlacedCardRef?: (el: HTMLDivElement | null) => void;
 };
 
-export function Timeline({ events }: TimelineProps) {
+export function Timeline({
+  events,
+  lastPlacedId,
+  onPlacedCardRef,
+}: TimelineProps) {
   const slots = useMemo(
     () => Array.from({ length: events.length + 1 }, (_, i) => i),
     [events.length],
   );
 
   return (
-    <div className="relative flex w-full items-center gap-4">
-      <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-zinc-300" />
+    <div
+      className="flex gap-4 overflow-x-auto overflow-y-visible px-2 py-4 scroll-smooth pb-6"
+      style={{
+        WebkitOverflowScrolling: "touch",
+        scrollbarGutter: "stable",
+      }}
+      role="list"
+      aria-label="Timeline events"
+    >
       {slots.map((slotIndex) => (
-        <div key={slotIndex} className="flex items-center gap-2">
-          {slotIndex === 0 ? null : (
-            <div className="flex flex-col items-center gap-1">
-              <div className="h-3 w-[2px] rounded-full bg-zinc-300" />
-              <div className="rounded-xl bg-white/90 px-3 py-2 text-xs shadow-sm">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
-                  {formatYear(events[slotIndex - 1].year)}
-                </div>
-                <div className="mt-0.5 font-semibold text-zinc-900">
-                  {events[slotIndex - 1].title}
-                </div>
-              </div>
-            </div>
-          )}
+        <div key={slotIndex} className="flex flex-shrink-0 items-center gap-3">
+          {slotIndex > 0 ? (
+            <EventCard
+              event={events[slotIndex - 1]}
+              showYear
+              revealed={events[slotIndex - 1].id !== lastPlacedId}
+              titleLinksToWikipedia
+              animateReveal={events[slotIndex - 1].id === lastPlacedId}
+              cardRef={
+                events[slotIndex - 1].id === lastPlacedId
+                  ? onPlacedCardRef
+                  : undefined
+              }
+              className="flex-shrink-0"
+            />
+          ) : null}
           <TimelineSlot index={slotIndex} />
         </div>
       ))}
     </div>
   );
 }
-
