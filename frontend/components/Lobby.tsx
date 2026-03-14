@@ -39,9 +39,18 @@ export function Lobby({
   }, [inviteUrl]);
 
   return (
-    <div className="page-bg flex min-h-screen flex-col p-6">
+    <div
+      className="flex min-h-screen flex-col page-container"
+      style={{
+        backgroundImage: 'linear-gradient(rgba(15,23,42,0.65), rgba(15,23,42,0.65)), url("/images/timeline-bg.webp")',
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        minHeight: "100vh",
+      }}
+    >
       <header className="mx-auto w-full max-w-[1100px]">
-        <h1 className="text-xl font-bold text-zinc-900">{roomState.name || "Party Timeliners"}</h1>
+        <h1 className="text-xl font-bold text-white">{roomState.name || "Party Timeliners"}</h1>
         <div className="mt-3">
           <button
             type="button"
@@ -51,7 +60,7 @@ export function Lobby({
             {copied ? "Copied!" : "Copy invite link"}
           </button>
         </div>
-        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
+        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-300">
           <li>Max events: {roomState.maxTimelineSize ?? 50}</li>
           <li>Points to win: {roomState.pointsToWin ?? 2}</li>
           <li>
@@ -122,7 +131,7 @@ export function Lobby({
           )}
 
           {!isHost && (
-            <p className="mt-4 text-sm text-zinc-500">Waiting for the host to start the game…</p>
+            <p className="mt-4 text-sm text-slate-300">Waiting for the host to start the game…</p>
           )}
         </div>
       </main>

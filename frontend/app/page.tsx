@@ -102,15 +102,24 @@ export default function Home() {
   };
 
   return (
-    <div className="page-bg flex min-h-screen flex-col items-center justify-center p-6">
-      <h1 className="text-2xl font-bold text-zinc-900">Party Timeliners</h1>
-      <p className="mt-1 text-sm text-zinc-500">
+    <div
+      className="flex min-h-screen flex-col items-center justify-center page-container"
+      style={{
+        backgroundImage: 'linear-gradient(rgba(15,23,42,0.65), rgba(15,23,42,0.65)), url("/images/timeline-bg.webp")',
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        minHeight: "100vh",
+      }}
+    >
+      <h1 className="text-2xl font-bold text-white">Party Timeliners</h1>
+      <p className="mt-1 text-sm text-slate-200">
         Place events on the timeline. Multiplayer by link.
       </p>
 
-      <div className="mx-auto mt-12 flex w-full max-w-[1100px] flex-col gap-8 px-4">
+      <div className="mx-auto mt-12 flex w-full max-w-[1100px] flex-col gap-8">
         {checkingPrevious && (
-          <p className="text-center text-sm text-zinc-500">Checking previous game…</p>
+          <p className="text-center text-sm text-slate-300">Checking previous game…</p>
         )}
         {!checkingPrevious && previousRoom && (
           <div className="rounded-2xl bg-white p-8 shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
@@ -222,7 +231,7 @@ export default function Home() {
         </div>
 
         {error && (
-          <p className="text-center text-sm text-red-600">{error}</p>
+          <p className="text-center text-sm text-red-300">{error}</p>
         )}
       </div>
     </div>

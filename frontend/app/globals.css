@@ -30,6 +30,25 @@ body {
   background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
 }
 
+/* Hero background for Home and Lobby (full-page image + dark overlay) */
+.hero-background {
+  background-image:
+    linear-gradient(
+      rgba(15, 23, 42, 0.65),
+      rgba(15, 23, 42, 0.65)
+    ),
+    url("/images/timeline-bg.webp");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+}
+
+/* Padding for hero pages so content stays centered and readable */
+.page-container {
+  padding: 40px;
+}
+
 /* Instant feedback when placing a card on the timeline */
 @keyframes place-feedback-in {
   from {
