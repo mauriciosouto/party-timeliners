@@ -336,7 +336,6 @@ export function placeEvent(
   position: number,
 ): PlaceResult | { error: string } {
   const db = getDb();
-  console.log("[roomService] placeEvent", { roomId, playerId, eventId, position });
 
   const room = db
     .prepare(
@@ -352,7 +351,6 @@ export function placeEvent(
     } | undefined;
 
   if (!room || room.status !== "playing") {
-    console.log("[roomService] placeEvent error: room not found or not playing");
     return { error: "Room not found or not playing" };
   }
 
@@ -362,19 +360,12 @@ export function placeEvent(
     )
     .all(roomId) as { player_id: string }[];
   const currentPlayerId = turnOrderRows[room.turn_index]?.player_id;
-  console.log("[roomService] placeEvent turn check", {
-    turn_index: room.turn_index,
-    currentPlayerId,
-    playerId,
-    match: currentPlayerId === playerId,
-  });
   if (currentPlayerId !== playerId) return { error: "Not your turn" };
 
   const event = db
     .prepare("SELECT * FROM events WHERE id = ?")
     .get(eventId) as EventRecord | undefined;
   if (!event) {
-    console.log("[roomService] placeEvent error: event not found", { eventId });
     return { error: "Event not found" };
   }
 
@@ -384,10 +375,6 @@ export function placeEvent(
     )
     .get(roomId, room.next_deck_sequence) as { event_id: string } | undefined;
   if (!deckRow || deckRow.event_id !== eventId) {
-    console.log("[roomService] placeEvent error: wrong event", {
-      expected: deckRow?.event_id,
-      got: eventId,
-    });
     return { error: "Wrong event for this turn" };
   }
 
@@ -402,14 +389,6 @@ export function placeEvent(
   const nextYear =
     position < timelineRows.length ? timelineRows[position]?.year : Infinity;
   const correct = event.year >= prevYear && event.year <= nextYear;
-  console.log("[roomService] placeEvent deck/timeline check", {
-    next_deck_sequence: room.next_deck_sequence,
-    deckEventId: deckRow?.event_id,
-    eventId,
-    position,
-    timelineLength: timelineRows.length,
-    correct,
-  });
 
   const playerScore = db
     .prepare(
@@ -418,7 +397,6 @@ export function placeEvent(
     .get(roomId, playerId) as { score: number };
 
   if (!correct) {
-    console.log("[roomService] placeEvent branch: incorrect placement");
     const correctIndex = timelineRows.findIndex((r) => r.year > event.year);
     const correctPosition = correctIndex === -1 ? timelineRows.length : correctIndex;
     const numPlayers = turnOrderRows.length;
@@ -438,7 +416,6 @@ export function placeEvent(
 
     const state = getRoomState(roomId);
     if (!state) {
-      console.log("[roomService] placeEvent error: getRoomState null after incorrect placement");
       return { error: "Room state unavailable" };
     }
     const newTimelineLength = state.timeline.length;
@@ -469,7 +446,6 @@ export function placeEvent(
     }
 
     const nextEvent = getNextEventForCurrentTurn(roomId, nextTurnPlayerId ?? "");
-    console.log("[roomService] placeEvent incorrect done", { nextTurnPlayerId });
     return {
       correct: false,
       gameEnded: false,
@@ -481,7 +457,6 @@ export function placeEvent(
     };
   }
 
-  console.log("[roomService] placeEvent branch: correct placement");
   const numPlayers = turnOrderRows.length;
   const nextTurnIndex = (room.turn_index + 1) % numPlayers;
   const nextTurnPlayerId = turnOrderRows[nextTurnIndex]?.player_id ?? null;
@@ -531,11 +506,6 @@ export function placeEvent(
   }
 
   const nextEvent = getNextEventForCurrentTurn(roomId, nextTurnPlayerId ?? "");
-  console.log("[roomService] placeEvent success", {
-    nextTurnPlayerId,
-    nextTurnIndex,
-    timelineLength: state.timeline.length,
-  });
   return {
     correct: true,
     score: state.scores[playerId] ?? 0,
@@ -556,7 +526,6 @@ export function timeoutTurn(
   timeline: ApiTimelineEntry[];
 } | { error: string } {
   const db = getDb();
-  console.log("[roomService] timeoutTurn", { roomId, playerId });
 
   const room = db
     .prepare(
@@ -572,11 +541,9 @@ export function timeoutTurn(
     } | undefined;
 
   if (!room || room.status !== "playing") {
-    console.log("[roomService] timeoutTurn error: room not found or not playing");
     return { error: "Room not found or not playing" };
   }
   if (room.turn_time_limit_seconds == null) {
-    console.log("[roomService] timeoutTurn error: no turn time limit set");
     return { error: "No turn time limit set" };
   }
 
@@ -586,12 +553,6 @@ export function timeoutTurn(
     )
     .all(roomId) as { player_id: string }[];
   const currentPlayerId = turnOrderRows[room.turn_index]?.player_id;
-  console.log("[roomService] timeoutTurn turn check", {
-    turn_index: room.turn_index,
-    currentPlayerId,
-    playerId,
-    match: currentPlayerId === playerId,
-  });
   if (currentPlayerId !== playerId) return { error: "Not your turn" };
 
   const deckRow = db
@@ -600,7 +561,6 @@ export function timeoutTurn(
     )
     .get(roomId, room.next_deck_sequence) as { event_id: string } | undefined;
   if (!deckRow) {
-    console.log("[roomService] timeoutTurn error: no event in deck");
     return { error: "No event in deck for this turn" };
   }
 
@@ -662,11 +622,6 @@ export function timeoutTurn(
     ? getNextEventForCurrentTurn(roomId, nextTurnPlayerId)
     : null;
 
-  console.log("[roomService] timeoutTurn success", {
-    nextTurnPlayerId,
-    nextTurnIndex,
-    timelineLength: state.timeline.length,
-  });
   return {
     nextTurnPlayerId,
     nextEvent: nextEvent ?? null,

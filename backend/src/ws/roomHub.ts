@@ -16,17 +16,7 @@ function getRoomClients(roomId: string): Set<Client> {
 
 function broadcastRoomState(roomId: string): void {
   const state = roomService.getRoomState(roomId);
-  if (!state) {
-    console.log("[roomHub] broadcastRoomState: no state for room", roomId);
-    return;
-  }
-  const clientCount = getRoomClients(roomId).size;
-  console.log("[roomHub] broadcastRoomState", {
-    roomId,
-    clientCount,
-    status: state.status,
-    currentTurnPlayerId: state.currentTurnPlayerId,
-  });
+  if (!state) return;
   const payload = JSON.stringify({ type: "room_state", roomState: state });
   getRoomClients(roomId).forEach((c) => {
     if (c.ws.readyState === 1) c.ws.send(payload);
@@ -144,14 +134,7 @@ export function attachRoomHub(ws: WebSocket): void {
 
       if (msg.type === "place_event") {
         const { eventId, position } = msg;
-        console.log("[roomHub] place_event received", {
-          roomId: client.roomId,
-          playerId: client.playerId,
-          eventId,
-          position,
-        });
         if (typeof eventId !== "string" || typeof position !== "number") {
-          console.log("[roomHub] place_event invalid payload");
           ws.send(
             JSON.stringify({
               type: "place_error",
@@ -182,7 +165,6 @@ export function attachRoomHub(ws: WebSocket): void {
           return;
         }
         if ("error" in result) {
-          console.log("[roomHub] place_event error", result.error);
           ws.send(
             JSON.stringify({
               type: "place_error",
@@ -193,11 +175,6 @@ export function attachRoomHub(ws: WebSocket): void {
           broadcastRoomState(client.roomId);
           return;
         }
-        console.log("[roomHub] place_event success", {
-          nextTurnPlayerId: result.nextTurnPlayerId,
-          gameEnded: result.gameEnded,
-          correct: result.correct,
-        });
         const stateAfter = roomService.getRoomState(client.roomId);
         ws.send(
           JSON.stringify({
@@ -212,13 +189,8 @@ export function attachRoomHub(ws: WebSocket): void {
       }
 
       if (msg.type === "turn_timeout") {
-        console.log("[roomHub] turn_timeout received", {
-          roomId: client.roomId,
-          playerId: client.playerId,
-        });
         const result = roomService.timeoutTurn(client.roomId, client.playerId);
         if ("error" in result) {
-          console.log("[roomHub] turn_timeout error", result.error);
           ws.send(
             JSON.stringify({
               type: "place_error",
@@ -229,10 +201,6 @@ export function attachRoomHub(ws: WebSocket): void {
           broadcastRoomState(client.roomId);
           return;
         }
-        console.log("[roomHub] turn_timeout success", {
-          nextTurnPlayerId: result.nextTurnPlayerId,
-          gameEnded: result.gameEnded,
-        });
         const state = roomService.getRoomState(client.roomId);
         ws.send(
           JSON.stringify({
@@ -302,10 +270,6 @@ export function attachRoomHub(ws: WebSocket): void {
         state?.status === "playing" &&
         state.currentTurnPlayerId === client.playerId
       ) {
-        console.log("[roomHub] current turn player disconnected, auto timeout", {
-          roomId: client.roomId,
-          playerId: client.playerId,
-        });
         const result = roomService.timeoutTurn(client.roomId, client.playerId);
         if (!("error" in result)) {
           const roomState = roomService.getRoomState(client.roomId);

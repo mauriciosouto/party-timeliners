@@ -103,7 +103,6 @@ export function RoomGameBoard({
         setSecondsLeft(0);
         if (!timeoutFiredRef.current) {
           timeoutFiredRef.current = true;
-          console.log("[RoomGameBoard] turn timeout fired, calling onTurnTimeout");
           onTurnTimeout();
         }
         return;
@@ -174,12 +173,10 @@ export function RoomGameBoard({
       );
       const validRange = 0 <= (slotIndex ?? -1) && (slotIndex ?? -1) <= timeline.length;
       if (slotIndex == null || !validRange) {
-        console.log("[RoomGameBoard] handleDragEnd: invalid drop", { slotIndex, timelineLength: timeline.length });
         setDropHint("Suelta la carta en un espacio entre eventos (zona «drop»)");
         setTimeout(() => setDropHint(null), 3000);
         return;
       }
-      console.log("[RoomGameBoard] handleDragEnd: placing", { eventId: currentEvent.id, slotIndex });
       setDropHint(null);
       setLastPlacedId(currentEvent.id);
       setCurrentEvent(null);

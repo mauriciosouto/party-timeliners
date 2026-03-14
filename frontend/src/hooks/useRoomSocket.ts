@@ -68,23 +68,6 @@ export function useRoomSocket(
       ws.onmessage = (event: MessageEvent) => {
         try {
           const msg = JSON.parse(event.data as string) as WsMessage;
-          if (msg.type === "room_state") {
-            console.log("[useRoomSocket] room_state", {
-              status: msg.roomState.status,
-              currentTurnPlayerId: msg.roomState.currentTurnPlayerId,
-              timelineLength: msg.roomState.timeline.length,
-            });
-          } else if (msg.type === "place_result") {
-            console.log("[useRoomSocket] place_result", {
-              correct: msg.correct,
-              gameEnded: msg.gameEnded,
-              nextTurnPlayerId: msg.nextTurnPlayerId,
-              score: msg.score,
-              timelineLength: msg.timeline?.length,
-            });
-          } else if (msg.type === "place_error") {
-            console.log("[useRoomSocket] place_error", msg.message);
-          }
           if (msg.type === "join_ack") {
             setRoomState(msg.roomState);
             setWsReady(true);
@@ -165,22 +148,16 @@ export function useRoomSocket(
   };
 
   const sendPlaceEvent = (eventId: string, position: number) => {
-    console.log("[useRoomSocket] sendPlaceEvent", { eventId, position, readyState: wsRef.current?.readyState });
     if (wsRef.current?.readyState === 1) {
       wsRef.current.send(
         JSON.stringify({ type: "place_event", eventId, position }),
       );
-    } else {
-      console.warn("[useRoomSocket] sendPlaceEvent skipped: WebSocket not open");
     }
   };
 
   const sendTurnTimeout = () => {
-    console.log("[useRoomSocket] sendTurnTimeout", { readyState: wsRef.current?.readyState });
     if (wsRef.current?.readyState === 1) {
       wsRef.current.send(JSON.stringify({ type: "turn_timeout" }));
-    } else {
-      console.warn("[useRoomSocket] sendTurnTimeout skipped: WebSocket not open");
     }
   };
 

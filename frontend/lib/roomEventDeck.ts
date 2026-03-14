@@ -61,10 +61,6 @@ export async function getNextRoomEvent(
     await refillRoomDeck(roomId, deck);
   }
 
-  if (deck) {
-    console.log("Room deck size:", deck.length);
-  }
-
   return event;
 }
 

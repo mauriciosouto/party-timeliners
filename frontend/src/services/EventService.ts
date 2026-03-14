@@ -76,10 +76,7 @@ export async function getNextEvent(
   if (fromNextApi) return fromNextApi;
 
   const fallback = getNextFromMock();
-  if (fallback) {
-    console.log("[EventService] using mock fallback event");
-    return fallback;
-  }
+  if (fallback) return fallback;
 
   return null;
 }
