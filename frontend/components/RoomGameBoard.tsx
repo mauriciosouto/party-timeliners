@@ -44,6 +44,7 @@ type RoomGameBoardProps = {
   onTurnTimeout: () => void;
   onRematch: () => void;
   onEndGame: () => void;
+  onCloseRoom?: () => void;
   onClearPlaceResult: () => void;
 };
 
@@ -61,6 +62,7 @@ export function RoomGameBoard({
   onTurnTimeout,
   onRematch,
   onEndGame,
+  onCloseRoom,
   onClearPlaceResult,
 }: RoomGameBoardProps) {
   const timeline = timelineFromRoomState(roomState);
@@ -302,12 +304,22 @@ export function RoomGameBoard({
               </div>
             )}
             <section className="flex flex-wrap items-center gap-3">
-              <Link
-                href="/"
-                className="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium text-zinc-700 hover:bg-zinc-50"
-              >
-                Terminar juego
-              </Link>
+              {isHost && onCloseRoom ? (
+                <button
+                  type="button"
+                  onClick={onCloseRoom}
+                  className="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium text-zinc-700 hover:bg-zinc-50"
+                >
+                  Terminar
+                </button>
+              ) : (
+                <Link
+                  href="/"
+                  className="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium text-zinc-700 hover:bg-zinc-50"
+                >
+                  Terminar juego
+                </Link>
+              )}
               {isHost && (
                 <button
                   type="button"

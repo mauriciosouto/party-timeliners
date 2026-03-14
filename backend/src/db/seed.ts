@@ -8,14 +8,16 @@ import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { initDb, getDb } from "./index.js";
-import { fetchAndPrepareEventPool } from "../services/eventIngestion.js";
+import {
+  fetchAndPrepareEventPool,
+  mergeWithExistingPool,
+  LIMIT_PER_CATEGORY,
+} from "../services/eventIngestion.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendData = path.join(__dirname, "../../data/eventPool.json");
-const frontendData = path.join(__dirname, "../../../frontend/data/eventPool.json");
-const seedPath =
-  process.env.SEED_PATH ||
-  (existsSync(backendData) ? backendData : frontendData);
+/** Only backend data or SEED_PATH; no frontend fallback so Wikidata is used when no seed file. */
+const seedPath = process.env.SEED_PATH || (existsSync(backendData) ? backendData : null);
 
 type PoolEvent = {
   id: string;
@@ -25,17 +27,18 @@ type PoolEvent = {
   year: number;
   image?: string;
   wikipediaUrl?: string;
+  popularityScore?: number;
 };
 
 await initDb();
 const db = getDb();
 
 const insertSql = `
-  INSERT OR REPLACE INTO events (id, title, type, display_title, year, image, wikipedia_url)
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+  INSERT OR REPLACE INTO events (id, title, type, display_title, year, image, wikipedia_url, popularity_score)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
-if (existsSync(seedPath)) {
+if (seedPath && existsSync(seedPath)) {
   const raw = readFileSync(seedPath, "utf8");
   const pool: PoolEvent[] = JSON.parse(raw);
   const runTx = db.transaction(() => {
@@ -49,18 +52,33 @@ if (existsSync(seedPath)) {
         e.year,
         e.image ?? null,
         e.wikipediaUrl ?? null,
+        e.popularityScore ?? null,
       );
     }
   });
   runTx();
   console.log(`Seeded ${pool.length} events from ${seedPath}`);
 } else {
-  console.log("No seed file found. Fetching events from Wikidata...");
-  const events = await fetchAndPrepareEventPool();
+  console.log("No seed file found. Fetching from Wikidata (merge with existing, max " + LIMIT_PER_CATEGORY + " per category)...");
+  const existing = db
+    .prepare("SELECT id, title, type, display_title, year, image, wikipedia_url, popularity_score FROM events")
+    .all() as { id: string; title: string; type: string; display_title: string; year: number; image: string | null; wikipedia_url: string | null; popularity_score: number | null }[];
+  const existingPool = existing.map((r) => ({
+    id: r.id,
+    title: r.title,
+    type: r.type,
+    displayTitle: r.display_title,
+    year: r.year,
+    image: r.image ?? undefined,
+    wikipediaUrl: r.wikipedia_url ?? undefined,
+    popularityScore: r.popularity_score ?? undefined,
+  }));
+  const candidates = await fetchAndPrepareEventPool();
+  const merged = mergeWithExistingPool(existingPool, candidates, LIMIT_PER_CATEGORY);
   const runTx = db.transaction(() => {
     db.exec("DELETE FROM events");
     const insert = db.prepare(insertSql);
-    for (const e of events) {
+    for (const e of merged) {
       insert.run(
         e.id,
         e.title,
@@ -69,10 +87,11 @@ if (existsSync(seedPath)) {
         e.year,
         e.image,
         e.wikipediaUrl,
+        e.popularityScore ?? null,
       );
     }
     db.prepare("INSERT OR REPLACE INTO event_pool_meta (key, value) VALUES (?, ?)").run("last_refreshed_at", new Date().toISOString());
   });
   runTx();
-  console.log(`Seeded ${events.length} events from Wikidata.`);
+  console.log(`Pool: ${existingPool.length} existing + ${candidates.length} candidates → ${merged.length} events.`);
 }

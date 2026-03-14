@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS events (
   display_title TEXT NOT NULL,
   year INTEGER NOT NULL,
   image TEXT,
-  wikipedia_url TEXT
+  wikipedia_url TEXT,
+  popularity_score INTEGER
 );
 
 -- When the event pool was last refreshed (for TTL / expiration)

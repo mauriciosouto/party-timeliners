@@ -8,6 +8,8 @@ import type {
 } from "../types.js";
 import type { EventRecord } from "../types.js";
 import { getDb } from "../db/index.js";
+import { buildDeck, shuffle } from "../game/deck.js";
+import { validatePlace, getNextTurnPlayerId } from "../game/validation.js";
 
 const INITIAL_DECK_SIZE = 200;
 
@@ -22,13 +24,8 @@ function eventToApi(e: EventRecord): ApiEvent {
   };
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  const out = [...arr];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
+function eventToEventLike(e: EventRecord): EventRecord & { wikipediaUrl?: string | null } {
+  return { ...e, wikipediaUrl: e.wikipedia_url };
 }
 
 const DEFAULT_MAX_TIMELINE_SIZE = 50;
@@ -72,12 +69,13 @@ export function createRoom(
 
   const maxTimelineSize = options?.maxTimelineSize ?? DEFAULT_MAX_TIMELINE_SIZE;
   const pointsToWin = options?.pointsToWin ?? DEFAULT_POINTS_TO_WIN;
+  const raw = options?.turnTimeLimitSeconds;
   const turnTimeLimitSeconds =
-    options?.turnTimeLimitSeconds === undefined
+    raw === undefined
       ? DEFAULT_TURN_TIME_LIMIT_SECONDS
-      : options.turnTimeLimitSeconds === null || options.turnTimeLimitSeconds === ""
+      : raw === null
         ? null
-        : options.turnTimeLimitSeconds;
+        : Number(raw);
 
   db.transaction(() => {
     db.prepare(
@@ -273,9 +271,13 @@ export function startGame(roomId: string, playerId: string): RoomState | { error
   const events = db.prepare("SELECT * FROM events").all() as EventRecord[];
   if (events.length < 2) return { error: "Not enough events in pool. Run seed first." };
 
-  const shuffled = shuffle(events);
-  const initialEvent = shuffled[0]!;
-  const deckEvents = shuffled.slice(1, INITIAL_DECK_SIZE + 1);
+  const deckWithInitial = buildDeck(
+    events.map(eventToEventLike),
+    INITIAL_DECK_SIZE + 1,
+  );
+  const initialEvent = deckWithInitial[0] as EventRecord | undefined;
+  const deckEvents = deckWithInitial.slice(1, INITIAL_DECK_SIZE + 1);
+  if (!initialEvent) return { error: "Failed to build deck" };
 
   const playerIds = db
     .prepare("SELECT player_id FROM room_players WHERE room_id = ? ORDER BY joined_at")
@@ -292,7 +294,7 @@ export function startGame(roomId: string, playerId: string): RoomState | { error
       `INSERT INTO room_timeline (room_id, event_id, position, placed_at) VALUES (?, ?, 0, datetime('now'))`,
     ).run(roomId, initialEvent.id);
 
-    turnOrderShuffle.forEach((pid, i) => {
+    turnOrderShuffle.forEach((pid: string, i: number) => {
       db.prepare(
         "UPDATE room_players SET turn_order = ?, score = 0 WHERE room_id = ? AND player_id = ?",
       ).run(i, roomId, pid);
@@ -359,50 +361,63 @@ export function placeEvent(
       "SELECT player_id FROM room_players WHERE room_id = ? ORDER BY turn_order",
     )
     .all(roomId) as { player_id: string }[];
-  const currentPlayerId = turnOrderRows[room.turn_index]?.player_id;
-  if (currentPlayerId !== playerId) return { error: "Not your turn" };
+  const turnOrder = turnOrderRows.map((r) => r.player_id);
+  const currentPlayerId = turnOrderRows[room.turn_index]?.player_id ?? null;
 
   const event = db
     .prepare("SELECT * FROM events WHERE id = ?")
     .get(eventId) as EventRecord | undefined;
-  if (!event) {
-    return { error: "Event not found" };
-  }
+  if (!event) return { error: "Event not found" };
 
   const deckRow = db
     .prepare(
       "SELECT event_id FROM room_deck WHERE room_id = ? AND sequence = ?",
     )
     .get(roomId, room.next_deck_sequence) as { event_id: string } | undefined;
-  if (!deckRow || deckRow.event_id !== eventId) {
-    return { error: "Wrong event for this turn" };
-  }
 
   const timelineRows = db
     .prepare(
-      `SELECT e.year, rt.position FROM room_timeline rt
+      `SELECT e.year FROM room_timeline rt
        JOIN events e ON e.id = rt.event_id WHERE rt.room_id = ? ORDER BY rt.position`,
     )
-    .all(roomId) as { year: number; position: number }[];
+    .all(roomId) as { year: number }[];
+  const timelineYears = timelineRows.map((r) => r.year);
 
-  const prevYear = position > 0 ? timelineRows[position - 1]?.year : -Infinity;
-  const nextYear =
-    position < timelineRows.length ? timelineRows[position]?.year : Infinity;
-  const correct = event.year >= prevYear && event.year <= nextYear;
-
-  const playerScore = db
+  const playerScoreRow = db
     .prepare(
       "SELECT score FROM room_players WHERE room_id = ? AND player_id = ?",
     )
-    .get(roomId, playerId) as { score: number };
+    .get(roomId, playerId) as { score: number } | undefined;
+  const currentPlayerScore = playerScoreRow?.score ?? 0;
+
+  const validation = validatePlace(
+    playerId,
+    eventId,
+    position,
+    { ...event, year: event.year },
+    {
+      currentTurnPlayerId: currentPlayerId,
+      turnOrder,
+      turnIndex: room.turn_index,
+      nextDeckSequence: room.next_deck_sequence,
+      deckEventIdAtSequence: deckRow?.event_id ?? null,
+      timelineYears,
+      timelineLength: timelineYears.length,
+      maxTimelineSize: room.max_timeline_size ?? DEFAULT_MAX_TIMELINE_SIZE,
+      pointsToWin: room.points_to_win ?? DEFAULT_POINTS_TO_WIN,
+      currentPlayerScore,
+    },
+  );
+
+  if (!validation.valid) return { error: validation.error };
+
+  const { correct, correctPosition } = validation;
+  const playerScore = { score: currentPlayerScore };
+  const numPlayers = turnOrderRows.length;
+  const nextTurnIndex = (room.turn_index + 1) % numPlayers;
+  const nextTurnPlayerId = getNextTurnPlayerId(turnOrder, room.turn_index);
 
   if (!correct) {
-    const correctIndex = timelineRows.findIndex((r) => r.year > event.year);
-    const correctPosition = correctIndex === -1 ? timelineRows.length : correctIndex;
-    const numPlayers = turnOrderRows.length;
-    const nextTurnIndex = (room.turn_index + 1) % numPlayers;
-    const nextTurnPlayerId = turnOrderRows[nextTurnIndex]?.player_id ?? null;
-
     db.transaction(() => {
       shiftTimelinePositions(db, roomId, correctPosition);
       db.prepare(
@@ -457,11 +472,8 @@ export function placeEvent(
     };
   }
 
-  const numPlayers = turnOrderRows.length;
-  const nextTurnIndex = (room.turn_index + 1) % numPlayers;
-  const nextTurnPlayerId = turnOrderRows[nextTurnIndex]?.player_id ?? null;
-  const newTimelineLength = timelineRows.length + 1;
-  const newScore = (playerScore?.score ?? 0) + 1;
+  const newTimelineLength = timelineYears.length + 1;
+  const newScore = playerScore.score + 1;
   const maxTimelineSize = room.max_timeline_size ?? DEFAULT_MAX_TIMELINE_SIZE;
   const pointsToWin = room.points_to_win ?? DEFAULT_POINTS_TO_WIN;
   const gameEndsByTimeline = newTimelineLength >= maxTimelineSize;

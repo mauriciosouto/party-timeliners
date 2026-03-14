@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { joinRoom, getRoomState, type RoomState } from "@/src/services/roomApi";
 import { JoinForm } from "@/components/JoinForm";
@@ -40,9 +40,11 @@ export default function RoomPage() {
     [roomId],
   );
 
+  const router = useRouter();
   const {
     roomState,
     wsReady,
+    roomClosed,
     placeResult,
     placeError,
     clearPlaceError,
@@ -53,6 +55,7 @@ export default function RoomPage() {
     sendTurnTimeout,
     sendRematch,
     sendEndGame,
+    sendCloseRoom,
     clearPlaceResult,
   } = useRoomSocket(roomId || null, playerId, nickname);
 
@@ -62,6 +65,11 @@ export default function RoomPage() {
       clearRoomFromStorage(roomId);
     }
   }, [roomId, roomState?.status]);
+
+  // When host closed the room, redirect everyone to home.
+  useEffect(() => {
+    if (roomClosed) router.push("/");
+  }, [roomClosed, router]);
 
   if (!roomId) {
     return (
@@ -120,6 +128,10 @@ export default function RoomPage() {
         onTurnTimeout={sendTurnTimeout}
         onRematch={sendRematch}
         onEndGame={sendEndGame}
+        onCloseRoom={() => {
+          sendCloseRoom();
+          router.push("/");
+        }}
         onClearPlaceResult={clearPlaceResult}
       />
     );

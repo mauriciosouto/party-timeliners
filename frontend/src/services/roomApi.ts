@@ -1,50 +1,16 @@
 import { getApiUrl } from "@/lib/api";
+import type {
+  GameState,
+  ApiEvent,
+  TimelineEntry,
+  RoomPlayer,
+} from "shared/types";
 
-export type RoomPlayerState = {
-  playerId: string;
-  nickname: string;
-  isHost: boolean;
-  score: number;
-  turnOrder: number | null;
-  connected: boolean;
-  joinedAt: string;
-};
-
-export type ApiEvent = {
-  id: string;
-  title: string;
-  year: number;
-  displayTitle: string;
-  image?: string;
-  wikipediaUrl?: string;
-};
-
-export type TimelineEntryState = {
-  event: ApiEvent;
-  position: number;
-  placedByPlayerId?: string | null;
-  placedAt?: string;
-};
-
-export type RoomState = {
-  roomId: string;
-  name: string;
-  status: "lobby" | "playing" | "ended";
-  hostPlayerId: string | null;
-  maxTimelineSize: number | null;
-  pointsToWin: number | null;
-  turnTimeLimitSeconds: number | null;
-  players: RoomPlayerState[];
-  timeline: TimelineEntryState[];
-  scores: Record<string, number>;
-  turnOrder: string[];
-  currentTurnPlayerId: string | null;
-  currentTurnStartedAt: string | null;
-  nextDeckSequence: number;
-  initialEventId: string | null;
-  endedAt: string | null;
-  winnerPlayerId: string | null;
-};
+/** Canonical game state types (shared with backend). */
+export type { GameState, ApiEvent, TimelineEntry, RoomPlayer };
+export type RoomState = GameState;
+export type RoomPlayerState = RoomPlayer;
+export type TimelineEntryState = TimelineEntry;
 
 export type CreateRoomOptions = {
   maxTimelineSize?: number;

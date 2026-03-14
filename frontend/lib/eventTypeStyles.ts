@@ -17,7 +17,8 @@ const TYPE_COLORS: Record<string, { border: string; bg: string; text: string }> 
   "Consumer product": { border: "border-l-lime-600", bg: "bg-lime-50", text: "text-lime-800" },
   Award: { border: "border-l-yellow-600", bg: "bg-yellow-50", text: "text-yellow-800" },
   Festival: { border: "border-l-rose-500", bg: "bg-rose-50", text: "text-rose-700" },
-  "Celebrity birth": { border: "border-l-pink-500", bg: "bg-pink-50", text: "text-pink-700" },
+  "Year of Birth": { border: "border-l-pink-500", bg: "bg-pink-50", text: "text-pink-700" },
+  "Celebrity birth": { border: "border-l-pink-500", bg: "bg-pink-50", text: "text-pink-700" }, // legacy DB
 };
 
 const DEFAULT_STYLE = { border: "border-l-zinc-400", bg: "bg-zinc-50", text: "text-zinc-700" };

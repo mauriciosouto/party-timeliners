@@ -5,9 +5,47 @@
 
 const WIKIDATA_ENDPOINT = "https://query.wikidata.org/sparql";
 const CURRENT_YEAR = new Date().getUTCFullYear();
-const CATEGORY_LIMIT = 120;
-const CELEBRITY_BIRTH_LIMIT = 120;
+/** Phase1: lightweight query limit (no article/label). Keep low to avoid 504. */
+const PHASE1_LIMIT = 25;
+const HISTORICAL_PHASE1_LIMIT = 15;
+const CELEBRITY_PHASE1_LIMIT = 25;
 const TARGET_POOL_SIZE = 300;
+/** Max events per category when merging; above this, new events replace a random one in that category. */
+export const LIMIT_PER_CATEGORY = 200;
+/** Pause between category requests to avoid overloading the endpoint. */
+const CATEGORY_DELAY_MS = 800;
+/** Number of phase1 runs per category (different year ranges); results combined then one enrich. */
+const PHASE1_RUNS_PER_CATEGORY = 3;
+
+/** Max year for events (avoid very recent; keep pool recognizable). */
+const MAX_YEAR = 2018;
+
+/** Min year per category for recognizability (pop culture modern, history from WWI, etc.). */
+const CATEGORY_MIN_YEAR: Record<string, number> = {
+  films: 1980,
+  books: 1980,
+  videoGames: 1980,
+  musicAlbums: 1980,
+  songs: 1980,
+  tvSeries: 1980,
+  inventions: 1970,
+  scientificDiscoveries: 1900,
+  medicalDiscoveries: 1900,
+  spaceMissions: 1957,
+  software: 1970,
+  consumerProducts: 1970,
+  awards: 1900,
+  festivals: 1900,
+};
+
+/** QIDs for historical event types (P31) fetched in one query via VALUES. */
+const HISTORICAL_EVENT_TYPE_QIDS = [
+  "Q178561",   // battle
+  "Q2695280",  // invention
+  "Q11862829", // scientific discovery
+  "Q7189713",  // medical discovery
+  "Q2133344",  // space mission
+];
 
 export const EVENT_CATEGORIES: Record<string, string> = {
   films: "Q11424",
@@ -16,6 +54,7 @@ export const EVENT_CATEGORIES: Record<string, string> = {
   musicAlbums: "Q482994",
   songs: "Q7366",
   tvSeries: "Q5398426",
+  historicalEvents: "",
   inventions: "Q161928",
   scientificDiscoveries: "Q11862829",
   medicalDiscoveries: "Q11190",
@@ -34,6 +73,7 @@ const TYPE_LABELS: Record<string, string> = {
   musicAlbums: "Music album",
   songs: "Song",
   tvSeries: "TV series",
+  historicalEvents: "Historical event",
   inventions: "Invention",
   scientificDiscoveries: "Scientific discovery",
   medicalDiscoveries: "Medical discovery",
@@ -42,7 +82,7 @@ const TYPE_LABELS: Record<string, string> = {
   consumerProducts: "Consumer product",
   awards: "Award",
   festivals: "Festival",
-  celebrityBirths: "Celebrity birth",
+  celebrityBirths: "Year of Birth",
 };
 
 const RANGE_REGEX = /\d{4}[-–]\d{2}/;
@@ -67,51 +107,205 @@ export type IngestedEvent = {
   year: number;
   image: string;
   wikipediaUrl: string;
+  /** Wikipedia page title (e.g. Apollo_11) for pageviews API. Derived from wikipediaUrl. */
+  wikiTitle?: string;
+  /** Sum of last 12 months pageviews; used to prefer recognizable events. */
+  popularityScore?: number;
 };
 
-function buildCategoryQuery(qid: string): string {
-  return `
-SELECT ?event ?eventLabel ?date ?image ?article WHERE {
-  ?event wdt:P31 wd:${qid} .
-  {
-    ?event wdt:P577 ?date .
+/** Extract Wikipedia page title from article URL (e.g. https://en.wikipedia.org/wiki/Apollo_11 → Apollo_11). */
+function getWikiTitle(wikipediaUrl: string): string | null {
+  if (!wikipediaUrl?.trim()) return null;
+  try {
+    const u = new URL(wikipediaUrl);
+    const match = u.pathname.match(/\/wiki\/(.+)$/);
+    if (!match) return null;
+    return decodeURIComponent(match[1].replace(/\+/g, " ")).trim() || null;
+  } catch {
+    return null;
   }
-  UNION
-  {
-    ?event wdt:P585 ?date .
-  }
-  UNION
-  {
-    ?event wdt:P571 ?date .
-  }
-
-  FILTER(YEAR(?date) > -3000 && YEAR(?date) <= YEAR(NOW()))
-
-  OPTIONAL { ?event wdt:P18 ?image }
-
-  ?article schema:about ?event ;
-           schema:isPartOf <https://en.wikipedia.org/> .
-
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-LIMIT ${CATEGORY_LIMIT}
+
+const PAGEVIEWS_CACHE = new Map<string, number>();
+const PAGEVIEWS_CONCURRENCY = 4;
+const PAGEVIEWS_YEAR = "2023";
+const PAGEVIEWS_START = `${PAGEVIEWS_YEAR}0101`;
+const PAGEVIEWS_END = `${PAGEVIEWS_YEAR}1231`;
+
+/** Fetch last-12-months pageviews for a Wikipedia title; uses in-memory cache. */
+async function fetchPageviewsForTitle(title: string): Promise<number> {
+  const cached = PAGEVIEWS_CACHE.get(title);
+  if (cached !== undefined) return cached;
+  const encoded = encodeURIComponent(title.replace(/ /g, "_"));
+  const url = `https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/${encoded}/monthly/${PAGEVIEWS_START}/${PAGEVIEWS_END}`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "PartyTimeliners/0.1 (https://party-timeliners.local; contact: dev@party-timeliners.local)",
+      },
+    });
+    if (!res.ok) {
+      PAGEVIEWS_CACHE.set(title, 0);
+      return 0;
+    }
+    const data = (await res.json()) as { items?: { views: number }[] };
+    const sum = (data.items ?? []).reduce((acc, i) => acc + (i.views ?? 0), 0);
+    PAGEVIEWS_CACHE.set(title, sum);
+    return sum;
+  } catch {
+    PAGEVIEWS_CACHE.set(title, 0);
+    return 0;
+  }
+}
+
+/** Run at most `concurrency` promises at a time. */
+async function runWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  let index = 0;
+  async function next(): Promise<void> {
+    const i = index++;
+    if (i >= items.length) return;
+    await fn(items[i]!);
+    await next();
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, next));
+}
+
+/** Fetch pageviews for all events (by wikiTitle), set popularityScore. Only requests titles not in cache; limits concurrency. */
+async function fetchPageviewsForEvents(events: IngestedEvent[]): Promise<void> {
+  const byTitle = new Map<string, IngestedEvent[]>();
+  for (const e of events) {
+    const title = getWikiTitle(e.wikipediaUrl);
+    if (!title) {
+      e.popularityScore = 0;
+      continue;
+    }
+    e.wikiTitle = title;
+    const list = byTitle.get(title) ?? [];
+    list.push(e);
+    byTitle.set(title, list);
+  }
+  const titlesToFetch = Array.from(byTitle.keys()).filter((t) => !PAGEVIEWS_CACHE.has(t));
+  await runWithConcurrency(titlesToFetch, PAGEVIEWS_CONCURRENCY, async (title) => {
+    await fetchPageviewsForTitle(title);
+  });
+  for (const e of events) {
+    const t = e.wikiTitle ?? getWikiTitle(e.wikipediaUrl);
+    e.popularityScore = t != null ? (PAGEVIEWS_CACHE.get(t) ?? 0) : 0;
+  }
+}
+
+/** Phase 1: only ?event ?date ?image — no schema:about, no label service. Much lighter. */
+function buildCategoryQueryPhase1(qid: string, minYear: number, maxYear: number): string {
+  const minDt = `"${minYear}-01-01T00:00:00Z"^^xsd:dateTime`;
+  const maxDt = `"${maxYear}-12-31T23:59:59Z"^^xsd:dateTime`;
+  return `
+SELECT ?event ?date ?image WHERE {
+  {
+    SELECT ?event ?date WHERE {
+      ?event wdt:P31 wd:${qid} .
+      { ?event wdt:P577 ?date . hint:Prior hint:rangeSafe true . }
+      UNION
+      { ?event wdt:P585 ?date . hint:Prior hint:rangeSafe true . }
+      UNION
+      { ?event wdt:P571 ?date . hint:Prior hint:rangeSafe true . }
+      FILTER(?date >= ${minDt} && ?date <= ${maxDt})
+    }
+    LIMIT ${PHASE1_LIMIT}
+  }
+  ?event wdt:P18 ?image .
+}
 `.trim();
 }
 
-function getCelebrityBirthQuery(): string {
+function buildHistoricalEventTypePhase1(
+  typeQid: string,
+  rangeMinYear: number = 1914,
+  rangeMaxYear: number = MAX_YEAR,
+): string {
+  const minDt = `"${rangeMinYear}-01-01T00:00:00Z"^^xsd:dateTime`;
+  const maxDt = `"${rangeMaxYear}-12-31T23:59:59Z"^^xsd:dateTime`;
   return `
-SELECT ?person ?personLabel ?date ?image ?article WHERE {
-  ?person wdt:P31 wd:Q5 .
-  ?person wdt:P569 ?date .
-
-  OPTIONAL { ?person wdt:P18 ?image }
-
-  ?article schema:about ?person ;
-           schema:isPartOf <https://en.wikipedia.org/> .
-
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+SELECT ?event ?date ?image WHERE {
+  {
+    SELECT ?event ?date WHERE {
+      ?event wdt:P31 wd:${typeQid} .
+      { ?event wdt:P577 ?date . hint:Prior hint:rangeSafe true . }
+      UNION
+      { ?event wdt:P585 ?date . hint:Prior hint:rangeSafe true . }
+      UNION
+      { ?event wdt:P571 ?date . hint:Prior hint:rangeSafe true . }
+      FILTER(?date >= ${minDt} && ?date <= ${maxDt})
+    }
+    LIMIT ${HISTORICAL_PHASE1_LIMIT}
+  }
+  ?event wdt:P18 ?image .
 }
-LIMIT ${CELEBRITY_BIRTH_LIMIT}
+`.trim();
+}
+
+function getCelebrityBirthQueryPhase1(
+  rangeMinYear: number = 1950,
+  rangeMaxYear: number = MAX_YEAR,
+): string {
+  const minDt = `"${rangeMinYear}-01-01T00:00:00Z"^^xsd:dateTime`;
+  const maxDt = `"${rangeMaxYear}-12-31T23:59:59Z"^^xsd:dateTime`;
+  return `
+SELECT ?person ?date ?image WHERE {
+  {
+    SELECT ?person ?date WHERE {
+      VALUES ?occupation {
+        wd:Q33999 wd:Q10800557 wd:Q177220 wd:Q639669 wd:Q488205 wd:Q2526255
+      }
+      ?person wdt:P106 ?occupation .
+      ?person wdt:P569 ?date . hint:Prior hint:rangeSafe true .
+      FILTER(?date >= ${minDt} && ?date <= ${maxDt})
+    }
+    LIMIT ${CELEBRITY_PHASE1_LIMIT}
+  }
+  ?person wdt:P18 ?image .
+}
+`.trim();
+}
+
+/** Split [minYear, maxYear] into n roughly equal ranges for multiple phase1 runs. */
+function getYearRanges(
+  minYear: number,
+  maxYear: number,
+  n: number = PHASE1_RUNS_PER_CATEGORY,
+): [number, number][] {
+  const span = Math.max(1, Math.ceil((maxYear - minYear + 1) / n));
+  const ranges: [number, number][] = [];
+  for (let i = 0; i < n; i++) {
+    const a = minYear + i * span;
+    const b = i === n - 1 ? maxYear : Math.min(minYear + (i + 1) * span - 1, maxYear);
+    if (a <= b) ranges.push([a, b]);
+  }
+  return ranges;
+}
+
+/** Enrich: label + article for a small set of entities (VALUES). Uses rdfs:label instead of label service. */
+function buildEnrichQuery(entityIds: string[], entityKey: "event" | "person"): string {
+  if (entityIds.length === 0) return "";
+  const labelVar = `${entityKey}Label`;
+  const wdValues = entityIds
+    .map((id) => {
+      const q = id.replace(/^.*\//, "").replace(/^wd:/, "");
+      return q ? `wd:${q}` : null;
+    })
+    .filter(Boolean) as string[];
+  if (wdValues.length === 0) return "";
+  const valuesBlock = wdValues.join(" ");
+  return `
+SELECT ?${entityKey} ?${labelVar} ?article WHERE {
+  VALUES ?${entityKey} { ${valuesBlock} }
+  ?article schema:about ?${entityKey} ; schema:isPartOf <https://en.wikipedia.org/> .
+  ?${entityKey} rdfs:label ?${labelVar} . FILTER(LANG(?${labelVar}) = "en")
+}
 `.trim();
 }
 
@@ -180,6 +374,47 @@ function normalizeBindings(
   return events;
 }
 
+/** Merge phase1 (event, date, image) with enrich (event, label, article) by entity ID. */
+function mergePhase1AndEnrich(
+  phase1: Binding[],
+  enrich: Binding[],
+  typeLabel: string,
+  entityKey: "event" | "person",
+): IngestedEvent[] {
+  const labelKey = `${entityKey}Label` as keyof Binding;
+  const byEntity = new Map<string, Binding>();
+  for (const b of enrich) {
+    const entity = b[entityKey]?.value;
+    if (entity && b.article?.value) byEntity.set(entity, b);
+  }
+  const out: IngestedEvent[] = [];
+  for (const p of phase1) {
+    const entity = p[entityKey]?.value;
+    if (!entity) continue;
+    const e = byEntity.get(entity);
+    if (!e) continue;
+    const title = (e[labelKey] as { value?: string } | undefined)?.value?.trim();
+    if (!title) continue;
+    const rawImage = p.image?.value?.trim();
+    if (!rawImage) continue;
+    const image = getWikimediaThumbnail(rawImage);
+    if (!image) continue;
+    const id = entity.split("/").pop() ?? entity;
+    const year = parseYear(p.date?.value);
+    if (year == null || year > CURRENT_YEAR) continue;
+    out.push({
+      id,
+      title,
+      type: typeLabel,
+      displayTitle: `${title} (${typeLabel})`,
+      year,
+      image,
+      wikipediaUrl: e.article?.value ?? "",
+    });
+  }
+  return out;
+}
+
 function isGoodEvent(event: IngestedEvent): boolean {
   const title = event.title?.trim();
   if (!title) return false;
@@ -193,8 +428,10 @@ function isGoodEvent(event: IngestedEvent): boolean {
   return true;
 }
 
+const SPARQL_TIMEOUT_SEC = 60;
+
 async function runSparql(sparql: string): Promise<Binding[]> {
-  const url = `${WIKIDATA_ENDPOINT}?query=${encodeURIComponent(sparql)}&format=json`;
+  const url = `${WIKIDATA_ENDPOINT}?query=${encodeURIComponent(sparql)}&format=json&timeout=${SPARQL_TIMEOUT_SEC * 1000}`;
   const res = await fetch(url, {
     headers: {
       Accept: "application/sparql-results+json",
@@ -207,29 +444,104 @@ async function runSparql(sparql: string): Promise<Binding[]> {
   return (json.results?.bindings ?? []) as Binding[];
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Run phase1 query, then enrich (label+article) for those IDs; merge. Two-phase avoids 504. */
+async function fetchCategoryTwoPhase(
+  phase1Sparql: string,
+  enrichEntityKey: "event" | "person",
+  typeLabel: string,
+): Promise<IngestedEvent[]> {
+  const phase1 = await runSparql(phase1Sparql);
+  const entityKey = enrichEntityKey;
+  const ids = phase1
+    .map((b) => b[entityKey]?.value)
+    .filter(Boolean) as string[];
+  if (ids.length === 0) return [];
+  const enrichQuery = buildEnrichQuery(ids, enrichEntityKey);
+  if (!enrichQuery) return [];
+  await delay(CATEGORY_DELAY_MS);
+  const enrich = await runSparql(enrichQuery);
+  return mergePhase1AndEnrich(phase1, enrich, typeLabel, enrichEntityKey);
+}
+
+/** Run N phase1 queries (e.g. different year ranges), combine and dedupe bindings, then one enrich and merge. */
+async function fetchCategoryTwoPhaseWithRuns(
+  phase1Sparqls: string[],
+  enrichEntityKey: "event" | "person",
+  typeLabel: string,
+): Promise<IngestedEvent[]> {
+  const entityKey = enrichEntityKey;
+  const phase1ByEntity = new Map<string, Binding>();
+  for (let i = 0; i < phase1Sparqls.length; i++) {
+    const bindings = await runSparql(phase1Sparqls[i]!);
+    for (const b of bindings) {
+      const entity = b[entityKey]?.value;
+      if (entity && !phase1ByEntity.has(entity)) phase1ByEntity.set(entity, b);
+    }
+    if (i < phase1Sparqls.length - 1) await delay(CATEGORY_DELAY_MS);
+  }
+  const phase1 = Array.from(phase1ByEntity.values());
+  const ids = phase1.map((b) => b[entityKey]?.value).filter(Boolean) as string[];
+  if (ids.length === 0) return [];
+  const enrichQuery = buildEnrichQuery(ids, enrichEntityKey);
+  if (!enrichQuery) return [];
+  await delay(CATEGORY_DELAY_MS);
+  const enrich = await runSparql(enrichQuery);
+  return mergePhase1AndEnrich(phase1, enrich, typeLabel, enrichEntityKey);
+}
+
 async function fetchAllCategories(): Promise<IngestedEvent[]> {
   const all: IngestedEvent[] = [];
+  const typeLabel = (key: string) => TYPE_LABELS[key] ?? key;
 
   for (const [categoryKey, qid] of Object.entries(EVENT_CATEGORIES)) {
-    const typeLabel = TYPE_LABELS[categoryKey] ?? categoryKey;
+    const label = typeLabel(categoryKey);
     try {
       if (categoryKey === "celebrityBirths") {
-        const bindings = await runSparql(getCelebrityBirthQuery());
-        all.push(...normalizeBindings(bindings, typeLabel, "person"));
+        console.log(`[events] Cargando categoría: ${label} (${PHASE1_RUNS_PER_CATEGORY} rangos)...`);
+        const ranges = getYearRanges(1950, MAX_YEAR);
+        const phase1Sparqls = ranges.map(([a, b]) => getCelebrityBirthQueryPhase1(a, b));
+        const events = await fetchCategoryTwoPhaseWithRuns(phase1Sparqls, "person", label);
+        all.push(...events);
+        console.log(`[events] ${label}: ${events.length} eventos`);
+      } else if (categoryKey === "historicalEvents") {
+        console.log(`[events] Cargando categoría: ${label} (por tipo, ${PHASE1_RUNS_PER_CATEGORY} rangos)...`);
+        let total = 0;
+        const ranges = getYearRanges(1914, MAX_YEAR);
+        for (const typeQid of HISTORICAL_EVENT_TYPE_QIDS) {
+          const phase1Sparqls = ranges.map(([a, b]) =>
+            buildHistoricalEventTypePhase1(typeQid, a, b),
+          );
+          const events = await fetchCategoryTwoPhaseWithRuns(phase1Sparqls, "event", label);
+          all.push(...events);
+          total += events.length;
+          await delay(CATEGORY_DELAY_MS);
+        }
+        console.log(`[events] ${label}: ${total} eventos`);
       } else {
-        const bindings = await runSparql(buildCategoryQuery(qid));
-        all.push(...normalizeBindings(bindings, typeLabel, "event"));
+        console.log(`[events] Cargando categoría: ${label} (${PHASE1_RUNS_PER_CATEGORY} rangos)...`);
+        const minYear = CATEGORY_MIN_YEAR[categoryKey] ?? 1900;
+        const ranges = getYearRanges(minYear, MAX_YEAR);
+        const phase1Sparqls = ranges.map(([a, b]) => buildCategoryQueryPhase1(qid, a, b));
+        const events = await fetchCategoryTwoPhaseWithRuns(phase1Sparqls, "event", label);
+        all.push(...events);
+        console.log(`[events] ${label}: ${events.length} eventos`);
       }
     } catch (error) {
-      console.warn(`Failed to fetch ${typeLabel}:`, error);
+      console.warn(`Failed to fetch ${label}:`, error);
     }
+    await delay(CATEGORY_DELAY_MS);
   }
 
   return all;
 }
 
 /**
- * Fetch events from Wikidata, apply quality filter, dedupe by id, and cap at TARGET_POOL_SIZE.
+ * Fetch events from Wikidata, apply quality filter, dedupe by id,
+ * fetch Wikipedia pageviews for popularity, sort by popularity, and cap at TARGET_POOL_SIZE.
  * Does not touch the database.
  */
 export async function fetchAndPrepareEventPool(): Promise<IngestedEvent[]> {
@@ -239,8 +551,70 @@ export async function fetchAndPrepareEventPool(): Promise<IngestedEvent[]> {
     if (!byId.has(ev.id)) byId.set(ev.id, ev);
   }
   let unique = Array.from(byId.values()).filter(isGoodEvent);
+  await fetchPageviewsForEvents(unique);
+  unique.sort((a, b) => (b.popularityScore ?? 0) - (a.popularityScore ?? 0));
   if (unique.length > TARGET_POOL_SIZE) {
     unique = unique.slice(0, TARGET_POOL_SIZE);
   }
   return unique;
+}
+
+/** Event-like shape used when merging; existing pool may come from DB with optional fields. */
+export type PoolEventLike = Pick<IngestedEvent, "id" | "type"> & Partial<IngestedEvent>;
+
+/**
+ * Merge new candidates into existing pool without wiping it.
+ * - If candidate.id is already in existing, skip.
+ * - If category has < limitPerCategory: add candidate.
+ * - If category has >= limitPerCategory: replace a random event of that category with candidate.
+ * Returns the merged list (existing + added/replaced).
+ */
+export function mergeWithExistingPool(
+  existing: PoolEventLike[],
+  newCandidates: IngestedEvent[],
+  limitPerCategory: number = LIMIT_PER_CATEGORY,
+): IngestedEvent[] {
+  const byId = new Map<string, PoolEventLike>();
+  for (const e of existing) {
+    byId.set(e.id, e);
+  }
+  const merged = existing.map((e) => toIngestedEvent(e));
+  const byTypeIndices = new Map<string, number[]>();
+  merged.forEach((e, i) => {
+    const list = byTypeIndices.get(e.type) ?? [];
+    list.push(i);
+    byTypeIndices.set(e.type, list);
+  });
+
+  for (const c of newCandidates) {
+    if (byId.has(c.id)) continue;
+    const category = c.type;
+    const indices = byTypeIndices.get(category) ?? [];
+    if (indices.length < limitPerCategory) {
+      merged.push(c);
+      byId.set(c.id, c);
+      indices.push(merged.length - 1);
+      byTypeIndices.set(category, indices);
+    } else {
+      const randomIdx = indices[Math.floor(Math.random() * indices.length)]!;
+      const old = merged[randomIdx]!;
+      byId.delete(old.id);
+      byId.set(c.id, c);
+      merged[randomIdx] = c;
+    }
+  }
+  return merged;
+}
+
+function toIngestedEvent(e: PoolEventLike): IngestedEvent {
+  return {
+    id: e.id,
+    title: e.title ?? "",
+    type: e.type,
+    displayTitle: e.displayTitle ?? `${e.title ?? ""} (${e.type})`,
+    year: e.year ?? 0,
+    image: e.image ?? "",
+    wikipediaUrl: e.wikipediaUrl ?? "",
+    popularityScore: e.popularityScore,
+  };
 }

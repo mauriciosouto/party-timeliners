@@ -1,21 +1,27 @@
 import { NextResponse } from "next/server";
-import { getNextRoomEvent } from "@/lib/roomEventDeck";
+import { getGlobalEvents } from "@/lib/eventPool";
 
-export async function GET(request: Request) {
+/** Fallback when backend is unavailable: pick one random event from the global pool. */
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const roomId = searchParams.get("roomId") ?? "default";
-
-    const event = await getNextRoomEvent(roomId);
-
-    if (!event) {
+    const pool = await getGlobalEvents();
+    if (pool.length === 0) {
       return NextResponse.json(
         { error: "No events available" },
         { status: 500 },
       );
     }
-
-    return NextResponse.json({ event });
+    const event = pool[Math.floor(Math.random() * pool.length)]!;
+    return NextResponse.json({
+      event: {
+        id: event.id,
+        title: event.title,
+        year: event.year,
+        displayTitle: event.displayTitle,
+        image: event.image,
+        wikipediaUrl: event.wikipediaUrl,
+      },
+    });
   } catch (error) {
     console.error("[api/events] Unexpected error while fetching events:", error);
     return NextResponse.json(
@@ -24,4 +30,3 @@ export async function GET(request: Request) {
     );
   }
 }
-

@@ -1,17 +1,9 @@
+/**
+ * Canonical game state types. Single source of truth for frontend and backend.
+ */
+
 export type RoomStatus = "lobby" | "playing" | "ended";
 
-export type EventRecord = {
-  id: string;
-  title: string;
-  type: string;
-  display_title: string;
-  year: number;
-  image: string | null;
-  wikipedia_url: string | null;
-  popularity_score?: number | null;
-};
-
-/** API: event as returned to client */
 export type ApiEvent = {
   id: string;
   title: string;
@@ -21,15 +13,14 @@ export type ApiEvent = {
   wikipediaUrl?: string;
 };
 
-/** API: timeline entry with optional placedBy */
-export type ApiTimelineEntry = {
+export type TimelineEntry = {
   event: ApiEvent;
   position: number;
   placedByPlayerId?: string | null;
   placedAt?: string;
 };
 
-export type RoomPlayerState = {
+export type RoomPlayer = {
   playerId: string;
   nickname: string;
   isHost: boolean;
@@ -39,7 +30,8 @@ export type RoomPlayerState = {
   joinedAt: string;
 };
 
-export type RoomState = {
+/** Full room/game state. Backend is the single source of truth. */
+export type GameState = {
   roomId: string;
   name: string;
   status: RoomStatus;
@@ -47,8 +39,8 @@ export type RoomState = {
   maxTimelineSize: number | null;
   pointsToWin: number | null;
   turnTimeLimitSeconds: number | null;
-  players: RoomPlayerState[];
-  timeline: ApiTimelineEntry[];
+  players: RoomPlayer[];
+  timeline: TimelineEntry[];
   scores: Record<string, number>;
   turnOrder: string[];
   currentTurnPlayerId: string | null;
@@ -57,15 +49,4 @@ export type RoomState = {
   initialEventId: string | null;
   endedAt: string | null;
   winnerPlayerId: string | null;
-};
-
-/** API: place response (single player score = current player's score) */
-export type PlaceResult = {
-  correct: boolean;
-  gameEnded?: boolean;
-  correctPosition?: number;
-  score: number;
-  timeline: ApiTimelineEntry[];
-  nextEvent?: ApiEvent | null;
-  nextTurnPlayerId?: string | null;
 };

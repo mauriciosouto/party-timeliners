@@ -5,13 +5,15 @@ import { getWsUrl } from "@/lib/api";
 import type { RoomState } from "@/src/services/roomApi";
 
 type WsMessage =
-  | { type: "join_ack"; playerId: string; roomState: RoomState }
+  | { type: "join_ack"; playerId: string; roomState: RoomState; room?: RoomState }
   | { type: "join_error"; code: string; message: string }
+  | { type: "state_update"; room: RoomState }
   | { type: "room_state"; roomState: RoomState }
-  | { type: "place_result"; correct: boolean; gameEnded?: boolean; score: number; timeline: RoomState["timeline"]; nextEvent?: ApiEvent | null; nextTurnPlayerId?: string | null; currentTurnStartedAt?: string | null; nextDeckSequence?: number }
+  | { type: "place_result"; correct: boolean; gameEnded?: boolean; score: number; timeline?: RoomState["timeline"]; nextEvent?: ApiEvent | null; nextTurnPlayerId?: string | null; currentTurnStartedAt?: string | null; nextDeckSequence?: number }
   | { type: "place_error"; code: string; message: string }
   | { type: "start_error"; code: string; message: string }
   | { type: "rematch_error"; code: string; message: string }
+  | { type: "room_closed" }
   | { type: "pong" };
 
 type ApiEvent = {
@@ -30,6 +32,7 @@ export function useRoomSocket(
 ) {
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [wsReady, setWsReady] = useState(false);
+  const [roomClosed, setRoomClosed] = useState(false);
   const [roomError, setRoomError] = useState<string | null>(null);
   const [placeError, setPlaceError] = useState<string | null>(null);
   const [placeResult, setPlaceResult] = useState<{
@@ -69,10 +72,12 @@ export function useRoomSocket(
         try {
           const msg = JSON.parse(event.data as string) as WsMessage;
           if (msg.type === "join_ack") {
-            setRoomState(msg.roomState);
+            const state = msg.room ?? msg.roomState;
+            setRoomState(state);
             setWsReady(true);
-          } else if (msg.type === "room_state") {
-            setRoomState(msg.roomState);
+          } else if (msg.type === "state_update" || msg.type === "room_state") {
+            const state = msg.type === "state_update" ? msg.room : msg.roomState;
+            setRoomState(state);
             setRoomError(null);
             setPlaceError(null);
           } else if (msg.type === "start_error" || msg.type === "rematch_error") {
@@ -80,26 +85,6 @@ export function useRoomSocket(
           } else if (msg.type === "place_error") {
             setPlaceError(msg.message);
           } else if (msg.type === "place_result") {
-            setRoomState((prev) => {
-              if (!prev) return null;
-              const next: RoomState = {
-                ...prev,
-                timeline: [...msg.timeline].sort((a, b) => a.position - b.position),
-              };
-              if (msg.nextTurnPlayerId !== undefined) {
-                next.currentTurnPlayerId = msg.nextTurnPlayerId ?? null;
-              }
-              if (msg.currentTurnStartedAt !== undefined) {
-                next.currentTurnStartedAt = msg.currentTurnStartedAt ?? null;
-              }
-              if (msg.nextDeckSequence !== undefined) {
-                next.nextDeckSequence = msg.nextDeckSequence;
-              }
-              if (playerId != null && msg.score !== undefined) {
-                next.scores = { ...prev.scores, [playerId]: msg.score };
-              }
-              return next;
-            });
             setPlaceError(null);
             setPlaceResult({
               correct: msg.correct,
@@ -107,6 +92,8 @@ export function useRoomSocket(
               score: msg.score,
               nextTurnPlayerId: msg.nextTurnPlayerId,
             });
+          } else if (msg.type === "room_closed") {
+            setRoomClosed(true);
           }
         } catch {
           // ignore
@@ -173,6 +160,12 @@ export function useRoomSocket(
     }
   };
 
+  const sendCloseRoom = () => {
+    if (wsRef.current?.readyState === 1) {
+      wsRef.current.send(JSON.stringify({ type: "close_room" }));
+    }
+  };
+
   const clearPlaceResult = () => setPlaceResult(null);
   const clearRoomError = () => setRoomError(null);
   const clearPlaceError = () => setPlaceError(null);
@@ -180,6 +173,7 @@ export function useRoomSocket(
   return {
     roomState,
     wsReady,
+    roomClosed,
     placeResult,
     placeError,
     clearPlaceError,
@@ -190,6 +184,7 @@ export function useRoomSocket(
     sendTurnTimeout,
     sendRematch,
     sendEndGame,
+    sendCloseRoom,
     clearPlaceResult,
   };
 }

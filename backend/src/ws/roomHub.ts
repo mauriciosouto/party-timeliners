@@ -14,10 +14,11 @@ function getRoomClients(roomId: string): Set<Client> {
   return set;
 }
 
-function broadcastRoomState(roomId: string): void {
-  const state = roomService.getRoomState(roomId);
-  if (!state) return;
-  const payload = JSON.stringify({ type: "room_state", roomState: state });
+/** Broadcast full room state to all clients in the room. Single source of truth. */
+function broadcastStateUpdate(roomId: string): void {
+  const room = roomService.getRoomState(roomId);
+  if (!room) return;
+  const payload = JSON.stringify({ type: "state_update", room });
   getRoomClients(roomId).forEach((c) => {
     if (c.ws.readyState === 1) c.ws.send(payload);
   });
@@ -94,15 +95,16 @@ export function attachRoomHub(ws: WebSocket): void {
         }
         client = { ws, playerId: joinedPlayerId, roomId };
         getRoomClients(roomId).add(client);
-        const state = roomService.getRoomState(roomId)!;
+        const room = roomService.getRoomState(roomId)!;
         ws.send(
           JSON.stringify({
             type: "join_ack",
             playerId: joinedPlayerId,
-            roomState: state,
+            roomState: room,
+            room,
           }),
         );
-        broadcastRoomState(roomId);
+        broadcastStateUpdate(roomId);
         return;
       }
 
@@ -128,7 +130,7 @@ export function attachRoomHub(ws: WebSocket): void {
           );
           return;
         }
-        broadcastRoomState(client.roomId);
+        broadcastStateUpdate(client.roomId);
         return;
       }
 
@@ -161,7 +163,7 @@ export function attachRoomHub(ws: WebSocket): void {
               message: err instanceof Error ? err.message : "Place failed",
             }),
           );
-          broadcastRoomState(client.roomId);
+          broadcastStateUpdate(client.roomId);
           return;
         }
         if ("error" in result) {
@@ -172,7 +174,7 @@ export function attachRoomHub(ws: WebSocket): void {
               message: result.error,
             }),
           );
-          broadcastRoomState(client.roomId);
+          broadcastStateUpdate(client.roomId);
           return;
         }
         const stateAfter = roomService.getRoomState(client.roomId);
@@ -184,7 +186,7 @@ export function attachRoomHub(ws: WebSocket): void {
             nextDeckSequence: stateAfter?.nextDeckSequence ?? 0,
           }),
         );
-        broadcastRoomState(client.roomId);
+        broadcastStateUpdate(client.roomId);
         return;
       }
 
@@ -198,7 +200,7 @@ export function attachRoomHub(ws: WebSocket): void {
               message: result.error,
             }),
           );
-          broadcastRoomState(client.roomId);
+          broadcastStateUpdate(client.roomId);
           return;
         }
         const state = roomService.getRoomState(client.roomId);
@@ -213,7 +215,7 @@ export function attachRoomHub(ws: WebSocket): void {
             gameEnded: result.gameEnded,
           }),
         );
-        broadcastRoomState(client.roomId);
+        broadcastStateUpdate(client.roomId);
         return;
       }
 
@@ -229,7 +231,7 @@ export function attachRoomHub(ws: WebSocket): void {
           );
           return;
         }
-        broadcastRoomState(client.roomId);
+        broadcastStateUpdate(client.roomId);
         return;
       }
 
@@ -245,7 +247,29 @@ export function attachRoomHub(ws: WebSocket): void {
           );
           return;
         }
-        broadcastRoomState(client.roomId);
+        broadcastStateUpdate(client.roomId);
+        return;
+      }
+
+      /** Host ends and closes the room for everyone (when status is already ended). */
+      if (msg.type === "close_room") {
+        const room = roomService.getRoomState(client.roomId);
+        if (!room) {
+          ws.send(JSON.stringify({ type: "close_room_error", message: "Room not found" }));
+          return;
+        }
+        if (room.status !== "ended") {
+          ws.send(JSON.stringify({ type: "close_room_error", message: "Game is not finished" }));
+          return;
+        }
+        if (room.hostPlayerId !== client.playerId) {
+          ws.send(JSON.stringify({ type: "close_room_error", message: "Only the host can close the room" }));
+          return;
+        }
+        const payload = JSON.stringify({ type: "room_closed" });
+        getRoomClients(client.roomId).forEach((c) => {
+          if (c.ws.readyState === 1) c.ws.send(payload);
+        });
         return;
       }
 
@@ -273,28 +297,12 @@ export function attachRoomHub(ws: WebSocket): void {
         const result = roomService.timeoutTurn(client.roomId, client.playerId);
         if (!("error" in result)) {
           const roomState = roomService.getRoomState(client.roomId);
-          getRoomClients(client.roomId).forEach((c) => {
-            if (c.ws.readyState === 1) {
-              c.ws.send(
-                JSON.stringify({
-                  type: "place_result",
-                  correct: false,
-                  score: roomState?.scores[c.playerId] ?? 0,
-                  timeline: result.timeline,
-                  nextEvent: result.nextEvent ?? null,
-                  nextTurnPlayerId: result.nextTurnPlayerId,
-                  gameEnded: result.gameEnded,
-                  currentTurnStartedAt: roomState?.currentTurnStartedAt ?? null,
-                  nextDeckSequence: roomState?.nextDeckSequence ?? 0,
-                }),
-              );
-            }
-          });
+          broadcastStateUpdate(client.roomId);
         }
       }
       roomService.setPlayerConnected(client.roomId, client.playerId, false);
       getRoomClients(client.roomId).delete(client);
-      broadcastRoomState(client.roomId);
+      broadcastStateUpdate(client.roomId);
     }
   });
 }
