@@ -30,6 +30,21 @@ body {
   background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
 }
 
+/* Instant feedback when placing a card on the timeline */
+@keyframes place-feedback-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.place-feedback-in {
+  animation: place-feedback-in 0.2s ease-out forwards;
+}
+
 /* Event card image: fixed height, cover, centered, match card corners */
 .event-image {
   width: 100%;

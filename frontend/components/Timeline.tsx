@@ -1,7 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import type { TimelineEvent } from "@/lib/types";
 import { EventCard } from "@/components/EventCard";
 
@@ -59,6 +59,8 @@ export type TimelineProps = {
   onPlacedCardRef?: (el: HTMLDivElement | null) => void;
 };
 
+const FLIP_TRANSITION = "transform 0.35s ease-out";
+
 export function Timeline({
   events,
   lastPlacedId,
@@ -68,6 +70,46 @@ export function Timeline({
     () => Array.from({ length: events.length + 1 }, (_, i) => i),
     [events.length],
   );
+  const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const prevRects = useRef<Map<number, DOMRect>>(new Map());
+  const prevSlotsLength = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    const newRects = new Map<number, DOMRect>();
+    itemRefs.current.forEach((el, slotIndex) => {
+      if (el) newRects.set(slotIndex, el.getBoundingClientRect());
+    });
+    const oldRects = prevRects.current;
+    const contentChanged = prevSlotsLength.current !== null && prevSlotsLength.current !== slots.length;
+    prevRects.current = newRects;
+    prevSlotsLength.current = slots.length;
+
+    if (contentChanged && oldRects.size > 0) {
+      const toAnimate: { el: HTMLDivElement; deltaX: number; deltaY: number }[] = [];
+      newRects.forEach((newRect, slotIndex) => {
+        const oldRect = oldRects.get(slotIndex);
+        const el = itemRefs.current.get(slotIndex);
+        if (el && oldRect && (oldRect.left !== newRect.left || oldRect.top !== newRect.top)) {
+          toAnimate.push({
+            el,
+            deltaX: oldRect.left - newRect.left,
+            deltaY: oldRect.top - newRect.top,
+          });
+        }
+      });
+      toAnimate.forEach(({ el, deltaX, deltaY }) => {
+        el.style.transition = "none";
+        el.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+      });
+      const raf = requestAnimationFrame(() => {
+        toAnimate.forEach(({ el }) => {
+          el.style.transition = FLIP_TRANSITION;
+          el.style.transform = "";
+        });
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [events, slots.length]);
 
   return (
     <div
@@ -75,12 +117,21 @@ export function Timeline({
       style={{
         WebkitOverflowScrolling: "touch",
         scrollbarGutter: "stable",
+        overscrollBehaviorX: "contain",
+        overscrollBehaviorY: "auto",
       }}
       role="list"
       aria-label="Timeline events"
     >
       {slots.map((slotIndex) => (
-        <div key={slotIndex} className="relative z-10 flex flex-shrink-0 items-center gap-3">
+        <div
+          key={slotIndex}
+          ref={(el) => {
+            if (el) itemRefs.current.set(slotIndex, el);
+            else itemRefs.current.delete(slotIndex);
+          }}
+          className="relative z-10 flex flex-shrink-0 items-center gap-3"
+        >
           {slotIndex > 0 ? (
             <EventCard
               event={events[slotIndex - 1]}

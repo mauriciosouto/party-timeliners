@@ -9,7 +9,7 @@ type WsMessage =
   | { type: "join_error"; code: string; message: string }
   | { type: "state_update"; room: RoomState }
   | { type: "room_state"; roomState: RoomState }
-  | { type: "place_result"; correct: boolean; gameEnded?: boolean; score: number; timeline?: RoomState["timeline"]; nextEvent?: ApiEvent | null; nextTurnPlayerId?: string | null; currentTurnStartedAt?: string | null; nextDeckSequence?: number }
+  | { type: "place_result"; correct: boolean; gameEnded?: boolean; score: number; timeline?: RoomState["timeline"]; correctPosition?: number; nextEvent?: ApiEvent | null; nextTurnPlayerId?: string | null; currentTurnStartedAt?: string | null; nextDeckSequence?: number }
   | { type: "place_error"; code: string; message: string }
   | { type: "start_error"; code: string; message: string }
   | { type: "rematch_error"; code: string; message: string }
@@ -40,6 +40,7 @@ export function useRoomSocket(
     gameEnded?: boolean;
     score: number;
     nextTurnPlayerId?: string | null;
+    correctPosition?: number;
   } | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,7 +92,13 @@ export function useRoomSocket(
               gameEnded: msg.gameEnded,
               score: msg.score,
               nextTurnPlayerId: msg.nextTurnPlayerId,
+              correctPosition: msg.correctPosition,
             });
+            if (msg.timeline && msg.timeline.length > 0) {
+              setRoomState((prev) =>
+                prev ? { ...prev, timeline: msg.timeline! } : null,
+              );
+            }
           } else if (msg.type === "room_closed") {
             setRoomClosed(true);
           }

@@ -34,6 +34,7 @@ type RoomGameBoardProps = {
     gameEnded?: boolean;
     score: number;
     nextTurnPlayerId?: string | null;
+    correctPosition?: number;
   } | null;
   placeError: string | null;
   onClearPlaceError: () => void;
@@ -374,16 +375,41 @@ export function RoomGameBoard({
               </div>
             )}
 
-            <section className="flex flex-1 flex-col gap-4 overflow-hidden rounded-2xl bg-white p-6 shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
+            <section
+              className={`relative flex flex-1 flex-col gap-4 overflow-hidden rounded-2xl bg-white p-6 shadow-[0_6px_20px_rgba(0,0,0,0.08)] transition-[box-shadow,border-color] duration-300 ${
+                placeResult
+                  ? placeResult.correct
+                    ? "ring-2 ring-emerald-400/80 ring-offset-2 ring-offset-white"
+                    : "ring-2 ring-amber-400/80 ring-offset-2 ring-offset-white"
+                  : ""
+              }`}
+            >
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
                   Timeline
                 </h2>
-                <p className="text-[11px] text-zinc-400">
-                  {isMyTurn ? "Drop the card between events" : "Watch the timeline"}
-                </p>
+                {placeResult && (
+                  <span
+                    className={`place-feedback-in inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold shadow-sm ${
+                      placeResult.correct
+                        ? "bg-emerald-500 text-white"
+                        : "bg-amber-500 text-white"
+                    }`}
+                    role="status"
+                  >
+                    {placeResult.correct ? "Correct!" : "Wrong spot"}
+                  </span>
+                )}
+                {!placeResult && (
+                  <p className="text-[11px] text-zinc-400">
+                    {isMyTurn ? "Drop the card between events" : "Watch the timeline"}
+                  </p>
+                )}
               </div>
-              <div className="min-h-[160px] overflow-x-auto overflow-y-visible">
+              <div
+                className="min-h-[160px] overflow-x-auto overflow-y-visible"
+                style={{ overscrollBehaviorX: "contain", overscrollBehaviorY: "auto" }}
+              >
                 <Timeline
                   events={timeline}
                   lastPlacedId={lastPlacedId}
