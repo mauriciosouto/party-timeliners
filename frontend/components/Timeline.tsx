@@ -34,12 +34,13 @@ function TimelineSlot({ index }: TimelineSlotProps) {
       ref={setNodeRef}
       className={`
         flex min-h-[48px] min-w-[40px] flex-shrink-0 flex-col items-center justify-center
-        rounded-lg border-2 border-dashed transition-all duration-200
+        rounded-[10px] border-2 border-dashed bg-[#f8fafc]
+        transition-all duration-200 ease
         touch-manipulation
         ${
           isOver
-            ? "border-violet-400 bg-violet-100/80 scale-105 shadow-md"
-            : "border-zinc-300/80 bg-zinc-100/50 hover:border-violet-300 hover:bg-violet-50/80"
+            ? "border-violet-500 bg-[#eef2ff] scale-105 shadow-md"
+            : "border-[#cbd5f5] hover:border-[#6366f1] hover:bg-[#eef2ff]"
         }
       `}
     >
@@ -70,7 +71,7 @@ export function Timeline({
 
   return (
     <div
-      className="flex gap-4 overflow-x-auto overflow-y-visible px-2 py-4 scroll-smooth pb-6"
+      className="relative flex gap-4 overflow-x-auto overflow-y-visible px-5 py-6 scroll-smooth pb-8 before:absolute before:left-5 before:right-5 before:top-1/2 before:h-1 before:-translate-y-1/2 before:rounded-sm before:bg-[#e2e8f0] before:content-['']"
       style={{
         WebkitOverflowScrolling: "touch",
         scrollbarGutter: "stable",
@@ -79,7 +80,7 @@ export function Timeline({
       aria-label="Timeline events"
     >
       {slots.map((slotIndex) => (
-        <div key={slotIndex} className="flex flex-shrink-0 items-center gap-3">
+        <div key={slotIndex} className="relative z-10 flex flex-shrink-0 items-center gap-3">
           {slotIndex > 0 ? (
             <EventCard
               event={events[slotIndex - 1]}

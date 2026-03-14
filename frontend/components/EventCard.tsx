@@ -63,11 +63,12 @@ export function EventCard({
   const style: CSSProperties | undefined =
     draggable && transform
       ? {
-          transform: CSS.Translate.toString(transform),
+          transform: CSS.Translate.toString(transform) + (isDragging ? " scale(1.02) rotate(-0.5deg)" : ""),
           boxShadow: isDragging
-            ? "0 20px 40px rgba(0,0,0,0.18)"
-            : "0 8px 24px rgba(0,0,0,0.12)",
+            ? "0 24px 48px rgba(0,0,0,0.2), 0 8px 16px rgba(0,0,0,0.1)"
+            : "0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.06)",
           zIndex: isDragging ? 50 : 1,
+          transition: isDragging ? "none" : "box-shadow 0.2s ease, transform 0.15s ease",
         }
       : undefined;
 
@@ -84,18 +85,18 @@ export function EventCard({
       {...(draggable ? attributes : {})}
       className={`
         relative min-w-[160px] max-w-[200px] rounded-[14px]
-        shadow-[0_4px_12px_rgba(0,0,0,0.12)]
-        transition-[transform,box-shadow] duration-300 ease-out
-        hover:shadow-[0_8px_20px_rgba(0,0,0,0.15)]
-        hover:-translate-y-0.5
+        shadow-[0_4px_12px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.06)]
+        transition-all duration-200 ease
+        hover:shadow-[0_12px_24px_rgba(0,0,0,0.15)]
+        hover:-translate-y-[3px]
         border-l-4 ${styleMap.border}
         ${className ?? ""}
-        ${isDragging ? "cursor-grabbing scale-105" : draggable ? "cursor-grab" : ""}
+        ${isDragging ? "cursor-grabbing will-change-[transform]" : draggable ? "cursor-grab" : ""}
       `}
     >
-      <div className="relative flex h-full min-h-[120px] flex-col rounded-[14px] bg-gradient-to-b from-white to-neutral-100 p-4">
+      <div className="relative flex h-full min-h-[120px] flex-col rounded-[14px] bg-gradient-to-b from-white to-neutral-100 p-4 overflow-hidden">
         {event.image && (
-          <div className="min-h-[90px] shrink-0 overflow-hidden rounded-lg">
+          <div className="flex h-[120px] shrink-0 w-full items-center justify-center overflow-hidden rounded-t-[12px] -mt-4 -mx-4 mb-2 bg-zinc-100/50">
             {!imageError ? (
               <img
                 src={getWikimediaThumbnail(event.image)}
@@ -106,7 +107,7 @@ export function EventCard({
               />
             ) : (
               <div
-                className="event-image flex items-center justify-center bg-zinc-200/80 text-[10px] font-medium text-zinc-500"
+                className="flex h-full min-h-[120px] w-full items-center justify-center rounded-t-[12px] bg-zinc-200/80 text-[10px] font-medium text-zinc-500"
                 aria-hidden
               >
                 No Image

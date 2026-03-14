@@ -25,11 +25,17 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Event card thumbnail: scales with card, keeps aspect ratio, crops if needed */
+/* Page background gradient for game screens */
+.page-bg {
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+/* Event card image: fixed height, cover, centered, match card corners */
 .event-image {
   width: 100%;
-  height: 90px;
+  height: 120px;
   object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 8px;
+  object-position: center;
+  border-radius: 12px 12px 0 0;
+  display: block;
 }

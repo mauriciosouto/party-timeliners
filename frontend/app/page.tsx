@@ -102,42 +102,42 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 p-4">
+    <div className="page-bg flex min-h-screen flex-col items-center justify-center p-6">
       <h1 className="text-2xl font-bold text-zinc-900">Party Timeliners</h1>
       <p className="mt-1 text-sm text-zinc-500">
         Place events on the timeline. Multiplayer by link.
       </p>
 
-      <div className="mt-10 flex w-full max-w-md flex-col gap-8">
+      <div className="mx-auto mt-12 flex w-full max-w-[1100px] flex-col gap-8 px-4">
         {checkingPrevious && (
           <p className="text-center text-sm text-zinc-500">Checking previous game…</p>
         )}
         {!checkingPrevious && previousRoom && (
-          <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-zinc-200/60">
+          <div className="rounded-2xl bg-white p-8 shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
             <h2 className="text-lg font-semibold text-zinc-900">Previous game</h2>
             <p className="mt-1 text-sm text-zinc-600">
               You&apos;re in the room as <span className="font-medium">{previousRoom.nickname}</span>. The game is still active.
             </p>
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="mt-6 flex flex-col gap-3">
               <Link
                 href={`/room/${previousRoom.roomId}`}
-                className="rounded-lg bg-violet-600 px-4 py-2 text-center font-medium text-white hover:bg-violet-700"
+                className="rounded-[10px] bg-violet-600 px-5 py-3 text-center font-semibold text-white shadow-sm transition-all duration-200 ease hover:bg-violet-700 hover:shadow-md"
               >
                 Rejoin
               </Link>
               <button
                 type="button"
                 onClick={handleClearPrevious}
-                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 font-medium text-zinc-700 hover:bg-zinc-50"
+                className="rounded-[10px] border border-zinc-300 bg-white px-5 py-3 font-semibold text-zinc-700 transition-all duration-200 ease hover:bg-zinc-50"
               >
                 End previous game
               </button>
             </div>
           </div>
         )}
-        <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-zinc-200/60">
+        <div className="rounded-2xl bg-white p-8 shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
           <h2 className="text-lg font-semibold text-zinc-900">Create room</h2>
-          <form onSubmit={handleCreateRoom} className="mt-4 space-y-3">
+          <form onSubmit={handleCreateRoom} className="mt-6 space-y-4">
             <input
               type="text"
               value={nickname}
@@ -195,16 +195,16 @@ export default function Home() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-violet-600 px-4 py-2 font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+              className="w-full rounded-[10px] bg-violet-600 px-5 py-3 font-semibold text-white shadow-sm transition-all duration-200 ease hover:bg-violet-700 hover:shadow-md disabled:opacity-50"
             >
               {loading ? "Creating…" : "Create room"}
             </button>
           </form>
         </div>
 
-        <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-zinc-200/60">
+        <div className="rounded-2xl bg-white p-8 shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
           <h2 className="text-lg font-semibold text-zinc-900">Join a room</h2>
-          <form onSubmit={handleJoinRoom} className="mt-4 space-y-3">
+          <form onSubmit={handleJoinRoom} className="mt-6 space-y-4">
             <input
               type="text"
               value={joinRoomId}
@@ -214,7 +214,7 @@ export default function Home() {
             />
             <button
               type="submit"
-              className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 font-medium text-zinc-700 hover:bg-zinc-50"
+              className="w-full rounded-[10px] border border-zinc-300 bg-white px-5 py-3 font-semibold text-zinc-700 transition-all duration-200 ease hover:bg-zinc-50"
             >
               Join
             </button>

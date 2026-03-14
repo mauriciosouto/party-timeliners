@@ -174,9 +174,9 @@ export function RoomGameBoard({
   const isHost = roomState.hostPlayerId === playerId;
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 to-slate-100 text-zinc-900">
-      <header className="flex-shrink-0 border-b border-zinc-200/80 bg-white/90 px-4 py-4 shadow-sm backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
+    <div className="page-bg flex min-h-screen flex-col text-zinc-900">
+      <header className="flex-shrink-0 border-b border-zinc-200/80 bg-white/90 px-6 py-5 shadow-sm backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-zinc-900 md:text-2xl">
               {roomState.name || "Party Timeliners"}
@@ -213,7 +213,7 @@ export function RoomGameBoard({
             <button
               type="button"
               onClick={onEndGame}
-              className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100"
+              className="rounded-[10px] border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800 transition-all duration-200 ease hover:bg-amber-100"
             >
               End game
             </button>
@@ -221,10 +221,10 @@ export function RoomGameBoard({
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-1 gap-4 px-4 py-6">
-        <main className="flex min-w-0 flex-1 flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-[1100px] flex-1 gap-6 px-6 py-8">
+        <main className="relative flex min-w-0 flex-1 flex-col gap-8">
         {isEnded && (
-          <section className="rounded-2xl border border-amber-200 bg-amber-50/95 px-4 py-4 shadow-sm">
+          <section className="rounded-2xl border border-amber-200 bg-amber-50/95 px-6 py-6 shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-800">
               Final result
             </h2>
@@ -252,7 +252,7 @@ export function RoomGameBoard({
 
         {isEnded ? (
           <>
-            <section className="flex flex-1 flex-col gap-3 overflow-hidden rounded-2xl bg-white/90 p-4 shadow-md ring-1 ring-zinc-200/60">
+            <section className="flex flex-1 flex-col gap-4 overflow-hidden rounded-2xl bg-white p-6 shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
                   Timeline
@@ -282,19 +282,19 @@ export function RoomGameBoard({
                 </button>
               </div>
             )}
-            <section className="flex flex-wrap items-center gap-3">
+            <section className="flex flex-wrap items-center gap-4">
               {isHost && onCloseRoom ? (
                 <button
                   type="button"
                   onClick={onCloseRoom}
-                  className="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium text-zinc-700 hover:bg-zinc-50"
+                  className="rounded-[10px] border border-zinc-300 bg-white px-5 py-3 font-semibold text-zinc-700 transition-all duration-200 ease hover:bg-zinc-50"
                 >
                   End
                 </button>
               ) : (
                 <Link
                   href="/"
-                  className="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium text-zinc-700 hover:bg-zinc-50"
+                  className="rounded-[10px] border border-zinc-300 bg-white px-5 py-3 font-semibold text-zinc-700 transition-all duration-200 ease hover:bg-zinc-50"
                 >
                   End game
                 </Link>
@@ -303,7 +303,7 @@ export function RoomGameBoard({
                 <button
                   type="button"
                   onClick={onRematch}
-                  className="rounded-lg bg-violet-600 px-4 py-3 font-medium text-white hover:bg-violet-700"
+                  className="rounded-[10px] bg-violet-600 px-5 py-3 font-semibold text-white shadow-sm transition-all duration-200 ease hover:bg-violet-700 hover:shadow-md"
                 >
                   Rematch
                 </button>
@@ -317,31 +317,35 @@ export function RoomGameBoard({
           </>
         ) : (
           <DndContext collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
+            {/* Place result as overlay toast so timeline doesn't move */}
             {placeResult && (
-              <section
-                className={`rounded-2xl border px-4 py-3 text-sm shadow-sm ${
-                  placeResult.correct
-                    ? "border-emerald-200 bg-emerald-50/95 text-emerald-900"
-                    : "border-amber-200 bg-amber-50/95 text-amber-900"
-                }`}
-              >
-                {placeResult.correct ? (
-                  <>
-                    <div className="text-xs font-semibold uppercase tracking-wide">Correct</div>
-                    <p>Your score: {placeResult.score}</p>
-                  </>
-                ) : placeResult.gameEnded ? (
-                  <>
-                    <div className="text-xs font-semibold uppercase tracking-wide">Game over</div>
-                    <p>Final score: {placeResult.score}</p>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-xs font-semibold uppercase tracking-wide">No points — game continues</div>
-                    <p>Your score: {placeResult.score}</p>
-                  </>
-                )}
-              </section>
+              <div className="absolute left-0 right-0 top-0 z-20 px-0 pt-0">
+                <section
+                  role="status"
+                  className={`rounded-xl border px-5 py-3 text-sm shadow-lg ${
+                    placeResult.correct
+                      ? "border-emerald-200 bg-emerald-50/98 text-emerald-900"
+                      : "border-amber-200 bg-amber-50/98 text-amber-900"
+                  }`}
+                >
+                  {placeResult.correct ? (
+                    <>
+                      <div className="text-xs font-semibold uppercase tracking-wide">Correct</div>
+                      <p>Your score: {placeResult.score}</p>
+                    </>
+                  ) : placeResult.gameEnded ? (
+                    <>
+                      <div className="text-xs font-semibold uppercase tracking-wide">Game over</div>
+                      <p>Final score: {placeResult.score}</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-xs font-semibold uppercase tracking-wide">No points — game continues</div>
+                      <p>Your score: {placeResult.score}</p>
+                    </>
+                  )}
+                </section>
+              </div>
             )}
 
             {placeError && (
@@ -370,7 +374,7 @@ export function RoomGameBoard({
               </div>
             )}
 
-            <section className="flex flex-1 flex-col gap-3 overflow-hidden rounded-2xl bg-white/90 p-4 shadow-md ring-1 ring-zinc-200/60">
+            <section className="flex flex-1 flex-col gap-4 overflow-hidden rounded-2xl bg-white p-6 shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
                   Timeline
@@ -379,7 +383,7 @@ export function RoomGameBoard({
                   {isMyTurn ? "Drop the card between events" : "Watch the timeline"}
                 </p>
               </div>
-              <div className="min-h-[140px] overflow-x-auto overflow-y-visible">
+              <div className="min-h-[160px] overflow-x-auto overflow-y-visible">
                 <Timeline
                   events={timeline}
                   lastPlacedId={lastPlacedId}
@@ -390,14 +394,20 @@ export function RoomGameBoard({
               </div>
             </section>
 
-            <section className="flex flex-shrink-0 flex-col gap-3 rounded-2xl bg-white/90 p-4 shadow-md ring-1 ring-zinc-200/60">
+            <section
+              className={`flex flex-shrink-0 flex-col gap-4 rounded-2xl p-6 shadow-[0_6px_20px_rgba(0,0,0,0.08)] transition-all duration-200 ${
+                isMyTurn
+                  ? "bg-violet-50/90 ring-2 ring-violet-400 ring-offset-2 ring-offset-[#eef2ff]"
+                  : "bg-white/80"
+              }`}
+            >
               <div className="flex flex-col gap-0.5">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
                   Card to place
                 </h2>
                 {currentTurnPlayer && (
-                  <p className="text-xs text-zinc-500">
-                    {isMyTurn ? "Your turn" : `Active: ${currentTurnPlayer.nickname}`}
+                  <p className={isMyTurn ? "text-sm font-semibold text-violet-700" : "text-xs text-zinc-500"}>
+                    {isMyTurn ? "Your turn — drag the card to the timeline" : `Active: ${currentTurnPlayer.nickname}`}
                   </p>
                 )}
               </div>
@@ -413,7 +423,7 @@ export function RoomGameBoard({
                     revealed={false}
                     draggable={isMyTurn}
                     draggableId={DRAGGABLE_ID}
-                    className={isMyTurn ? "touch-manipulation" : undefined}
+                    className={isMyTurn ? "touch-manipulation ring-2 ring-violet-400 ring-offset-2 ring-offset-white" : undefined}
                   />
                 </div>
               ) : (
@@ -426,7 +436,7 @@ export function RoomGameBoard({
         )}
         </main>
 
-        <aside className="flex w-56 flex-shrink-0 flex-col gap-3 rounded-2xl bg-white/90 p-4 shadow-md ring-1 ring-zinc-200/60">
+        <aside className="flex w-56 flex-shrink-0 flex-col gap-4 rounded-[14px] bg-white p-4 shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
             Players
           </h2>

@@ -73,7 +73,7 @@ export default function RoomPage() {
 
   if (!roomId) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="page-bg flex min-h-screen items-center justify-center p-6">
         <p className="text-zinc-500">Invalid room</p>
       </div>
     );
@@ -81,7 +81,7 @@ export default function RoomPage() {
 
   if (initialLoad) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="page-bg flex min-h-screen items-center justify-center p-6">
         <p className="text-zinc-500">Loading…</p>
       </div>
     );
@@ -138,7 +138,7 @@ export default function RoomPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="page-bg flex min-h-screen items-center justify-center p-6">
       {wsReady ? (
         <p className="text-zinc-500">Connecting…</p>
       ) : (
