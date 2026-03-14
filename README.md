@@ -14,6 +14,7 @@ A casual multiplayer browser game where players place historical events in chron
 - [How the game works](#how-the-game-works)
 - [Architecture](#architecture)
 - [Development](#development)
+- [Testing](#testing)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -198,6 +199,35 @@ Server: `http://localhost:3001` (or `PORT`). WebSocket: `ws://localhost:3001/ws`
 
 - `npm run seed` — Seed the database from the event pool.
 - `npm run refresh-events` — Refresh the event pool (e.g. from Wikidata). See `backend/README.md` for API and env details.
+
+### Testing
+
+The backend includes **unit tests** and **integration tests** (Vitest).
+
+- **Unit tests** — Game logic (event quality, timeline validation, deck building, place validation) and event ingestion (merge pool).
+- **Integration tests** — Room service with a real SQLite database: create room, join, start game, place events, end game, rematch.
+
+Run all tests from the backend directory:
+
+```bash
+cd backend
+npm run test
+```
+
+Run tests with coverage (statement/branch/function/line % in terminal + HTML report in `backend/coverage/`):
+
+```bash
+cd backend
+npm run test:coverage
+```
+
+Watch mode (re-run on file changes):
+
+```bash
+npm run test:watch
+```
+
+See [backend/README.md](backend/README.md#testing) for details.
 
 ### Deployment
 

@@ -8,7 +8,11 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "seed": "tsx src/db/seed.ts",
-    "refresh-events": "tsx scripts/refreshEvents.ts"
+    "refresh-events": "tsx scripts/refreshEvents.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:coverage:integration": "vitest run --coverage src/**/*.integration.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -22,6 +26,8 @@
     "@types/ws": "^8.5.13",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "vitest": "^2.1.0"
   }
 }

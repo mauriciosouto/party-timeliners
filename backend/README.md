@@ -66,6 +66,49 @@ Connect then send JSON messages:
   - `place_error`: `{ "type": "place_error", "code", "message" }`
   - `pong`: `{ "type": "pong" }`
 
+## Testing
+
+Tests use [Vitest](https://vitest.dev/). They include **unit tests** (pure logic, no DB) and **integration tests** (room service with SQLite).
+
+**Run all tests:**
+
+```bash
+npm run test
+```
+
+**Run tests with coverage** (V8; incluye tests unitarios e **integración**; salida en terminal + HTML en `coverage/`):
+
+```bash
+npm run test:coverage
+```
+
+El reporte de coverage se genera con **todos** los tests (unit + integración). Los tests de integración aportan cobertura a `roomService.ts`, `db/index.ts`, etc.
+
+Opcional: solo tests de integración con coverage:
+
+```bash
+npx vitest run --coverage src/**/*.integration.test.ts
+```
+
+**Watch mode** (re-run on file changes):
+
+```bash
+npm run test:watch
+```
+
+**What’s covered:**
+
+| Area | Path | Description |
+|------|------|-------------|
+| Event quality | `src/game/eventQuality.test.ts` | `isGoodEvent`, `filterGoodEvents` (title/year/image/wikipedia rules) |
+| Timeline | `src/game/timeline.test.ts` | `isValidPosition`, `findCorrectPosition`, `isCorrectPlacement` |
+| Validation | `src/game/validation.test.ts` | `validatePlace`, `getNextTurnPlayerId` |
+| Deck | `src/game/deck.test.ts` | `shuffle`, `buildDeck` (excludeIds, quality preference) |
+| Event ingestion | `src/services/eventIngestion.test.ts` | `mergeWithExistingPool` (cumulative pool, limit per category) |
+| Room service (integration) | `src/services/roomService.integration.test.ts` | createRoom, joinRoom, startGame, placeEvent, endGame, rematchRoom with real DB |
+
+Integration tests use a separate DB file (`test-data/integration.db`, see `vitest.config.ts`). They seed the `events` table with sample data and clear room tables between tests.
+
 ## Env
 
 | Variable   | Default        | Description        |

@@ -4,6 +4,7 @@ node_modules/
 # Backend
 backend/dist/
 backend/data/
+backend/test-data/
 *.db
 *.sqlite
 *.sqlite3
