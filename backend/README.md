@@ -68,46 +68,39 @@ Connect then send JSON messages:
 
 ## Testing
 
-Tests use [Vitest](https://vitest.dev/). They include **unit tests** (pure logic, no DB) and **integration tests** (room service with SQLite).
+Tests use [Vitest](https://vitest.dev/): **unit tests** (lógica pura) e **integration tests** (room service con SQLite).
 
-**Run all tests:**
+### Cómo ejecutar
 
-```bash
-npm run test
-```
+| Script | Descripción |
+|--------|-------------|
+| `npm run test` | Todos los tests (unit + integración). |
+| `npm run test:coverage` | Tests + coverage (terminal + `coverage/` con HTML y `lcov.info`). |
+| `npm run test:watch` | Modo watch: re-ejecuta al guardar. |
+| `npm run test:coverage:integration` | Solo tests de integración con coverage. |
 
-**Run tests with coverage** (V8; incluye tests unitarios e **integración**; salida en terminal + HTML en `coverage/`):
+Desde la raíz del repo: `cd backend` y luego el comando anterior.
 
-```bash
-npm run test:coverage
-```
+### Coverage en GitHub
 
-El reporte de coverage se genera con **todos** los tests (unit + integración). Los tests de integración aportan cobertura a `roomService.ts`, `db/index.ts`, etc.
+El workflow [../.github/workflows/test.yml](../.github/workflows/test.yml) corre en cada push y en cada PR:
 
-Opcional: solo tests de integración con coverage:
+- **Estado del job** en la pestaña *Actions* (pass/fail).
+- **Artifact *coverage-report***: en cada run podés descargar el ZIP con la carpeta `coverage/`; al abrir `index.html` en el navegador ves el reporte completo.
+- **Codecov (opcional):** para un badge de coverage y el diff en PRs, conectá el repo en [codecov.io](https://codecov.io) y añadí el token en *Settings → Secrets* como `CODECOV_TOKEN`.
 
-```bash
-npx vitest run --coverage src/**/*.integration.test.ts
-```
+### Qué cubren los tests
 
-**Watch mode** (re-run on file changes):
-
-```bash
-npm run test:watch
-```
-
-**What’s covered:**
-
-| Area | Path | Description |
-|------|------|-------------|
-| Event quality | `src/game/eventQuality.test.ts` | `isGoodEvent`, `filterGoodEvents` (title/year/image/wikipedia rules) |
+| Área | Archivo | Descripción |
+|------|---------|-------------|
+| Event quality | `src/game/eventQuality.test.ts` | `isGoodEvent`, `filterGoodEvents` |
 | Timeline | `src/game/timeline.test.ts` | `isValidPosition`, `findCorrectPosition`, `isCorrectPlacement` |
 | Validation | `src/game/validation.test.ts` | `validatePlace`, `getNextTurnPlayerId` |
-| Deck | `src/game/deck.test.ts` | `shuffle`, `buildDeck` (excludeIds, quality preference) |
-| Event ingestion | `src/services/eventIngestion.test.ts` | `mergeWithExistingPool` (cumulative pool, limit per category) |
-| Room service (integration) | `src/services/roomService.integration.test.ts` | createRoom, joinRoom, startGame, placeEvent, endGame, rematchRoom with real DB |
+| Deck | `src/game/deck.test.ts` | `shuffle`, `buildDeck` |
+| Event ingestion | `src/services/eventIngestion.test.ts` | `mergeWithExistingPool` |
+| Room (integración) | `src/services/roomService.integration.test.ts` | createRoom, joinRoom, startGame, placeEvent, endGame, rematch con BD real |
 
-Integration tests use a separate DB file (`test-data/integration.db`, see `vitest.config.ts`). They seed the `events` table with sample data and clear room tables between tests.
+Los tests de integración usan `test-data/integration.db`; siembran la tabla `events` y limpian las tablas de sala entre tests.
 
 ## Env
 

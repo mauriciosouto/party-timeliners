@@ -202,32 +202,28 @@ Server: `http://localhost:3001` (or `PORT`). WebSocket: `ws://localhost:3001/ws`
 
 ### Testing
 
-The backend includes **unit tests** and **integration tests** (Vitest).
+The backend includes **unit tests** and **integration tests** ([Vitest](https://vitest.dev/)).
 
-- **Unit tests** — Game logic (event quality, timeline validation, deck building, place validation) and event ingestion (merge pool).
-- **Integration tests** — Room service with a real SQLite database: create room, join, start game, place events, end game, rematch.
+| Comando | Descripción |
+|--------|-------------|
+| `cd backend && npm run test` | Ejecuta todos los tests (unit + integración). |
+| `cd backend && npm run test:coverage` | Igual + reporte de coverage en terminal y en `backend/coverage/` (HTML + lcov). |
+| `cd backend && npm run test:watch` | Modo watch: vuelve a correr tests al guardar. |
 
-Run all tests from the backend directory:
+**Qué se prueba**
 
-```bash
-cd backend
-npm run test
-```
+- **Unit:** lógica de juego (event quality, timeline, validación de jugada, deck), merge del pool de eventos.
+- **Integración:** sala, unirse, iniciar partida, colocar evento, terminar partida, revancha (con SQLite real).
 
-Run tests with coverage (statement/branch/function/line % in terminal + HTML report in `backend/coverage/`):
+**Coverage en GitHub**
 
-```bash
-cd backend
-npm run test:coverage
-```
+En cada push y en cada PR, [GitHub Actions](.github/workflows/test.yml) ejecuta los tests con coverage:
 
-Watch mode (re-run on file changes):
+1. **Resultado del job** — En la pestaña *Actions* ves si los tests pasan o fallan.
+2. **Descargar reporte** — En cada run podés bajar el artifact *coverage-report* (carpeta `coverage/`); al descomprimir, abrí `index.html` en el navegador para ver el reporte completo.
+3. **Badge y resumen en PRs (opcional)** — Si conectás el repo con [Codecov](https://codecov.io) y añadís `CODECOV_TOKEN` en los secrets del repo, el workflow sube el coverage y podés usar un badge en el README y ver el diff de coverage en cada PR.
 
-```bash
-npm run test:watch
-```
-
-See [backend/README.md](backend/README.md#testing) for details.
+Ver [backend/README.md](backend/README.md#testing) para más detalle y scripts opcionales.
 
 ### Deployment
 
