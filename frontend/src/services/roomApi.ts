@@ -76,14 +76,12 @@ export async function createRoom(
 export async function joinRoom(
   roomId: string,
   nickname: string,
-  email?: string,
 ): Promise<{ playerId: string; roomState: RoomState }> {
   const res = await fetch(`${getApiUrl()}/api/rooms/${roomId}/join`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       nickname: nickname.trim() || "Player",
-      email: email?.trim() || undefined,
     }),
   });
   if (!res.ok) {

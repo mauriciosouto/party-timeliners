@@ -14,7 +14,9 @@ A casual multiplayer browser game where players place historical events in chron
 
 ## Game overview
 
-Party Timeliners is played in the browser. Players join a room via a shared link, enter a nickname (and optional email for reconnection), and take turns placing **hidden** historical event cards onto a shared timeline. After each placement, the year is revealed and the game scores the move. The timeline stays in chronological order; the goal is to guess where each event belongs.
+Party Timeliners is played in the browser. Players join a room via a shared link, enter a nickname (no account or email required), and take turns placing **hidden** historical event cards onto a shared timeline. After each placement, the year is revealed and the game scores the move. The timeline stays in chronological order; the goal is to guess where each event belongs.
+
+**Reconnection:** If a player closes the tab or browser, they can rejoin the same room from the same device: credentials are stored in `localStorage`. When they return to the site, the home page checks whether their last room is still active; if so, they see the option to **rejoin** or **clear that session** and start a new game. No automatic redirect—they choose.
 
 **Design goals:**
 
@@ -40,7 +42,9 @@ Party Timeliners is played in the browser. Players join a room via a shared link
 
 5. **Game end** — The game ends when the timeline reaches the configured max size or the event pool is exhausted. Highest score wins. Players can then rematch from the lobby.
 
-6. **Disconnections** — If a player drops during their turn, the turn is skipped. Players can reconnect with the same nickname and email.
+6. **Disconnections** — If a player drops during their turn, the turn is skipped. Players can reconnect from the same browser: the app stores room credentials in `localStorage`, so reopening the room link or using “Volver a sumarse” on the home page (if the room is still active) restores their session. No email required.
+
+7. **Returning to the site** — On the home page, if the backend reports that the last stored room is still active, the player sees: **Volver a sumarse** (rejoin), **Terminar partida anterior** (clear stored session and stay on home), or the usual create/join forms. If the room no longer exists, the stored session is cleared automatically.
 
 ---
 
@@ -73,7 +77,7 @@ External APIs (Wikidata / Wikipedia)
 - **Frontend** — Renders the UI, manages local state, sends actions to the server. It does not enforce game rules; all authoritative logic runs on the server.
 - **Workers** — Route requests and WebSocket connections to the correct Durable Object (room).
 - **Durable Objects** — Each game room is an isolated Durable Object holding room state, timeline, scores, and turn order. WebSockets provide real-time updates to all players in the room.
-- **Events** — Historical events are sourced from Wikidata/Wikipedia; the system avoids storing a full local history. Events include id, title, year, description, optional image, and link.
+- **Events** — Historical events are sourced from Wikidata/Wikipedia; the system avoids storing a full local history. Events include id, title, year, description, optional image, and link. The event pool and refresh live on the backend only (`npm run refresh-events` or `POST /api/admin/refresh-events`); the frontend keeps a small example pool for fallback when the backend is unavailable.
 
 ---
 
@@ -82,9 +86,9 @@ External APIs (Wikidata / Wikipedia)
 ```
 party-timeliners/
 ├── frontend/          # Next.js app (UI, drag-and-drop timeline, room pages)
-│   ├── app/           # App Router routes (e.g. /room/[roomId])
-│   ├── components/    # React components
-│   ├── lib/           # Client-side utilities (event pool, filters)
+│   ├── app/           # App Router routes (/, /room/[roomId])
+│   ├── components/    # React components (JoinForm, Lobby, RoomGameBoard)
+│   ├── lib/           # Utilities (event pool fallback, roomStorage for reconnection)
 │   └── src/           # Hooks, services (API, WebSocket)
 ├── backend/           # Node.js game server (local dev; mirrors Workers API)
 │   ├── src/
@@ -92,7 +96,7 @@ party-timeliners/
 │   │   ├── routes/    # REST (rooms, admin, events)
 │   │   ├── services/  # Game and room logic
 │   │   └── ws/        # WebSocket room hub
-│   └── scripts/       # e.g. refresh events from Wikidata
+│   └── scripts/       # e.g. refresh-events from Wikidata
 ├── shared/            # Shared types (if any)
 └── docs/              # Architecture, multiplayer design, project context
 ```
@@ -127,7 +131,7 @@ cd frontend
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Create or join a room from the home page; open `/room/[roomId]` to play.
+Open [http://localhost:3000](http://localhost:3000). From the home page you can create a room, join with a link, or—if you have a previous session and the room is still active—rejoin or clear that session. Gameplay is at `/room/[roomId]`.
 
 - **Build:** `npm run build`
 - **Start (production):** `npm run start`

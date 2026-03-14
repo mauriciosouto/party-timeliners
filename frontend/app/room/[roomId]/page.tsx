@@ -7,35 +7,7 @@ import { JoinForm } from "@/components/JoinForm";
 import { Lobby } from "@/components/Lobby";
 import { RoomGameBoard } from "@/components/RoomGameBoard";
 import { useRoomSocket } from "@/src/hooks/useRoomSocket";
-
-const STORAGE_KEY = (roomId: string) => `room_${roomId}`;
-
-function getStoredPlayer(roomId: string): { playerId: string; nickname: string } | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY(roomId));
-    if (!raw) return null;
-    const data = JSON.parse(raw) as { playerId: string; nickname: string };
-    return data?.playerId && data?.nickname ? data : null;
-  } catch {
-    return null;
-  }
-}
-
-function setStoredPlayer(
-  roomId: string,
-  playerId: string,
-  nickname: string,
-): void {
-  try {
-    sessionStorage.setItem(
-      STORAGE_KEY(roomId),
-      JSON.stringify({ playerId, nickname }),
-    );
-  } catch {
-    // ignore
-  }
-}
+import { getStoredPlayer, setStoredPlayer, clearRoomFromStorage } from "@/lib/roomStorage";
 
 export default function RoomPage() {
   const params = useParams();
@@ -83,6 +55,13 @@ export default function RoomPage() {
     sendEndGame,
     clearPlaceResult,
   } = useRoomSocket(roomId || null, playerId, nickname);
+
+  // When the room has ended, clear stored credentials so "rejoin" is not offered on home.
+  useEffect(() => {
+    if (roomId && roomState?.status === "ended") {
+      clearRoomFromStorage(roomId);
+    }
+  }, [roomId, roomState?.status]);
 
   if (!roomId) {
     return (

@@ -10,7 +10,6 @@ type JoinFormProps = {
 
 export function JoinForm({ roomId, onJoined }: JoinFormProps) {
   const [nickname, setNickname] = useState("");
-  const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [roomInfo, setRoomInfo] = useState<{ name: string; hostNickname: string } | null>(null);
@@ -34,7 +33,7 @@ export function JoinForm({ roomId, onJoined }: JoinFormProps) {
     setError(null);
     setLoading(true);
     try {
-      const result = await joinRoom(roomId, nickname.trim() || "Player", email.trim() || undefined);
+      const result = await joinRoom(roomId, nickname.trim() || "Player");
       onJoined(result.playerId, result.roomState.players.find((p) => p.playerId === result.playerId)?.nickname ?? nickname);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to join");
@@ -66,19 +65,6 @@ export function JoinForm({ roomId, onJoined }: JoinFormProps) {
               placeholder="Your name"
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 placeholder-zinc-400 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
               autoFocus
-            />
-          </div>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-zinc-700">
-              Email <span className="text-zinc-400">(optional, for reconnect)</span>
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 placeholder-zinc-400 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
             />
           </div>
           {error && (

@@ -1,11 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createRoom } from "@/src/services/roomApi";
+import { createRoom, getRoomState } from "@/src/services/roomApi";
+import { getLastRoom, clearRoomFromStorage, setStoredPlayer } from "@/lib/roomStorage";
 
 const DEFAULT_MAX_EVENTS = 50;
 const DEFAULT_POINTS_TO_WIN = 2;
+
+type PreviousRoom = {
+  roomId: string;
+  playerId: string;
+  nickname: string;
+};
 
 export default function Home() {
   const router = useRouter();
@@ -17,6 +25,37 @@ export default function Home() {
   const [joinRoomId, setJoinRoomId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previousRoom, setPreviousRoom] = useState<PreviousRoom | null>(null);
+  const [checkingPrevious, setCheckingPrevious] = useState(true);
+
+  useEffect(() => {
+    const last = getLastRoom();
+    if (!last) {
+      setCheckingPrevious(false);
+      return;
+    }
+    getRoomState(last.roomId)
+      .then((state) => {
+        if (!state || state.status === "ended") {
+          clearRoomFromStorage(last.roomId);
+          setPreviousRoom(null);
+        } else {
+          setPreviousRoom({ roomId: last.roomId, playerId: last.playerId, nickname: last.nickname });
+        }
+      })
+      .catch(() => {
+        clearRoomFromStorage(last.roomId);
+        setPreviousRoom(null);
+      })
+      .finally(() => setCheckingPrevious(false));
+  }, []);
+
+  const handleClearPrevious = () => {
+    if (previousRoom) {
+      clearRoomFromStorage(previousRoom.roomId);
+      setPreviousRoom(null);
+    }
+  };
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,12 +77,8 @@ export default function Home() {
           turnTimeLimitSeconds,
         },
       );
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(
-          `room_${roomId}`,
-          JSON.stringify({ playerId, nickname: nickname.trim() || "Player" }),
-        );
-      }
+      const nick = nickname.trim() || "Player";
+      setStoredPlayer(roomId, playerId, nick);
       router.push(`/room/${roomId}?playerId=${encodeURIComponent(playerId)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create room");
@@ -74,8 +109,34 @@ export default function Home() {
       </p>
 
       <div className="mt-10 flex w-full max-w-md flex-col gap-8">
+        {checkingPrevious && (
+          <p className="text-center text-sm text-zinc-500">Comprobando partida anterior…</p>
+        )}
+        {!checkingPrevious && previousRoom && (
+          <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-zinc-200/60">
+            <h2 className="text-lg font-semibold text-zinc-900">Partida anterior</h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              Estás en la sala como <span className="font-medium">{previousRoom.nickname}</span>. La partida sigue activa.
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <Link
+                href={`/room/${previousRoom.roomId}`}
+                className="rounded-lg bg-violet-600 px-4 py-2 text-center font-medium text-white hover:bg-violet-700"
+              >
+                Volver a sumarse
+              </Link>
+              <button
+                type="button"
+                onClick={handleClearPrevious}
+                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 font-medium text-zinc-700 hover:bg-zinc-50"
+              >
+                Terminar partida anterior
+              </button>
+            </div>
+          </div>
+        )}
         <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-zinc-200/60">
-          <h2 className="text-lg font-semibold text-zinc-900">Create room</h2>
+          <h2 className="text-lg font-semibold text-zinc-900">Crear sala</h2>
           <form onSubmit={handleCreateRoom} className="mt-4 space-y-3">
             <input
               type="text"
@@ -136,13 +197,13 @@ export default function Home() {
               disabled={loading}
               className="w-full rounded-lg bg-violet-600 px-4 py-2 font-medium text-white hover:bg-violet-700 disabled:opacity-50"
             >
-              {loading ? "Creating…" : "Create room"}
+              {loading ? "Creando…" : "Crear sala"}
             </button>
           </form>
         </div>
 
         <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-zinc-200/60">
-          <h2 className="text-lg font-semibold text-zinc-900">Join room</h2>
+          <h2 className="text-lg font-semibold text-zinc-900">Unirse a una sala</h2>
           <form onSubmit={handleJoinRoom} className="mt-4 space-y-3">
             <input
               type="text"
@@ -155,7 +216,7 @@ export default function Home() {
               type="submit"
               className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 font-medium text-zinc-700 hover:bg-zinc-50"
             >
-              Join
+              Unirse
             </button>
           </form>
         </div>
