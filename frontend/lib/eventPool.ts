@@ -26,7 +26,7 @@ export async function ensureGlobalPoolFilled(): Promise<void> {
   // With static JSON ingestion, there is nothing to do here at runtime.
   if (globalPool.length < TARGET_POOL_SIZE) {
     console.warn(
-      `[eventPool] Global pool has only ${globalPool.length} events. For multiplayer, use the backend event pool (backend: npm run refresh-events or POST /api/admin/refresh-events).`,
+      `[eventPool] Global pool has only ${globalPool.length} events; consider running scripts/updateEvents.ts to rebuild it.`,
     );
   }
 }
