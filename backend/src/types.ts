@@ -53,6 +53,8 @@ export type RoomState = {
   turnOrder: string[];
   currentTurnPlayerId: string | null;
   currentTurnStartedAt: string | null;
+  /** Event the active player must place; visible to all players when status is playing. */
+  currentTurnEvent: ApiEvent | null;
   nextDeckSequence: number;
   initialEventId: string | null;
   endedAt: string | null;

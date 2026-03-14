@@ -7,7 +7,6 @@ import type { TimelineEvent } from "@/lib/types";
 import { Timeline, parseSlotIndexFromId } from "@/components/Timeline";
 import { EventCard } from "@/components/EventCard";
 import { formatYear } from "@/lib/format";
-import { getNextEvent } from "@/src/services/roomApi";
 import type { RoomState } from "@/src/services/roomApi";
 
 const DRAGGABLE_ID = "current-card";
@@ -66,8 +65,6 @@ export function RoomGameBoard({
   onClearPlaceResult,
 }: RoomGameBoardProps) {
   const timeline = timelineFromRoomState(roomState);
-  const [currentEvent, setCurrentEvent] = useState<TimelineEvent | null>(null);
-  const [loadingCard, setLoadingCard] = useState(false);
   const [lastPlacedId, setLastPlacedId] = useState<string | null>(null);
   const [dropHint, setDropHint] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
@@ -117,33 +114,16 @@ export function RoomGameBoard({
     return () => clearInterval(interval);
   }, [isMyTurn, turnTimeLimitSeconds, currentTurnStartedAt, onTurnTimeout]);
 
-  useEffect(() => {
-    if (
-      roomState.status !== "playing" ||
-      roomState.currentTurnPlayerId !== playerId
-    ) {
-      setCurrentEvent(null);
-      return;
-    }
-    let cancelled = false;
-    setLoadingCard(true);
-    getNextEvent(roomId, playerId).then((ev) => {
-      if (!cancelled && ev) {
-        setCurrentEvent({
-          id: ev.id,
-          title: ev.title,
-          year: ev.year,
-          description: ev.displayTitle,
-          image: ev.image,
-          wikipediaUrl: ev.wikipediaUrl,
-        });
-      }
-      if (!cancelled) setLoadingCard(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [roomId, playerId, roomState.status, roomState.currentTurnPlayerId]);
+  const currentTurnEvent = roomState.status === "playing" && roomState.currentTurnEvent
+    ? {
+        id: roomState.currentTurnEvent.id,
+        title: roomState.currentTurnEvent.title,
+        year: roomState.currentTurnEvent.year,
+        description: roomState.currentTurnEvent.displayTitle,
+        image: roomState.currentTurnEvent.image,
+        wikipediaUrl: roomState.currentTurnEvent.wikipediaUrl,
+      } as TimelineEvent
+    : null;
 
   useEffect(() => {
     if (!placeResult) return;
@@ -169,7 +149,7 @@ export function RoomGameBoard({
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      if (!currentEvent || event.active.id !== DRAGGABLE_ID) return;
+      if (!currentTurnEvent || event.active.id !== DRAGGABLE_ID) return;
       const slotIndex = parseSlotIndexFromId(
         (event.over?.id as string | null | undefined) ?? null,
       );
@@ -180,11 +160,10 @@ export function RoomGameBoard({
         return;
       }
       setDropHint(null);
-      setLastPlacedId(currentEvent.id);
-      setCurrentEvent(null);
-      onPlaceEvent(currentEvent.id, slotIndex);
+      setLastPlacedId(currentTurnEvent.id);
+      onPlaceEvent(currentTurnEvent.id, slotIndex);
     },
-    [currentEvent, onPlaceEvent, timeline.length],
+    [currentTurnEvent, onPlaceEvent, timeline.length],
   );
 
   const myScore = roomState.scores[playerId] ?? 0;
@@ -412,31 +391,34 @@ export function RoomGameBoard({
             </section>
 
             <section className="flex flex-shrink-0 flex-col gap-3 rounded-2xl bg-white/90 p-4 shadow-md ring-1 ring-zinc-200/60">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
-                Your event
-              </h2>
+              <div className="flex flex-col gap-0.5">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
+                  Card to place
+                </h2>
+                {currentTurnPlayer && (
+                  <p className="text-xs text-zinc-500">
+                    {isMyTurn ? "Your turn" : `Active: ${currentTurnPlayer.nickname}`}
+                  </p>
+                )}
+              </div>
               {!wsReady ? (
                 <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 text-sm text-zinc-400">
                   Connecting…
                 </div>
-              ) : loadingCard ? (
-                <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 text-sm text-zinc-400">
-                  Loading card…
-                </div>
-              ) : isMyTurn && currentEvent ? (
+              ) : currentTurnEvent ? (
                 <div className="flex justify-center md:justify-start">
                   <EventCard
-                    event={currentEvent}
+                    event={currentTurnEvent}
                     showYear={false}
                     revealed={false}
-                    draggable
+                    draggable={isMyTurn}
                     draggableId={DRAGGABLE_ID}
-                    className="touch-manipulation"
+                    className={isMyTurn ? "touch-manipulation" : undefined}
                   />
                 </div>
               ) : (
                 <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/80 text-center text-sm text-zinc-500">
-                  {isMyTurn ? "Loading…" : "Wait for your turn"}
+                  Loading…
                 </div>
               )}
             </section>

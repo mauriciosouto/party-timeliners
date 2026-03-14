@@ -1,7 +1,11 @@
 /**
- * Ensures the event pool is populated and not expired on server startup.
- * If the table is empty or the pool TTL has elapsed, replaces events from JSON or Wikidata.
- * When fetching from Wikidata, merges with existing pool (cumulative); max 200 per category.
+ * Ensures the event pool is populated on server startup.
+ * - If the pool is valid (not expired): does nothing; server starts immediately.
+ * - If the pool is empty and a seed file exists: loads from seed synchronously (fast), then
+ *   starts a background refresh from Wikidata so the list can be updated without blocking.
+ * - If the pool is empty and no seed file, or the pool is expired: server starts immediately
+ *   with existing events (if any), and a background job fetches from Wikidata and updates
+ *   the pool. You can play with existing events while the update runs.
  * Call after initDb().
  */
 import { readFileSync, existsSync } from "node:fs";
@@ -57,9 +61,13 @@ function loadExistingPool(db: ReturnType<typeof getDb>): PoolEventLike[] {
   }));
 }
 
-function isPoolExpired(db: ReturnType<typeof getDb>): boolean {
+function getEventCount(db: ReturnType<typeof getDb>): number {
   const row = db.prepare("SELECT COUNT(*) as count FROM events").get() as { count: number };
-  if (row.count === 0) return true;
+  return row.count;
+}
+
+function isPoolExpired(db: ReturnType<typeof getDb>): boolean {
+  if (getEventCount(db) === 0) return true;
 
   const meta = db.prepare("SELECT value FROM event_pool_meta WHERE key = ?").get(META_KEY_LAST_REFRESHED) as { value: string } | undefined;
   if (!meta?.value) return true;
@@ -75,26 +83,65 @@ function setLastRefreshed(db: ReturnType<typeof getDb>): void {
   stmt.run(META_KEY_LAST_REFRESHED, new Date().toISOString());
 }
 
+const INSERT_SQL = `
+  INSERT OR REPLACE INTO events (id, title, type, display_title, year, image, wikipedia_url, popularity_score)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`;
+
+/**
+ * Fetches from Wikidata, merges with existing pool, and writes to DB. Runs in background; errors are logged only.
+ */
+function refreshEventPoolInBackground(): void {
+  console.log("[events] Background refresh started (Wikidata, merge with existing, max " + LIMIT_PER_CATEGORY + " per category).");
+  (async () => {
+    try {
+      const db = getDb();
+      const existing = loadExistingPool(db);
+      const candidates = await fetchAndPrepareEventPool();
+      const merged = mergeWithExistingPool(existing, candidates, LIMIT_PER_CATEGORY);
+      const runTx = db.transaction(() => {
+        db.exec("DELETE FROM events");
+        const insert = db.prepare(INSERT_SQL);
+        for (const e of merged) {
+          insert.run(
+            e.id,
+            e.title,
+            e.type,
+            e.displayTitle,
+            e.year,
+            e.image ?? null,
+            e.wikipediaUrl ?? null,
+            e.popularityScore ?? null,
+          );
+        }
+        setLastRefreshed(db);
+      });
+      runTx();
+      console.log(`[events] Background refresh done: ${existing.length} existing + ${candidates.length} candidates → ${merged.length} events.`);
+    } catch (err) {
+      console.error("[events] Background refresh failed:", err);
+    }
+  })();
+}
+
 export async function ensureEventPool(): Promise<void> {
   const db = getDb();
-  if (!isPoolExpired(db)) {
-    const row = db.prepare("SELECT COUNT(*) as count FROM events").get() as { count: number };
-    console.log(`[events] Pool has ${row.count} events and is still valid (TTL ${config.eventPoolTtlMinutes} min).`);
+  const count = getEventCount(db);
+  const expired = isPoolExpired(db);
+
+  if (!expired) {
+    console.log(`[events] Pool has ${count} events and is still valid (TTL ${config.eventPoolTtlMinutes} min).`);
     return;
   }
 
-  console.log(`[events] Pool empty or expired (TTL ${config.eventPoolTtlMinutes} min). Refreshing...`);
-
-  const insertSql = `
-    INSERT OR REPLACE INTO events (id, title, type, display_title, year, image, wikipedia_url, popularity_score)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-
-  function runRefresh(events: PoolEvent[]): void {
+  // Pool empty or expired: start server immediately and refresh in background (or load seed first if empty + seed exists).
+  if (count === 0 && seedPath && existsSync(seedPath)) {
+    const raw = readFileSync(seedPath, "utf8");
+    const pool: PoolEvent[] = JSON.parse(raw);
     const runTx = db.transaction(() => {
       db.exec("DELETE FROM events");
-      const insert = db.prepare(insertSql);
-      for (const e of events) {
+      const insert = db.prepare(INSERT_SQL);
+      for (const e of pool) {
         insert.run(
           e.id,
           e.title,
@@ -109,31 +156,15 @@ export async function ensureEventPool(): Promise<void> {
       setLastRefreshed(db);
     });
     runTx();
-  }
-
-  if (seedPath && existsSync(seedPath)) {
-    const raw = readFileSync(seedPath, "utf8");
-    const pool: PoolEvent[] = JSON.parse(raw);
-    runRefresh(pool);
-    console.log(`[events] Seeded ${pool.length} events from ${seedPath}`);
+    console.log(`[events] Seeded ${pool.length} events from ${seedPath}. Refreshing from Wikidata in background...`);
+    refreshEventPoolInBackground();
     return;
   }
 
-  console.log("[events] No seed file. Fetching from Wikidata (merge with existing, max " + LIMIT_PER_CATEGORY + " per category)...");
-  const existing = loadExistingPool(db);
-  const candidates = await fetchAndPrepareEventPool();
-  const merged = mergeWithExistingPool(existing, candidates, LIMIT_PER_CATEGORY);
-  runRefresh(
-    merged.map((e) => ({
-      id: e.id,
-      title: e.title,
-      type: e.type,
-      displayTitle: e.displayTitle,
-      year: e.year,
-      image: e.image,
-      wikipediaUrl: e.wikipediaUrl,
-      popularityScore: e.popularityScore,
-    })),
-  );
-  console.log(`[events] Pool: ${existing.length} existing + ${candidates.length} candidates → ${merged.length} events.`);
+  if (count === 0) {
+    console.log("[events] Pool empty. Server starting; refreshing from Wikidata in background (play once events are loaded).");
+  } else {
+    console.log(`[events] Pool expired (${count} events). Server starting with existing events; refreshing from Wikidata in background.`);
+  }
+  refreshEventPoolInBackground();
 }

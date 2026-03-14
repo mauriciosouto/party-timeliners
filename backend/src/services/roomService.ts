@@ -213,6 +213,7 @@ export function getRoomState(roomId: string): RoomState | null {
   let currentTurnPlayerId: string | null = null;
   let currentTurnStartedAt: string | null = null;
 
+  let currentTurnEvent: ApiEvent | null = null;
   if (room.status === "playing" && playerRows.length > 0) {
     const ordered = [...playerRows].sort(
       (a, b) => (a.turn_order ?? 999) - (b.turn_order ?? 999),
@@ -224,6 +225,14 @@ export function getRoomState(roomId: string): RoomState | null {
       raw && typeof raw === "string" && raw.length === 19 && !raw.endsWith("Z")
         ? `${raw}Z`
         : raw;
+    const deckRow = db
+      .prepare(
+        `SELECT e.* FROM room_deck rd
+         JOIN events e ON e.id = rd.event_id
+         WHERE rd.room_id = ? AND rd.sequence = ?`,
+      )
+      .get(roomId, room.next_deck_sequence) as EventRecord | undefined;
+    currentTurnEvent = deckRow ? eventToApi(deckRow) : null;
   }
 
   return {
@@ -240,6 +249,7 @@ export function getRoomState(roomId: string): RoomState | null {
     turnOrder,
     currentTurnPlayerId,
     currentTurnStartedAt,
+    currentTurnEvent,
     nextDeckSequence: room.next_deck_sequence,
     initialEventId: room.initial_event_id,
     endedAt: room.ended_at,
