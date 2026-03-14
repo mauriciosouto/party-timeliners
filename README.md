@@ -1,18 +1,49 @@
 # Party Timeliners
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A casual multiplayer browser game where players place historical events in chronological order on a shared timeline. Simple to learn, fast to play, no account required—just share a link and play with friends.
 
 ---
 
-## Screenshot
+## Table of Contents
 
-<!-- TODO: Add gameplay screenshot -->
-
-*Screenshot placeholder. Add a capture of the game room or timeline view.*
+- [Play the Game](#play-the-game)
+- [Gameplay Preview](#gameplay-preview)
+- [Why this project exists](#why-this-project-exists)
+- [How the game works](#how-the-game-works)
+- [Architecture](#architecture)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## Game overview
+## Play the Game
+
+<!-- TODO: Add link when the game is deployed -->
+
+**[Play Party Timeliners online](https://example.com)** *(coming soon)*
+
+Until then, run the game locally—see [Development](#development).
+
+---
+
+## Gameplay Preview
+
+![Party Timeliners gameplay](docs/gameplay.gif)
+
+*Add a short recording of the game (lobby, timeline, or drag-and-drop) and save it as `docs/gameplay.gif`.*
+
+---
+
+## Why this project exists
+
+Party Timeliners is a **simple multiplayer timeline party game** you can play directly in the browser. No app install, no accounts—someone creates a room, shares the link, and everyone joins with a nickname. The idea is to keep the barrier to entry low so that a group can start playing in seconds: place historical events in the right order on a shared timeline, take turns, and score points. The project aims to be easy to run and contribute to, with a clear path from local dev to a low-cost, scalable deployment (e.g. Cloudflare Workers + Durable Objects).
+
+---
+
+## How the game works
 
 Party Timeliners is played in the browser. Players join a room via a shared link, enter a nickname (no account or email required), and take turns placing **hidden** historical event cards onto a shared timeline. After each placement, the year is revealed and the game scores the move. The timeline stays in chronological order; the goal is to guess where each event belongs.
 
@@ -26,9 +57,7 @@ Party Timeliners is played in the browser. Players join a room via a shared link
 - No sign-up; join with a link
 - Low infrastructure cost (targeting serverless/edge)
 
----
-
-## Gameplay rules
+### Gameplay rules
 
 1. **Lobby** — Players join with a link, set a nickname, and wait in the lobby. The host can configure room name, points to win, turn time limit, and max timeline size. The host starts the game when ready (minimum 1 player).
 
@@ -48,40 +77,41 @@ Party Timeliners is played in the browser. Players join a room via a shared link
 
 ---
 
-## Tech stack
+## Architecture
 
-| Layer | Technologies |
-|-------|--------------|
-| **Frontend** | Next.js, React, TypeScript, Tailwind CSS, [dnd-kit](https://dndkit.com/) (drag and drop) |
-| **Backend** | Cloudflare Workers, Durable Objects, WebSockets (real-time multiplayer) |
-| **Data** | Wikidata, Wikipedia (historical events) |
+### Overview
 
----
+- **Browser client** — Next.js app that renders the UI, keeps local state, and sends actions over HTTP and WebSocket. It does not enforce game rules; all authoritative logic runs on the server.
+- **WebSockets** — Real-time channel for joining rooms, receiving room state, placing events, and turn/timeout updates.
+- **Cloudflare Workers** — (Production target.) Game router that receives HTTP and WebSocket traffic and forwards to the correct room.
+- **Durable Objects** — (Production target.) One Durable Object per game room; holds room state, timeline, scores, turn order, and pushes updates to connected clients.
+- **External APIs** — Historical events are sourced from [Wikidata](https://www.wikidata.org/) and [Wikipedia](https://www.wikipedia.org/). The event pool and refresh live on the backend (`npm run refresh-events` or `POST /api/admin/refresh-events`); the frontend keeps a small example pool for fallback when the backend is unavailable.
 
-## Architecture overview
+### Diagram
 
 ```
-Browser clients
-       │
-       │ WebSocket / HTTP
-       ▼
-Cloudflare Workers (game router)
-       │
-       ▼
-Durable Objects (one per game room)
-       │
-       ▼
-External APIs (Wikidata / Wikipedia)
+  Browser clients
+         │
+         │ HTTP / WebSocket
+         ▼
+  Cloudflare Workers (game router)
+         │
+         ▼
+  Durable Objects (one per room: state, timeline, WebSockets)
+         │
+         ▼
+  External APIs (Wikidata / Wikipedia)
 ```
 
-- **Frontend** — Renders the UI, manages local state, sends actions to the server. It does not enforce game rules; all authoritative logic runs on the server.
-- **Workers** — Route requests and WebSocket connections to the correct Durable Object (room).
-- **Durable Objects** — Each game room is an isolated Durable Object holding room state, timeline, scores, and turn order. WebSockets provide real-time updates to all players in the room.
-- **Events** — Historical events are sourced from Wikidata/Wikipedia; the system avoids storing a full local history. Events include id, title, year, description, optional image, and link. The event pool and refresh live on the backend only (`npm run refresh-events` or `POST /api/admin/refresh-events`); the frontend keeps a small example pool for fallback when the backend is unavailable.
+### Tech stack
 
----
+| Layer   | Technologies |
+|--------|---------------|
+| Frontend | Next.js, React, TypeScript, Tailwind CSS, [dnd-kit](https://dndkit.com/) (drag and drop) |
+| Backend  | Cloudflare Workers, Durable Objects, WebSockets (real-time multiplayer) |
+| Data     | Wikidata, Wikipedia (historical events) |
 
-## Project structure
+### Project structure
 
 ```
 party-timeliners/
@@ -103,9 +133,13 @@ party-timeliners/
 
 ---
 
-## Local development setup
+## Development
 
-**Prerequisites:** Node.js (v18+), npm (or yarn/pnpm).
+### Prerequisites
+
+Node.js (v18+), npm (or yarn/pnpm).
+
+### Local setup
 
 1. **Clone and install**
 
@@ -116,15 +150,13 @@ party-timeliners/
    npm install --prefix backend
    ```
 
-2. **Backend (game server)** — For local development, the repo includes a Node.js server (Express + WebSockets + SQLite) that implements the same API and WebSocket contract as the Cloudflare Workers target. See [Running the backend](#running-the-backend).
+2. **Backend** — The repo includes a Node.js server (Express + WebSockets + SQLite) that matches the Cloudflare Workers API contract. See [Running the backend](#running-the-backend).
 
-3. **Frontend** — Points at the local backend by default (`NEXT_PUBLIC_API_URL=http://localhost:3001`). See [Running the frontend](#running-the-frontend).
+3. **Frontend** — Uses the local backend by default (`NEXT_PUBLIC_API_URL=http://localhost:3001`). See [Running the frontend](#running-the-frontend).
 
-4. **Environment** — Optional: create `backend/.env` or set `PORT`, `DB_PATH`, `SEED_PATH` if you need to override defaults. No `.env` is required for a basic run after seeding.
+4. **Environment** — Optional: create `backend/.env` or set `PORT`, `DB_PATH`, `SEED_PATH`. No `.env` is required for a basic run after seeding.
 
----
-
-## Running the frontend
+### Running the frontend
 
 ```bash
 cd frontend
@@ -136,9 +168,7 @@ Open [http://localhost:3000](http://localhost:3000). From the home page you can 
 - **Build:** `npm run build`
 - **Start (production):** `npm run start`
 
----
-
-## Running the backend
+### Running the backend
 
 The `backend/` app is the **local development** game server (Node.js + Express + WebSockets + SQLite). Production deployment uses **Cloudflare Workers** and **Durable Objects**.
 
@@ -164,16 +194,14 @@ npm run build && npm start
 
 Server: `http://localhost:3001` (or `PORT`). WebSocket: `ws://localhost:3001/ws`.
 
-**Useful scripts:**
+**Scripts:**
 
 - `npm run seed` — Seed the database from the event pool.
 - `npm run refresh-events` — Refresh the event pool (e.g. from Wikidata). See `backend/README.md` for API and env details.
 
----
+### Deployment
 
-## Deployment overview
-
-- **Frontend** — Can be deployed to Vercel, Netlify, or any static/Node host that supports Next.js. Set `NEXT_PUBLIC_API_URL` to your game API URL.
+- **Frontend** — Deploy to Vercel, Netlify, or any host that supports Next.js. Set `NEXT_PUBLIC_API_URL` to your game API URL.
 - **Backend (production)** — Target architecture is **Cloudflare Workers** plus **Durable Objects**: one Worker as the game router and one Durable Object per game room for state and WebSockets. The Node.js backend in this repo is the reference implementation for local development and for the API/WebSocket contract.
 
 Deployment steps for Workers/Durable Objects will be documented in the repo (e.g. in `docs/` or a dedicated `DEPLOY.md`) when the Workers implementation is added.
