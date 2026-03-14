@@ -87,8 +87,8 @@ export function EventCard({
         relative min-w-[160px] max-w-[200px] rounded-[14px]
         shadow-[0_4px_12px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.06)]
         transition-all duration-200 ease
-        hover:shadow-[0_12px_24px_rgba(0,0,0,0.15)]
-        hover:-translate-y-[3px]
+        hover:shadow-[0_14px_30px_rgba(0,0,0,0.18)]
+        hover:-translate-y-1
         border-l-4 ${styleMap.border}
         ${className ?? ""}
         ${isDragging ? "cursor-grabbing will-change-[transform]" : draggable ? "cursor-grab" : ""}

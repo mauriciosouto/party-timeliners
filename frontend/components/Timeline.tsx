@@ -32,17 +32,9 @@ function TimelineSlot({ index }: TimelineSlotProps) {
   return (
     <div
       ref={setNodeRef}
-      className={`
-        flex min-h-[48px] min-w-[40px] flex-shrink-0 flex-col items-center justify-center
-        rounded-[10px] border-2 border-dashed bg-[#f8fafc]
-        transition-all duration-200 ease
-        touch-manipulation
-        ${
-          isOver
-            ? "border-violet-500 bg-[#eef2ff] scale-105 shadow-md"
-            : "border-[#cbd5f5] hover:border-[#6366f1] hover:bg-[#eef2ff]"
-        }
-      `}
+      className={`timeline-slot flex flex-shrink-0 flex-col items-center justify-center touch-manipulation ${
+        isOver ? "!border-violet-500 !bg-[#eef2ff] scale-105 shadow-md" : ""
+      }`}
     >
       <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">
         drop

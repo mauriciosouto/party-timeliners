@@ -39,23 +39,14 @@ export function Lobby({
   }, [inviteUrl]);
 
   return (
-    <div
-      className="flex min-h-screen flex-col page-container"
-      style={{
-        backgroundImage: 'linear-gradient(rgba(15,23,42,0.65), rgba(15,23,42,0.65)), url("/images/timeline-bg.webp")',
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        minHeight: "100vh",
-      }}
-    >
+    <div className="hero-background flex min-h-screen flex-col page-container">
       <header className="mx-auto w-full max-w-[1100px]">
         <h1 className="text-xl font-bold text-white">{roomState.name || "Party Timeliners"}</h1>
         <div className="mt-3">
           <button
             type="button"
             onClick={copyInviteLink}
-            className="rounded-[10px] border border-violet-300 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition-all duration-200 ease hover:bg-violet-100"
+            className="rounded-[10px] border border-violet-300 bg-violet-50 px-[18px] py-2.5 text-sm font-semibold text-violet-700 transition-all duration-200 ease hover:-translate-y-px hover:bg-violet-100 hover:shadow-[0_6px_12px_rgba(0,0,0,0.1)]"
           >
             {copied ? "Copied!" : "Copy invite link"}
           </button>
@@ -73,7 +64,7 @@ export function Lobby({
       </header>
 
       <main className="mx-auto mt-10 w-full max-w-[1100px] flex-1">
-        <div className="rounded-2xl bg-white p-8 shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
+        <div className="glass-panel">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
             Players ({roomState.players.length})
           </h2>
@@ -124,7 +115,7 @@ export function Lobby({
           {isHost && wsReady && (
             <button
               onClick={onStartGame}
-              className="mt-8 w-full rounded-[10px] bg-violet-600 px-5 py-3 font-semibold text-white shadow-sm transition-all duration-200 ease hover:bg-violet-700 hover:shadow-md"
+              className="mt-8 w-full rounded-[10px] bg-violet-600 px-[18px] py-2.5 font-semibold text-white shadow-sm transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.15)] hover:bg-violet-700"
             >
               Start game
             </button>

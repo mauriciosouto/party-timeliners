@@ -214,7 +214,7 @@ export function RoomGameBoard({
             <button
               type="button"
               onClick={onEndGame}
-              className="rounded-[10px] border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800 transition-all duration-200 ease hover:bg-amber-100"
+              className="rounded-[10px] border border-amber-300 bg-amber-50 px-[18px] py-2.5 text-sm font-semibold text-amber-800 transition-all duration-200 ease hover:-translate-y-px hover:bg-amber-100 hover:shadow-[0_6px_12px_rgba(0,0,0,0.1)]"
             >
               End game
             </button>
@@ -288,14 +288,14 @@ export function RoomGameBoard({
                 <button
                   type="button"
                   onClick={onCloseRoom}
-                  className="rounded-[10px] border border-zinc-300 bg-white px-5 py-3 font-semibold text-zinc-700 transition-all duration-200 ease hover:bg-zinc-50"
+                  className="rounded-[10px] border border-zinc-300 bg-white px-[18px] py-2.5 font-semibold text-zinc-700 transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.1)] hover:bg-zinc-50"
                 >
                   End
                 </button>
               ) : (
                 <Link
                   href="/"
-                  className="rounded-[10px] border border-zinc-300 bg-white px-5 py-3 font-semibold text-zinc-700 transition-all duration-200 ease hover:bg-zinc-50"
+                  className="inline-block rounded-[10px] border border-zinc-300 bg-white px-[18px] py-2.5 font-semibold text-zinc-700 transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.1)] hover:bg-zinc-50"
                 >
                   End game
                 </Link>
@@ -304,7 +304,7 @@ export function RoomGameBoard({
                 <button
                   type="button"
                   onClick={onRematch}
-                  className="rounded-[10px] bg-violet-600 px-5 py-3 font-semibold text-white shadow-sm transition-all duration-200 ease hover:bg-violet-700 hover:shadow-md"
+                  className="rounded-[10px] bg-violet-600 px-[18px] py-2.5 font-semibold text-white shadow-sm transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.15)] hover:bg-violet-700"
                 >
                   Rematch
                 </button>
