@@ -8,6 +8,9 @@ import { Timeline, parseSlotIndexFromId } from "@/components/Timeline";
 import { EventCard } from "@/components/EventCard";
 import { formatYear } from "@/lib/format";
 import type { RoomState } from "@/src/services/roomApi";
+import { fireSuccessConfetti } from "@/src/utils/confetti";
+import { fireVictoryConfetti } from "@/src/utils/victoryConfetti";
+import { playSound } from "@/src/utils/sound";
 
 const DRAGGABLE_ID = "current-card";
 
@@ -71,6 +74,9 @@ export function RoomGameBoard({
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const placedCardRef = useRef<HTMLDivElement | null>(null);
   const timeoutFiredRef = useRef(false);
+  const victoryConfettiFiredRef = useRef(false);
+  const defeatEffectFiredRef = useRef(false);
+  const [showDefeatOverlay, setShowDefeatOverlay] = useState(false);
 
   const isMyTurn =
     roomState.status === "playing" &&
@@ -133,6 +139,41 @@ export function RoomGameBoard({
   }, [placeResult, onClearPlaceResult]);
 
   useEffect(() => {
+    if (placeResult?.correct) {
+      fireSuccessConfetti();
+      playSound("correct");
+    }
+  }, [placeResult?.correct]);
+
+  useEffect(() => {
+    if (placeResult && !placeResult.correct) {
+      playSound("wrong");
+    }
+  }, [placeResult?.correct]);
+
+  useEffect(() => {
+    if (roomState.status !== "ended" || !roomState.winnerPlayerId) {
+      victoryConfettiFiredRef.current = false;
+      defeatEffectFiredRef.current = false;
+      return;
+    }
+    const isWinner = roomState.winnerPlayerId === playerId;
+    if (isWinner) {
+      if (victoryConfettiFiredRef.current) return;
+      victoryConfettiFiredRef.current = true;
+      fireVictoryConfetti();
+      playSound("victory");
+    } else {
+      if (defeatEffectFiredRef.current) return;
+      defeatEffectFiredRef.current = true;
+      playSound("defeat");
+      setShowDefeatOverlay(true);
+      const t = setTimeout(() => setShowDefeatOverlay(false), 800);
+      return () => clearTimeout(t);
+    }
+  }, [roomState.status, roomState.winnerPlayerId, playerId]);
+
+  useEffect(() => {
     if (!lastPlacedId) return;
     const t = setTimeout(() => {
       placedCardRef.current?.scrollIntoView({
@@ -174,8 +215,35 @@ export function RoomGameBoard({
   );
   const isHost = roomState.hostPlayerId === playerId;
 
+  const rankedPlayers = [...roomState.players].sort(
+    (a, b) => (b.score ?? 0) - (a.score ?? 0),
+  );
+  const playerCount = rankedPlayers.length;
+  const podiumCount =
+    playerCount <= 3 ? 1 : playerCount <= 5 ? 2 : 3;
+  const podiumPlayers = rankedPlayers.slice(0, podiumCount);
+  const restRanked = rankedPlayers.slice(podiumCount);
+
+  function ordinal(n: number): string {
+    const s = n % 100;
+    if (s >= 11 && s <= 13) return `${n}th`;
+    switch (n % 10) {
+      case 1:
+        return `${n}st`;
+      case 2:
+        return `${n}nd`;
+      case 3:
+        return `${n}rd`;
+      default:
+        return `${n}th`;
+    }
+  }
+
   return (
     <div className="page-bg flex min-h-screen flex-col text-zinc-900">
+      {showDefeatOverlay && (
+        <div className="game-over-overlay defeat-effect" aria-hidden />
+      )}
       <header className="flex-shrink-0 border-b border-zinc-200/80 bg-white/90 px-6 py-5 shadow-sm backdrop-blur-md">
         <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-4">
           <div>
@@ -225,29 +293,109 @@ export function RoomGameBoard({
       <div className="mx-auto flex w-full max-w-[1100px] flex-1 gap-6 px-6 py-8">
         <main className="relative flex min-w-0 flex-1 flex-col gap-8">
         {isEnded && (
-          <section className="rounded-2xl border border-amber-200 bg-amber-50/95 px-6 py-6 shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-800">
-              Final result
-            </h2>
-            <p className="mt-2 text-lg font-semibold text-amber-900">
-              {winner ? `${winner.nickname} wins` : "Tie"}
-            </p>
-            <ul className="mt-3 space-y-2">
-              {roomState.players
-                .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-                .map((p) => (
-                  <li
-                    key={p.playerId}
-                    className="flex justify-between rounded-lg bg-white/80 px-3 py-2"
-                  >
-                    <span className="font-medium text-zinc-900">
-                      {p.nickname}
-                      {p.playerId === playerId && " (you)"}
-                    </span>
-                    <span className="text-zinc-600">{p.score} pts</span>
-                  </li>
-                ))}
-            </ul>
+          <section className="results-screen rounded-2xl bg-white p-8 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
+            <h2 className="results-title">Match Results</h2>
+
+            {winner ? (
+              <>
+                {podiumCount === 1 ? (
+                  <div className="winner-card">
+                    <div className="winner-icon" aria-hidden>🏆</div>
+                    <div className="winner-name">
+                      {podiumPlayers[0].nickname}
+                      {podiumPlayers[0].playerId === playerId && " (you)"}
+                    </div>
+                    <div className="winner-label">Winner</div>
+                  </div>
+                ) : (
+                  <div className="podium">
+                  {podiumCount >= 2 && (
+                    <>
+                      <div className="podium-item podium-second flex flex-col justify-end">
+                        <span className="text-xl" aria-hidden>🥈</span>
+                        <span className="podium-name mt-2">
+                          {podiumPlayers[1].nickname}
+                          {podiumPlayers[1].playerId === playerId && " (you)"}
+                        </span>
+                        <span className="mb-2 text-xs text-zinc-500">2nd</span>
+                      </div>
+                      <div className="podium-item podium-first flex flex-col justify-end">
+                        <span className="text-2xl" aria-hidden>🥇</span>
+                        <span className="podium-name mt-2">
+                          {podiumPlayers[0].nickname}
+                          {podiumPlayers[0].playerId === playerId && " (you)"}
+                        </span>
+                        <span className="mb-2 text-xs text-zinc-500">1st</span>
+                      </div>
+                      {podiumCount === 3 && (
+                        <div className="podium-item podium-third flex flex-col justify-end">
+                          <span className="text-xl" aria-hidden>🥉</span>
+                          <span className="podium-name mt-2">
+                            {podiumPlayers[2].nickname}
+                            {podiumPlayers[2].playerId === playerId && " (you)"}
+                          </span>
+                          <span className="mb-2 text-xs text-zinc-500">3rd</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  </div>
+                )}
+                {restRanked.length > 0 && (
+                  <ul className="results-list results-ranking-list">
+                    {restRanked.map((p, i) => (
+                      <li key={p.playerId}>
+                        <strong>{ordinal(podiumCount + i + 1)}</strong> — {p.nickname}
+                        {p.playerId === playerId && " (you)"}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="mb-4 text-lg font-semibold text-zinc-600">It&apos;s a tie!</p>
+                <ul className="results-list results-ranking-list">
+                  {rankedPlayers.map((p, i) => (
+                    <li key={p.playerId}>
+                      <strong>{ordinal(i + 1)}</strong> — {p.nickname}
+                      {p.playerId === playerId && " (you)"} — {p.score ?? 0} pts
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              {isHost && onCloseRoom ? (
+                <button
+                  type="button"
+                  onClick={onCloseRoom}
+                  className="rounded-[10px] border border-zinc-300 bg-white px-[18px] py-2.5 font-semibold text-zinc-700 transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.1)] hover:bg-zinc-50"
+                >
+                  End
+                </button>
+              ) : (
+                <Link
+                  href="/"
+                  className="inline-block rounded-[10px] border border-zinc-300 bg-white px-[18px] py-2.5 font-semibold text-zinc-700 transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.1)] hover:bg-zinc-50"
+                >
+                  End game
+                </Link>
+              )}
+              {isHost && (
+                <button
+                  type="button"
+                  onClick={onRematch}
+                  className="rounded-[10px] bg-violet-600 px-[18px] py-2.5 font-semibold text-white shadow-sm transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.15)] hover:bg-violet-700"
+                >
+                  Play again
+                </button>
+              )}
+              {!isHost && (
+                <p className="text-sm text-zinc-500">The host can start a rematch</p>
+              )}
+            </div>
           </section>
         )}
 
@@ -283,38 +431,6 @@ export function RoomGameBoard({
                 </button>
               </div>
             )}
-            <section className="flex flex-wrap items-center gap-4">
-              {isHost && onCloseRoom ? (
-                <button
-                  type="button"
-                  onClick={onCloseRoom}
-                  className="rounded-[10px] border border-zinc-300 bg-white px-[18px] py-2.5 font-semibold text-zinc-700 transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.1)] hover:bg-zinc-50"
-                >
-                  End
-                </button>
-              ) : (
-                <Link
-                  href="/"
-                  className="inline-block rounded-[10px] border border-zinc-300 bg-white px-[18px] py-2.5 font-semibold text-zinc-700 transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.1)] hover:bg-zinc-50"
-                >
-                  End game
-                </Link>
-              )}
-              {isHost && (
-                <button
-                  type="button"
-                  onClick={onRematch}
-                  className="rounded-[10px] bg-violet-600 px-[18px] py-2.5 font-semibold text-white shadow-sm transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.15)] hover:bg-violet-700"
-                >
-                  Rematch
-                </button>
-              )}
-              {!isHost && (
-                <p className="text-sm text-zinc-500">
-                  The host can start a rematch
-                </p>
-              )}
-            </section>
           </>
         ) : (
           <DndContext collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>

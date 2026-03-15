@@ -98,3 +98,135 @@ body {
   border-radius: 14px 14px 0 0;
   display: block;
 }
+
+/* Defeat overlay when the player loses the match */
+.game-over-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 50;
+}
+
+@keyframes defeatPulse {
+  0% { opacity: 0; }
+  50% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+.defeat-effect {
+  animation: defeatPulse 0.8s ease;
+}
+
+/* Match results screen */
+.results-screen {
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 32px;
+  text-align: center;
+}
+
+.results-screen .results-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #18181b;
+  margin-bottom: 24px;
+}
+
+/* Winner card — single highlight when 1–3 players */
+.winner-card {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  text-align: center;
+  width: 200px;
+  margin: 30px auto;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+.winner-card .winner-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.winner-card .winner-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.winner-card .winner-label {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 20px;
+  margin-top: 20px;
+  margin-bottom: 24px;
+}
+
+.podium-item {
+  background: white;
+  border-radius: 14px;
+  padding: 16px;
+  min-width: 120px;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.podium-first {
+  height: 160px;
+}
+
+.podium-second {
+  height: 130px;
+}
+
+.podium-third {
+  height: 110px;
+}
+
+.podium-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.results-list {
+  margin-top: 20px;
+  color: #475569;
+}
+
+.results-ranking-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+  text-align: left;
+  max-width: 280px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 24px;
+}
+
+.results-list.results-ranking-list {
+  margin-top: 20px;
+}
+
+.results-ranking-list li {
+  padding: 8px 0;
+  font-size: 0.9375rem;
+  color: #475569;
+}
+
+.results-ranking-list li strong {
+  color: #1e293b;
+}
