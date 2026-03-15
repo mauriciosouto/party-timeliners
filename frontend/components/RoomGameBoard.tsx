@@ -297,76 +297,52 @@ export function RoomGameBoard({
             <h2 className="results-title">Match Results</h2>
 
             {winner ? (
-              <>
-                {podiumCount === 1 ? (
-                  <div className="winner-card">
-                    <div className="winner-icon" aria-hidden>🏆</div>
-                    <div className="winner-name">
-                      {podiumPlayers[0].nickname}
-                      {podiumPlayers[0].playerId === playerId && " (you)"}
-                    </div>
-                    <div className="winner-label">Winner</div>
+              <div className="results-content">
+                <div className="winner-card">
+                  <div className="winner-icon" aria-hidden>🏆</div>
+                  <div className="winner-name">
+                    {winner.nickname}
+                    {winner.playerId === playerId && " (you)"}
                   </div>
-                ) : (
-                  <div className="podium">
-                  {podiumCount >= 2 && (
-                    <>
-                      <div className="podium-item podium-second flex flex-col justify-end">
-                        <span className="text-xl" aria-hidden>🥈</span>
-                        <span className="podium-name mt-2">
-                          {podiumPlayers[1].nickname}
-                          {podiumPlayers[1].playerId === playerId && " (you)"}
-                        </span>
-                        <span className="mb-2 text-xs text-zinc-500">2nd</span>
-                      </div>
-                      <div className="podium-item podium-first flex flex-col justify-end">
-                        <span className="text-2xl" aria-hidden>🥇</span>
-                        <span className="podium-name mt-2">
-                          {podiumPlayers[0].nickname}
-                          {podiumPlayers[0].playerId === playerId && " (you)"}
-                        </span>
-                        <span className="mb-2 text-xs text-zinc-500">1st</span>
-                      </div>
-                      {podiumCount === 3 && (
-                        <div className="podium-item podium-third flex flex-col justify-end">
-                          <span className="text-xl" aria-hidden>🥉</span>
-                          <span className="podium-name mt-2">
-                            {podiumPlayers[2].nickname}
-                            {podiumPlayers[2].playerId === playerId && " (you)"}
-                          </span>
-                          <span className="mb-2 text-xs text-zinc-500">3rd</span>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  </div>
-                )}
-                {restRanked.length > 0 && (
-                  <ul className="results-list results-ranking-list">
+                  <div className="winner-label">Winner</div>
+                </div>
+                <div className="player-ranking-wrapper">
+                  <h3 className="player-ranking-title">
+                    {restRanked.length > 0 ? "Ranking" : "No other players"}
+                  </h3>
+                  <ul className="player-ranking">
                     {restRanked.map((p, i) => (
                       <li key={p.playerId}>
-                        <strong>{ordinal(podiumCount + i + 1)}</strong> — {p.nickname}
-                        {p.playerId === playerId && " (you)"}
+                        <span className="rank">{ordinal(i + 2)}</span>
+                        <span className="name">
+                          {p.nickname}
+                          {p.playerId === playerId && " (you)"}
+                        </span>
+                        <span className="score">{p.score ?? 0} pts</span>
                       </li>
                     ))}
                   </ul>
-                )}
-              </>
+                </div>
+              </div>
             ) : (
               <>
                 <p className="mb-4 text-lg font-semibold text-zinc-600">It&apos;s a tie!</p>
                 <ul className="results-list results-ranking-list">
                   {rankedPlayers.map((p, i) => (
                     <li key={p.playerId}>
-                      <strong>{ordinal(i + 1)}</strong> — {p.nickname}
-                      {p.playerId === playerId && " (you)"} — {p.score ?? 0} pts
+                      <strong>{ordinal(i + 1)}</strong>
+                      <span>
+                        {p.nickname}
+                        {p.playerId === playerId && " (you)"}
+                      </span>
+                      <span>{p.score ?? 0} pts</span>
                     </li>
                   ))}
                 </ul>
               </>
             )}
 
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="results-actions flex flex-wrap items-center justify-center gap-4">
               {isHost && onCloseRoom ? (
                 <button
                   type="button"
