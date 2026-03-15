@@ -3,9 +3,10 @@ const sounds = {
   wrong: typeof Audio !== "undefined" ? new Audio("/sounds/wrong.mp3") : null,
   victory: typeof Audio !== "undefined" ? new Audio("/sounds/victory.mp3") : null,
   defeat: typeof Audio !== "undefined" ? new Audio("/sounds/defeat.mp3") : null,
+  tick: typeof Audio !== "undefined" ? new Audio("/sounds/tick.mp3") : null,
 };
 
-export function playSound(type: "correct" | "wrong" | "victory" | "defeat"): void {
+export function playSound(type: "correct" | "wrong" | "victory" | "defeat" | "tick"): void {
   const sound = sounds[type];
   if (!sound) return;
 

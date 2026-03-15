@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { DndContext, pointerWithin, type DragEndEvent } from "@dnd-kit/core";
+import { DndContext, pointerWithin, useDndContext, type DragEndEvent } from "@dnd-kit/core";
 import type { TimelineEvent } from "@/lib/types";
+import type { TimelineProps } from "@/components/Timeline";
 import { Timeline, parseSlotIndexFromId } from "@/components/Timeline";
 import { EventCard } from "@/components/EventCard";
 import { formatYear } from "@/lib/format";
@@ -13,6 +14,12 @@ import { fireVictoryConfetti } from "@/src/utils/victoryConfetti";
 import { playSound } from "@/src/utils/sound";
 
 const DRAGGABLE_ID = "current-card";
+
+/** Wrapper so Timeline can show drag-active glow; must be used inside DndContext. */
+function TimelineWithDragState(props: Omit<TimelineProps, "dragActive">) {
+  const { active } = useDndContext();
+  return <Timeline {...props} dragActive={active != null} />;
+}
 
 function timelineFromRoomState(state: RoomState): TimelineEvent[] {
   return [...state.timeline]
@@ -76,7 +83,36 @@ export function RoomGameBoard({
   const timeoutFiredRef = useRef(false);
   const victoryConfettiFiredRef = useRef(false);
   const defeatEffectFiredRef = useRef(false);
+  const lastTickSecondRef = useRef<number | null>(null);
   const [showDefeatOverlay, setShowDefeatOverlay] = useState(false);
+
+  function getTimerClasses(s: number): { text: string; bar: string } {
+    if (s > 10) return { text: "timer-safe", bar: "timer-bar-safe" };
+    if (s >= 6) return { text: "timer-warning", bar: "timer-bar-warning" };
+    if (s >= 2) return { text: "timer-danger", bar: "timer-bar-danger" };
+    if (s === 1) return { text: "timer-final timer-danger", bar: "timer-bar-final" };
+    return { text: "timer-danger", bar: "timer-bar-danger" };
+  }
+
+  useEffect(() => {
+    if (secondsLeft == null || secondsLeft > 3) {
+      lastTickSecondRef.current = null;
+      return;
+    }
+    if (secondsLeft >= 1 && secondsLeft <= 3 && lastTickSecondRef.current !== secondsLeft) {
+      lastTickSecondRef.current = secondsLeft;
+      playSound("tick");
+    }
+  }, [secondsLeft]);
+
+  useEffect(() => {
+    if (!placeError && !roomError) return;
+    const t = setTimeout(() => {
+      if (placeError) onClearPlaceError();
+      if (roomError) onClearRoomError();
+    }, 4000);
+    return () => clearTimeout(t);
+  }, [placeError, roomError, onClearPlaceError, onClearRoomError]);
 
   const isMyTurn =
     roomState.status === "playing" &&
@@ -241,6 +277,40 @@ export function RoomGameBoard({
 
   return (
     <div className="page-bg flex min-h-screen flex-col text-zinc-900">
+      <div className="game-background" aria-hidden />
+      <div className="game-background-overlay" aria-hidden />
+
+      {(placeError || roomError) && (
+        <div className="error-toast-container" role="alert" aria-live="polite">
+          {placeError && (
+            <div className="error-toast error-toast-enter">
+              <span>{placeError}</span>
+              <button
+                type="button"
+                onClick={onClearPlaceError}
+                className="shrink-0 rounded p-1 text-white/90 hover:bg-white/20 hover:text-white"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          {roomError && (
+            <div className="error-toast error-toast-enter">
+              <span>{roomError}</span>
+              <button
+                type="button"
+                onClick={onClearRoomError}
+                className="shrink-0 rounded p-1 text-white/90 hover:bg-white/20 hover:text-white"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {showDefeatOverlay && (
         <div className="game-over-overlay defeat-effect" aria-hidden />
       )}
@@ -261,22 +331,25 @@ export function RoomGameBoard({
                     ? `Waiting for ${currentTurnPlayer.nickname}…`
                     : "Loading…"}
             </p>
-            {!isEnded && isMyTurn && turnTimeLimitSeconds != null && secondsLeft != null && (
-              <div className="mt-2 w-full max-w-xs">
-                <div className="flex justify-between text-xs text-zinc-500">
-                  <span>{secondsLeft}s</span>
-                  <span>Limit: {turnTimeLimitSeconds}s</span>
+            {!isEnded && isMyTurn && turnTimeLimitSeconds != null && secondsLeft != null && (() => {
+              const { text: timerTextClass, bar: timerBarClass } = getTimerClasses(secondsLeft);
+              return (
+                <div className="mt-2 w-full max-w-xs">
+                  <div className="flex justify-between text-xs text-zinc-500">
+                    <span className={`font-semibold tabular-nums ${timerTextClass}`}>{secondsLeft}s</span>
+                    <span>Limit: {turnTimeLimitSeconds}s</span>
+                  </div>
+                  <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-200">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${timerBarClass}`}
+                      style={{
+                        width: `${Math.max(0, (secondsLeft / turnTimeLimitSeconds) * 100)}%`,
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-200">
-                  <div
-                    className="h-full rounded-full bg-violet-500 transition-all duration-500"
-                    style={{
-                      width: `${Math.max(0, (secondsLeft / turnTimeLimitSeconds) * 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
           {!isEnded && isHost && (
             <button
@@ -391,22 +464,6 @@ export function RoomGameBoard({
                 />
               </div>
             </section>
-            {roomError && (
-              <div
-                role="alert"
-                className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
-              >
-                <span>{roomError}</span>
-                <button
-                  type="button"
-                  onClick={onClearRoomError}
-                  className="shrink-0 rounded p-1 text-amber-600 hover:bg-amber-100 hover:text-amber-900"
-                  aria-label="Close"
-                >
-                  ×
-                </button>
-              </div>
-            )}
           </>
         ) : (
           <DndContext collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
@@ -438,23 +495,6 @@ export function RoomGameBoard({
                     </>
                   )}
                 </section>
-              </div>
-            )}
-
-            {placeError && (
-              <div
-                role="alert"
-                className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
-              >
-                <span>{placeError}</span>
-                <button
-                  type="button"
-                  onClick={onClearPlaceError}
-                  className="shrink-0 rounded p-1 text-amber-600 hover:bg-amber-100 hover:text-amber-900"
-                  aria-label="Close"
-                >
-                  ×
-                </button>
               </div>
             )}
 
@@ -502,7 +542,7 @@ export function RoomGameBoard({
                 className="min-h-[160px] overflow-x-auto overflow-y-visible"
                 style={{ overscrollBehaviorX: "contain", overscrollBehaviorY: "auto" }}
               >
-                <Timeline
+                <TimelineWithDragState
                   events={timeline}
                   lastPlacedId={lastPlacedId}
                   onPlacedCardRef={(el) => {

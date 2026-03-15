@@ -33,7 +33,7 @@ function TimelineSlot({ index }: TimelineSlotProps) {
     <div
       ref={setNodeRef}
       className={`timeline-slot flex flex-shrink-0 flex-col items-center justify-center touch-manipulation ${
-        isOver ? "!border-violet-500 !bg-[#eef2ff] scale-105 shadow-md" : ""
+        isOver ? "timeline-slot-highlight !border-violet-500 !bg-[#eef2ff]/80 scale-105 shadow-md" : ""
       }`}
     >
       <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400">
@@ -49,6 +49,8 @@ export type TimelineProps = {
   lastPlacedId?: string | null;
   /** Ref callback for the card that was just placed (for scrollIntoView) */
   onPlacedCardRef?: (el: HTMLDivElement | null) => void;
+  /** When true, timeline shows drag-active glow (set by parent when inside DndContext) */
+  dragActive?: boolean;
 };
 
 const FLIP_TRANSITION = "transform 0.35s ease-out";
@@ -57,6 +59,7 @@ export function Timeline({
   events,
   lastPlacedId,
   onPlacedCardRef,
+  dragActive = false,
 }: TimelineProps) {
   const slots = useMemo(
     () => Array.from({ length: events.length + 1 }, (_, i) => i),
@@ -105,7 +108,7 @@ export function Timeline({
 
   return (
     <div
-      className="relative flex gap-4 overflow-x-auto overflow-y-visible px-5 py-6 scroll-smooth pb-8 before:absolute before:left-5 before:right-5 before:top-1/2 before:h-1 before:-translate-y-1/2 before:rounded-sm before:bg-[#e2e8f0] before:content-['']"
+      className={`timeline relative flex gap-4 overflow-x-auto overflow-y-visible px-5 py-6 scroll-smooth pb-8 before:absolute before:left-5 before:right-5 before:top-1/2 before:h-1 before:-translate-y-1/2 before:rounded-sm before:bg-[#e2e8f0] before:content-[''] ${dragActive ? "drag-active" : ""}`}
       style={{
         WebkitOverflowScrolling: "touch",
         scrollbarGutter: "stable",
