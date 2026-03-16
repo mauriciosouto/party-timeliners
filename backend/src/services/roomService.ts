@@ -51,6 +51,7 @@ export type CreateRoomOptions = {
   maxTimelineSize?: number;
   pointsToWin?: number;
   turnTimeLimitSeconds?: number | null;
+  avatar?: string | null;
 };
 
 /** Create a room and add the host as first player. Returns roomId and playerId. */
@@ -76,6 +77,7 @@ export function createRoom(
       : raw === null
         ? null
         : Number(raw);
+  const avatar = options?.avatar ?? null;
 
   db.transaction(() => {
     db.prepare(
@@ -91,9 +93,9 @@ export function createRoom(
     );
 
     db.prepare(
-      `INSERT INTO room_players (room_id, player_id, nickname, is_host, connected)
-       VALUES (?, ?, ?, 1, 1)`,
-    ).run(roomId, playerId, hostNickname);
+      `INSERT INTO room_players (room_id, player_id, nickname, avatar, is_host, connected)
+       VALUES (?, ?, ?, ?, 1, 1)`,
+    ).run(roomId, playerId, hostNickname, avatar);
   })();
 
   const roomState = getRoomState(roomId)!;
@@ -105,6 +107,7 @@ export function joinRoom(
   roomId: string,
   nickname: string,
   email?: string,
+  avatar?: string | null,
 ): { playerId: string; roomState: RoomState } | { error: string } {
   const db = getDb();
 
@@ -118,9 +121,9 @@ export function joinRoom(
   const playerId = randomUUID();
   try {
     db.prepare(
-      `INSERT INTO room_players (room_id, player_id, nickname, email, is_host, connected)
-       VALUES (?, ?, ?, ?, 0, 1)`,
-    ).run(roomId, playerId, nickname, email ?? null);
+      `INSERT INTO room_players (room_id, player_id, nickname, avatar, email, is_host, connected)
+       VALUES (?, ?, ?, ?, ?, 0, 1)`,
+    ).run(roomId, playerId, nickname, avatar ?? null, email ?? null);
   } catch {
     return { error: "Failed to join room" };
   }
@@ -164,12 +167,13 @@ export function getRoomState(roomId: string, forPlayerId?: string): RoomState | 
 
   const playerRows = db
     .prepare(
-      `SELECT player_id, nickname, is_host, turn_order, score, connected, joined_at
+      `SELECT player_id, nickname, avatar, is_host, turn_order, score, connected, joined_at
        FROM room_players WHERE room_id = ? ORDER BY joined_at`,
     )
     .all(roomId) as {
       player_id: string;
       nickname: string;
+      avatar: string | null;
       is_host: number;
       turn_order: number | null;
       score: number;
@@ -180,6 +184,7 @@ export function getRoomState(roomId: string, forPlayerId?: string): RoomState | 
   const players: RoomPlayerState[] = playerRows.map((p) => ({
     playerId: p.player_id,
     nickname: p.nickname,
+    avatar: p.avatar ?? undefined,
     isHost: p.is_host === 1,
     score: p.score,
     turnOrder: p.turn_order,
@@ -688,7 +693,7 @@ export function timeoutTurn(
   };
 }
 
-/** End the game now. Host only, room must be playing. Winner is the player with highest score. */
+/** End the game now. Host only, room must be playing. No winner — room returns to lobby so everyone can start a new game. */
 export function endGame(roomId: string, playerId: string): RoomState | { error: string } {
   const db = getDb();
 
@@ -700,18 +705,19 @@ export function endGame(roomId: string, playerId: string): RoomState | { error: 
   if (room.status !== "playing") return { error: "Game is not in progress" };
   if (room.host_player_id !== playerId) return { error: "Only the host can end the game" };
 
-  const winnerRows = db
-    .prepare(
-      "SELECT player_id, score FROM room_players WHERE room_id = ? ORDER BY score DESC",
-    )
-    .all(roomId) as { player_id: string; score: number }[];
-  const maxScore = winnerRows[0]?.score ?? 0;
-  const winnerPlayerId =
-    winnerRows.find((r) => r.score === maxScore)?.player_id ?? null;
-
-  db.prepare(
-    `UPDATE rooms SET status = 'ended', ended_at = datetime('now'), winner_player_id = ? WHERE id = ?`,
-  ).run(winnerPlayerId, roomId);
+  db.transaction(() => {
+    db.prepare("DELETE FROM room_timeline WHERE room_id = ?").run(roomId);
+    db.prepare("DELETE FROM room_deck WHERE room_id = ?").run(roomId);
+    db.prepare("DELETE FROM room_hand WHERE room_id = ?").run(roomId);
+    db.prepare(
+      `UPDATE rooms SET status = 'lobby', initial_event_id = NULL, next_deck_sequence = 0,
+       turn_index = 0, turn_started_at = NULL, started_at = NULL, ended_at = NULL, winner_player_id = NULL
+       WHERE id = ?`,
+    ).run(roomId);
+    db.prepare(
+      "UPDATE room_players SET score = 0, turn_order = NULL WHERE room_id = ?",
+    ).run(roomId);
+  })();
 
   return getRoomState(roomId)!;
 }
@@ -755,6 +761,107 @@ export function rematchRoom(roomId: string, playerId: string): RoomState | { err
   })();
 
   return getRoomState(roomId)!;
+}
+
+/** Leave room (non-host only). In lobby: just remove player. In playing: remove player, keep timeline; if it was their turn, advance to next without placing a card. Returns new state and left player nickname for notification, or error. */
+export function leaveRoom(
+  roomId: string,
+  playerId: string,
+): { roomState: RoomState; leftPlayerNickname: string } | { error: string } {
+  const db = getDb();
+
+  const room = db
+    .prepare(
+      "SELECT id, status, host_player_id, turn_index FROM rooms WHERE id = ?",
+    )
+    .get(roomId) as {
+      id: string;
+      status: string;
+      host_player_id: string | null;
+      turn_index: number;
+    } | undefined;
+
+  if (!room) return { error: "Room not found" };
+  if (room.host_player_id === playerId) {
+    return { error: "Host cannot leave; use End game to return to lobby" };
+  }
+
+  const playerRow = db
+    .prepare(
+      "SELECT player_id, nickname FROM room_players WHERE room_id = ? AND player_id = ?",
+    )
+    .get(roomId, playerId) as { player_id: string; nickname: string } | undefined;
+  if (!playerRow) return { error: "Player not in room" };
+  const leftPlayerNickname = playerRow.nickname;
+
+  if (room.status === "lobby") {
+    db.prepare(
+      "DELETE FROM room_players WHERE room_id = ? AND player_id = ?",
+    ).run(roomId, playerId);
+    const roomState = getRoomState(roomId);
+    return {
+      roomState: roomState!,
+      leftPlayerNickname,
+    };
+  }
+
+  if (room.status !== "playing") {
+    return { error: "Room is not in lobby or playing" };
+  }
+
+  const turnOrderedRows = db
+    .prepare(
+      "SELECT player_id FROM room_players WHERE room_id = ? ORDER BY turn_order ASC",
+    )
+    .all(roomId) as { player_id: string }[];
+  const orderedIds = turnOrderedRows.map((r) => r.player_id);
+  const leavingIndex = orderedIds.indexOf(playerId);
+  if (leavingIndex === -1) return { error: "Player not in room" };
+
+  const currentTurnPlayerId = orderedIds[room.turn_index] ?? null;
+  const wasCurrentTurn = currentTurnPlayerId === playerId;
+  const newOrderedIds = orderedIds.filter((id) => id !== playerId);
+
+  db.transaction(() => {
+    db.prepare(
+      "DELETE FROM room_hand WHERE room_id = ? AND player_id = ?",
+    ).run(roomId, playerId);
+    db.prepare(
+      "DELETE FROM room_players WHERE room_id = ? AND player_id = ?",
+    ).run(roomId, playerId);
+
+    if (newOrderedIds.length < 2) {
+      db.prepare("DELETE FROM room_timeline WHERE room_id = ?").run(roomId);
+      db.prepare("DELETE FROM room_deck WHERE room_id = ?").run(roomId);
+      db.prepare("DELETE FROM room_hand WHERE room_id = ?").run(roomId);
+      db.prepare(
+        `UPDATE rooms SET status = 'lobby', initial_event_id = NULL, next_deck_sequence = 0,
+         turn_index = 0, turn_started_at = NULL, started_at = NULL, ended_at = NULL, winner_player_id = NULL
+         WHERE id = ?`,
+      ).run(roomId);
+      db.prepare(
+        "UPDATE room_players SET score = 0, turn_order = NULL WHERE room_id = ?",
+      ).run(roomId);
+    } else {
+      const nextPlayerId = wasCurrentTurn
+        ? orderedIds[(room.turn_index + 1) % orderedIds.length]
+        : currentTurnPlayerId;
+      const newTurnIndex = newOrderedIds.indexOf(nextPlayerId!);
+      if (newTurnIndex === -1) return;
+
+      for (let i = 0; i < newOrderedIds.length; i++) {
+        db.prepare(
+          "UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?",
+        ).run(i, roomId, newOrderedIds[i]);
+      }
+      db.prepare(
+        `UPDATE rooms SET turn_index = ?, turn_started_at = datetime('now') WHERE id = ?`,
+      ).run(newTurnIndex, roomId);
+    }
+  })();
+
+  const roomState = getRoomState(roomId, newOrderedIds[0]);
+  return { roomState: roomState!, leftPlayerNickname };
 }
 
 /** Mark player as disconnected (for WebSocket close). */

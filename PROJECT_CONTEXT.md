@@ -108,6 +108,30 @@ Players stay in the room until they leave or the host starts a rematch.
 
 ---
 
+# Player Avatar System
+
+Before entering a room (create or join), each user chooses a **nickname** and an **avatar**.
+
+**Avatar assets:** Stored under `frontend/public/avatars/` as `character-1.png` through `character-18.png`. The app exposes a centralized list (`AVAILABLE_AVATARS` in `frontend/lib/avatars.ts`).
+
+**Selection flow:**
+
+1. On **Create room** (home): user enters nickname, optional room name, and picks an avatar from a grid before submitting.
+2. On **Join room**: user enters nickname and picks an avatar before joining.
+3. If the user does not select an avatar, a **random** one is assigned from the list.
+
+**Player model:** Each player has an `avatar` field (string, URL path e.g. `"/avatars/character-5.png"`). It is stored in the room’s player record and synchronized with the rest of the game state (no gameplay logic depends on it).
+
+**Where avatars appear:**
+
+- **Lobby:** Player list shows avatar + nickname for each player.
+- **Gameplay:** Aside player list, turn indicator, and “Your hand” section show the active player’s avatar.
+- **Results screen:** Winner card and ranking list show each player’s avatar.
+
+Avatars are optional: if missing, the UI shows a fallback (e.g. initial letter).
+
+---
+
 # Room Settings
 
 The host may configure:

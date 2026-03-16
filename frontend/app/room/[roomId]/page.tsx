@@ -35,10 +35,10 @@ export default function RoomPage() {
   }, [roomId, searchParams]);
 
   const handleJoined = useCallback(
-    (joinedPlayerId: string, joinedNickname: string) => {
+    (joinedPlayerId: string, joinedNickname: string, avatar?: string) => {
       setPlayerId(joinedPlayerId);
       setNickname(joinedNickname);
-      if (roomId) setStoredPlayer(roomId, joinedPlayerId, joinedNickname);
+      if (roomId) setStoredPlayer(roomId, joinedPlayerId, joinedNickname, avatar);
     },
     [roomId],
   );
@@ -48,6 +48,9 @@ export default function RoomPage() {
     roomState,
     wsReady,
     roomClosed,
+    leftRoom,
+    playerLeftNotification,
+    clearPlayerLeftNotification,
     placeResult,
     placeError,
     clearPlaceError,
@@ -59,6 +62,7 @@ export default function RoomPage() {
     sendRematch,
     sendEndGame,
     sendCloseRoom,
+    sendLeaveRoom,
     clearPlaceResult,
   } = useRoomSocket(roomId || null, playerId, nickname);
 
@@ -73,6 +77,21 @@ export default function RoomPage() {
   useEffect(() => {
     if (roomClosed) router.push("/");
   }, [roomClosed, router]);
+
+  // When this player left the room (leave_ack), clear storage and redirect.
+  useEffect(() => {
+    if (leftRoom && roomId) {
+      clearRoomFromStorage(roomId);
+      router.push("/");
+    }
+  }, [leftRoom, roomId, router]);
+
+  // Auto-dismiss "player left" toast after 5s.
+  useEffect(() => {
+    if (!playerLeftNotification) return;
+    const t = setTimeout(clearPlayerLeftNotification, 5000);
+    return () => clearTimeout(t);
+  }, [playerLeftNotification, clearPlayerLeftNotification]);
 
   const prevStatusRef = useRef<string | null>(null);
   const [gameJustStarted, setGameJustStarted] = useState(false);
@@ -126,6 +145,7 @@ export default function RoomPage() {
         roomError={roomError}
         onClearRoomError={clearRoomError}
         onStartGame={sendStartGame}
+        onLeaveRoom={sendLeaveRoom}
       />
     );
   }
@@ -138,6 +158,22 @@ export default function RoomPage() {
             className="game-start-flash fixed inset-0 z-[9998] pointer-events-none"
             aria-hidden
           />
+        )}
+        {playerLeftNotification && (
+          <div
+            role="status"
+            className="fixed left-1/2 top-6 z-[9999] flex -translate-x-1/2 items-center gap-3 rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-700 shadow-lg"
+          >
+            <span>{playerLeftNotification} left the game</span>
+            <button
+              type="button"
+              onClick={clearPlayerLeftNotification}
+              className="shrink-0 rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
         )}
         <RoomGameBoard
           roomId={roomId}
@@ -157,6 +193,7 @@ export default function RoomPage() {
             sendCloseRoom();
             router.push("/");
           }}
+          onLeaveRoom={sendLeaveRoom}
           onClearPlaceResult={clearPlaceResult}
         />
       </>

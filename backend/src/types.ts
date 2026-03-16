@@ -32,6 +32,7 @@ export type ApiTimelineEntry = {
 export type RoomPlayerState = {
   playerId: string;
   nickname: string;
+  avatar?: string | null;
   isHost: boolean;
   score: number;
   turnOrder: number | null;

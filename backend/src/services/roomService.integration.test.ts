@@ -63,6 +63,31 @@ function clearRoomTables(): void {
   db.prepare("DELETE FROM rooms").run();
 }
 
+describe("roomService avatar (integration)", () => {
+  beforeAll(async () => {
+    ensureTestDataDir();
+    await initDb();
+    seedTestEvents();
+  });
+
+  afterAll(() => {
+    closeDb();
+  });
+
+  beforeEach(() => {
+    clearRoomTables();
+  });
+
+  it("getRoomState includes avatar for each player", () => {
+    const created = createRoom("Host", "R", { avatar: "/avatars/character-1.png" });
+    joinRoom(created.roomId, "P2", undefined, "/avatars/character-2.png");
+    const state = getRoomState(created.roomId)!;
+    expect(state.players).toHaveLength(2);
+    expect(state.players.some((p) => p.avatar === "/avatars/character-1.png")).toBe(true);
+    expect(state.players.some((p) => p.avatar === "/avatars/character-2.png")).toBe(true);
+  });
+});
+
 describe("roomService (integration)", () => {
   beforeAll(async () => {
     ensureTestDataDir();
@@ -87,6 +112,20 @@ describe("roomService (integration)", () => {
     expect(result.roomState.players).toHaveLength(1);
     expect(result.roomState.players[0]?.nickname).toBe("Host");
     expect(result.roomState.players[0]?.isHost).toBe(true);
+  });
+
+  it("createRoom and joinRoom store and return player avatar", () => {
+    const avatarPath = "/avatars/character-5.png";
+    const created = createRoom("Host", "Room", { avatar: avatarPath });
+    expect(created.roomState.players[0]?.avatar).toBe(avatarPath);
+
+    const join = joinRoom(created.roomId, "P2", undefined, "/avatars/character-3.png");
+    expect("error" in join).toBe(false);
+    const state = (join as { roomState: ReturnType<typeof getRoomState> }).roomState;
+    const host = state.players.find((p) => p.playerId === created.playerId);
+    const p2 = state.players.find((p) => p.nickname === "P2");
+    expect(host?.avatar).toBe(avatarPath);
+    expect(p2?.avatar).toBe("/avatars/character-3.png");
   });
 
   it("joinRoom adds second player and getRoomState reflects both", () => {
@@ -187,7 +226,7 @@ describe("roomService (integration)", () => {
     expect(result).toEqual({ error: "Not your turn" });
   });
 
-  it("endGame sets status to ended and sets winner", () => {
+  it("endGame returns room to lobby with no winner", () => {
     const { roomId, playerId: hostId } = createRoom("Host");
     joinRoom(roomId, "P2");
     startGame(roomId, hostId);
@@ -195,8 +234,10 @@ describe("roomService (integration)", () => {
     const result = endGame(roomId, hostId);
     expect("error" in result).toBe(false);
     const state = result as NonNullable<ReturnType<typeof getRoomState>>;
-    expect(state.status).toBe("ended");
-    expect(state.winnerPlayerId).toBeDefined();
+    expect(state.status).toBe("lobby");
+    expect(state.winnerPlayerId).toBeNull();
+    expect(state.timeline).toHaveLength(0);
+    expect(state.players.every((p) => p.score === 0)).toBe(true);
   });
 
   it("endGame returns error when not host", () => {
@@ -223,7 +264,11 @@ describe("roomService (integration)", () => {
     const { roomId, playerId: hostId } = createRoom("Host");
     joinRoom(roomId, "P2");
     startGame(roomId, hostId);
-    endGame(roomId, hostId);
+    getDb()
+      .prepare(
+        "UPDATE rooms SET status = 'ended', ended_at = datetime('now'), winner_player_id = ? WHERE id = ?",
+      )
+      .run(hostId, roomId);
 
     const result = rematchRoom(roomId, hostId);
     expect("error" in result).toBe(false);
@@ -252,7 +297,11 @@ describe("roomService (integration)", () => {
     const join = joinRoom(roomId, "P2") as { playerId: string };
     const p2Id = join.playerId;
     startGame(roomId, hostId);
-    endGame(roomId, hostId);
+    getDb()
+      .prepare(
+        "UPDATE rooms SET status = 'ended', ended_at = datetime('now'), winner_player_id = ? WHERE id = ?",
+      )
+      .run(hostId, roomId);
     setPlayerConnected(roomId, p2Id, false);
 
     const result = rematchRoom(roomId, hostId);

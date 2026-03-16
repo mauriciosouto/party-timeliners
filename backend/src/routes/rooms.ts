@@ -8,6 +8,7 @@ roomsRouter.post("/", (req, res) => {
     const nickname =
       (req.body?.nickname as string)?.trim() || "Player";
     const name = (req.body?.name as string)?.trim();
+    const avatar = (req.body?.avatar as string)?.trim() || undefined;
     const maxTimelineSize =
       req.body?.maxTimelineSize != null ? Number(req.body.maxTimelineSize) : undefined;
     const pointsToWin =
@@ -21,8 +22,9 @@ roomsRouter.post("/", (req, res) => {
     const options =
       maxTimelineSize !== undefined ||
       pointsToWin !== undefined ||
-      turnTimeLimitSeconds !== undefined
-        ? { maxTimelineSize, pointsToWin, turnTimeLimitSeconds }
+      turnTimeLimitSeconds !== undefined ||
+      avatar !== undefined
+        ? { maxTimelineSize, pointsToWin, turnTimeLimitSeconds, avatar }
         : undefined;
     const result = roomService.createRoom(nickname, name || undefined, options);
     res.status(201).json(result);
@@ -48,7 +50,8 @@ roomsRouter.post("/:id/join", (req, res) => {
   const nickname =
     (req.body?.nickname as string)?.trim() || "Player";
   const email = (req.body?.email as string)?.trim() || undefined;
-  const result = roomService.joinRoom(req.params.id, nickname, email);
+  const avatar = (req.body?.avatar as string)?.trim() || undefined;
+  const result = roomService.joinRoom(req.params.id, nickname, email, avatar);
   if ("error" in result) {
     res.status(400).json({ error: result.error });
     return;
@@ -124,6 +127,20 @@ roomsRouter.post("/:id/turn-timeout", (req, res) => {
     return;
   }
   const result = roomService.timeoutTurn(req.params.id, playerId);
+  if ("error" in result) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+roomsRouter.post("/:id/leave", (req, res) => {
+  const playerId = (req.body?.playerId as string)?.trim();
+  if (!playerId) {
+    res.status(400).json({ error: "playerId required" });
+    return;
+  }
+  const result = roomService.leaveRoom(req.params.id, playerId);
   if ("error" in result) {
     res.status(400).json({ error: result.error });
     return;

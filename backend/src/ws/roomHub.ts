@@ -34,13 +34,14 @@ export function attachRoomHub(ws: WebSocket): void {
         roomId?: string;
         playerId?: string;
         nickname?: string;
+        avatar?: string;
         email?: string;
         eventId?: string;
         position?: number;
       };
 
       if (msg.type === "join_room") {
-        const { roomId, playerId, nickname, email } = msg;
+        const { roomId, playerId, nickname, avatar, email } = msg;
         if (!roomId || !nickname) {
           ws.send(
             JSON.stringify({
@@ -80,6 +81,7 @@ export function attachRoomHub(ws: WebSocket): void {
             roomId,
             nickname,
             email ?? undefined,
+            avatar ?? undefined,
           );
           if ("error" in result) {
             ws.send(
@@ -246,6 +248,32 @@ export function attachRoomHub(ws: WebSocket): void {
           return;
         }
         broadcastStateUpdate(client.roomId);
+        return;
+      }
+
+      /** Non-host leaves the room (lobby or during game). Others get state_update + player_left. */
+      if (msg.type === "leave_room") {
+        const result = roomService.leaveRoom(client.roomId, client.playerId);
+        if ("error" in result) {
+          ws.send(
+            JSON.stringify({
+              type: "leave_error",
+              message: result.error,
+            }),
+          );
+          return;
+        }
+        const { roomState, leftPlayerNickname } = result;
+        getRoomClients(client.roomId).delete(client);
+        broadcastStateUpdate(client.roomId);
+        const playerLeftPayload = JSON.stringify({
+          type: "player_left",
+          nickname: leftPlayerNickname,
+        });
+        getRoomClients(client.roomId).forEach((c) => {
+          if (c.ws.readyState === 1) c.ws.send(playerLeftPayload);
+        });
+        ws.send(JSON.stringify({ type: "leave_ack" }));
         return;
       }
 

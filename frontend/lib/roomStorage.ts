@@ -1,8 +1,8 @@
 const STORAGE_KEY = (roomId: string) => `room_${roomId}`;
 const LAST_ROOM_KEY = "lastRoom";
 
-export type StoredPlayer = { playerId: string; nickname: string };
-export type LastRoom = { roomId: string; playerId: string; nickname: string };
+export type StoredPlayer = { playerId: string; nickname: string; avatar?: string };
+export type LastRoom = { roomId: string; playerId: string; nickname: string; avatar?: string };
 
 function isClient(): boolean {
   return typeof window !== "undefined";
@@ -25,16 +25,15 @@ export function setStoredPlayer(
   roomId: string,
   playerId: string,
   nickname: string,
+  avatar?: string,
 ): void {
   if (!isClient()) return;
   try {
-    localStorage.setItem(
-      STORAGE_KEY(roomId),
-      JSON.stringify({ playerId, nickname }),
-    );
+    const data = { playerId, nickname, ...(avatar && { avatar }) };
+    localStorage.setItem(STORAGE_KEY(roomId), JSON.stringify(data));
     localStorage.setItem(
       LAST_ROOM_KEY,
-      JSON.stringify({ roomId, playerId, nickname }),
+      JSON.stringify({ roomId, playerId, nickname, ...(avatar && { avatar }) }),
     );
   } catch {
     // ignore

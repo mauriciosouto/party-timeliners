@@ -13,6 +13,9 @@ type WsMessage =
   | { type: "place_error"; code: string; message: string }
   | { type: "start_error"; code: string; message: string }
   | { type: "rematch_error"; code: string; message: string }
+  | { type: "leave_ack" }
+  | { type: "leave_error"; message: string }
+  | { type: "player_left"; nickname: string }
   | { type: "room_closed" }
   | { type: "pong" };
 
@@ -33,6 +36,8 @@ export function useRoomSocket(
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [wsReady, setWsReady] = useState(false);
   const [roomClosed, setRoomClosed] = useState(false);
+  const [leftRoom, setLeftRoom] = useState(false);
+  const [playerLeftNotification, setPlayerLeftNotification] = useState<string | null>(null);
   const [roomError, setRoomError] = useState<string | null>(null);
   const [placeError, setPlaceError] = useState<string | null>(null);
   const [placeResult, setPlaceResult] = useState<{
@@ -101,6 +106,12 @@ export function useRoomSocket(
             }
           } else if (msg.type === "room_closed") {
             setRoomClosed(true);
+          } else if (msg.type === "leave_ack") {
+            setLeftRoom(true);
+          } else if (msg.type === "leave_error") {
+            setRoomError(msg.message);
+          } else if (msg.type === "player_left") {
+            setPlayerLeftNotification(msg.nickname);
           }
         } catch {
           // ignore
@@ -174,14 +185,24 @@ export function useRoomSocket(
     }
   };
 
+  const sendLeaveRoom = () => {
+    if (wsRef.current?.readyState === 1) {
+      wsRef.current.send(JSON.stringify({ type: "leave_room" }));
+    }
+  };
+
   const clearPlaceResult = () => setPlaceResult(null);
   const clearRoomError = () => setRoomError(null);
   const clearPlaceError = () => setPlaceError(null);
+  const clearPlayerLeftNotification = () => setPlayerLeftNotification(null);
 
   return {
     roomState,
     wsReady,
     roomClosed,
+    leftRoom,
+    playerLeftNotification,
+    clearPlayerLeftNotification,
     placeResult,
     placeError,
     clearPlaceError,
@@ -193,6 +214,7 @@ export function useRoomSocket(
     sendRematch,
     sendEndGame,
     sendCloseRoom,
+    sendLeaveRoom,
     clearPlaceResult,
   };
 }

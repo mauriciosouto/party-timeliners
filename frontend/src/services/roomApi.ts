@@ -16,6 +16,7 @@ export type CreateRoomOptions = {
   maxTimelineSize?: number;
   pointsToWin?: number;
   turnTimeLimitSeconds?: number | null;
+  avatar?: string | null;
 };
 
 export async function createRoom(
@@ -30,6 +31,7 @@ export async function createRoom(
   if (options?.maxTimelineSize != null) body.maxTimelineSize = options.maxTimelineSize;
   if (options?.pointsToWin != null) body.pointsToWin = options.pointsToWin;
   if (options?.turnTimeLimitSeconds !== undefined) body.turnTimeLimitSeconds = options.turnTimeLimitSeconds;
+  if (options?.avatar != null) body.avatar = options.avatar;
   const res = await fetch(`${getApiUrl()}/api/rooms`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -42,13 +44,14 @@ export async function createRoom(
 export async function joinRoom(
   roomId: string,
   nickname: string,
+  avatar?: string | null,
 ): Promise<{ playerId: string; roomState: RoomState }> {
+  const body: Record<string, unknown> = { nickname: nickname.trim() || "Player" };
+  if (avatar) body.avatar = avatar;
   const res = await fetch(`${getApiUrl()}/api/rooms/${roomId}/join`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      nickname: nickname.trim() || "Player",
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));

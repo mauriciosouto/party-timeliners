@@ -23,6 +23,7 @@ export type TimelineEntry = {
 export type RoomPlayer = {
   playerId: string;
   nickname: string;
+  avatar?: string | null;
   isHost: boolean;
   score: number;
   turnOrder: number | null;

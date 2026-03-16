@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS room_players (
   room_id TEXT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
   player_id TEXT NOT NULL,
   nickname TEXT NOT NULL,
+  avatar TEXT,
   email TEXT,
   is_host INTEGER NOT NULL DEFAULT 0,
   turn_order INTEGER,

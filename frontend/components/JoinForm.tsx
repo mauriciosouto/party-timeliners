@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { joinRoom, getRoomState } from "@/src/services/roomApi";
+import { AvatarPicker } from "@/components/AvatarPicker";
+import { getRandomAvatar } from "@/lib/avatars";
 
 type JoinFormProps = {
   roomId: string;
-  onJoined: (playerId: string, nickname: string) => void;
+  onJoined: (playerId: string, nickname: string, avatar?: string) => void;
 };
 
 export function JoinForm({ roomId, onJoined }: JoinFormProps) {
   const [nickname, setNickname] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [roomInfo, setRoomInfo] = useState<{ name: string; hostNickname: string } | null>(null);
@@ -33,8 +36,10 @@ export function JoinForm({ roomId, onJoined }: JoinFormProps) {
     setError(null);
     setLoading(true);
     try {
-      const result = await joinRoom(roomId, nickname.trim() || "Player");
-      onJoined(result.playerId, result.roomState.players.find((p) => p.playerId === result.playerId)?.nickname ?? nickname);
+      const avatar = selectedAvatar ?? getRandomAvatar();
+      const result = await joinRoom(roomId, nickname.trim() || "Player", avatar);
+      const nick = result.roomState.players.find((p) => p.playerId === result.playerId)?.nickname ?? nickname;
+      onJoined(result.playerId, nick, avatar);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to join");
     } finally {
@@ -65,6 +70,14 @@ export function JoinForm({ roomId, onJoined }: JoinFormProps) {
               placeholder="Your name"
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 placeholder-zinc-400 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
               autoFocus
+            />
+          </div>
+          <div>
+            <p className="mb-2 block text-sm font-medium text-zinc-700">Avatar</p>
+            <AvatarPicker
+              selectedAvatar={selectedAvatar}
+              onSelect={setSelectedAvatar}
+              aria-label="Choose your avatar"
             />
           </div>
           {error && (

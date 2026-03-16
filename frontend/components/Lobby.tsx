@@ -12,6 +12,7 @@ type LobbyProps = {
   roomError: string | null;
   onClearRoomError: () => void;
   onStartGame: () => void;
+  onLeaveRoom: () => void;
 };
 
 export function Lobby({
@@ -22,6 +23,7 @@ export function Lobby({
   roomError,
   onClearRoomError,
   onStartGame,
+  onLeaveRoom,
 }: LobbyProps) {
   const isHost = roomState.hostPlayerId === playerId;
   const [copied, setCopied] = useState(false);
@@ -83,14 +85,32 @@ export function Lobby({
             {roomState.players.map((p) => (
               <li
                 key={p.playerId}
-                className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2"
+                className="player-row flex items-center justify-between gap-3 rounded-lg bg-zinc-50 px-3 py-2"
               >
-                <span className="font-medium text-zinc-900">
-                  {p.nickname}
-                  {p.playerId === playerId && (
-                    <span className="ml-2 text-xs text-zinc-500">(you)</span>
+                <div className="flex items-center gap-3">
+                  {p.avatar ? (
+                    <img
+                      src={p.avatar}
+                      alt=""
+                      className="player-avatar h-9 w-9 shrink-0 rounded-full object-cover"
+                      width={36}
+                      height={36}
+                    />
+                  ) : (
+                    <div
+                      className="player-avatar flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-600"
+                      aria-hidden
+                    >
+                      {(p.nickname || "?")[0]?.toUpperCase() ?? "?"}
+                    </div>
                   )}
-                </span>
+                  <span className="font-medium text-zinc-900">
+                    {p.nickname}
+                    {p.playerId === playerId && (
+                      <span className="ml-2 text-xs text-zinc-500">(you)</span>
+                    )}
+                  </span>
+                </div>
                 {p.isHost && (
                   <span className="rounded bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
                     Host
@@ -133,7 +153,18 @@ export function Lobby({
           )}
 
           {!isHost && (
-            <p className="mt-4 text-sm text-slate-300">Waiting for the host to start the game…</p>
+            <>
+              <p className="mt-4 text-sm text-slate-300">Waiting for the host to start the game…</p>
+              {wsReady && (
+                <button
+                  type="button"
+                  onClick={onLeaveRoom}
+                  className="mt-4 w-full rounded-[10px] border border-zinc-300 bg-zinc-100 px-[18px] py-2.5 text-sm font-semibold text-zinc-700 transition-all duration-200 ease hover:bg-zinc-200"
+                >
+                  Leave room
+                </button>
+              )}
+            </>
           )}
         </div>
       </main>

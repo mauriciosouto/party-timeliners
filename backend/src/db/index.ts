@@ -122,6 +122,11 @@ export async function initDb(): Promise<void> {
   } catch {
     // Column already exists (e.g. new schema)
   }
+  try {
+    db.run("ALTER TABLE room_players ADD COLUMN avatar TEXT");
+  } catch {
+    // Column already exists (e.g. new schema)
+  }
   if (!buffer) save();
   wrapper = wrap(db);
 }

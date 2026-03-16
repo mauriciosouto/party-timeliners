@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createRoom, getRoomState } from "@/src/services/roomApi";
 import { getLastRoom, clearRoomFromStorage, setStoredPlayer } from "@/lib/roomStorage";
+import { AvatarPicker } from "@/components/AvatarPicker";
+import { getRandomAvatar } from "@/lib/avatars";
 
 const DEFAULT_MAX_EVENTS = 50;
 const DEFAULT_POINTS_TO_WIN = 2;
@@ -18,6 +20,7 @@ type PreviousRoom = {
 export default function Home() {
   const router = useRouter();
   const [nickname, setNickname] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [roomName, setRoomName] = useState("");
   const [maxEvents, setMaxEvents] = useState(DEFAULT_MAX_EVENTS);
   const [pointsToWin, setPointsToWin] = useState(DEFAULT_POINTS_TO_WIN);
@@ -68,6 +71,7 @@ export default function Home() {
           : turnTimeMinutes <= 0
             ? null
             : Math.round(Number(turnTimeMinutes) * 60);
+      const avatar = selectedAvatar ?? getRandomAvatar();
       const { roomId, playerId } = await createRoom(
         nickname.trim() || "Player",
         roomName.trim() || undefined,
@@ -75,10 +79,11 @@ export default function Home() {
           maxTimelineSize: maxEvents,
           pointsToWin,
           turnTimeLimitSeconds,
+          avatar,
         },
       );
       const nick = nickname.trim() || "Player";
-      setStoredPlayer(roomId, playerId, nick);
+      setStoredPlayer(roomId, playerId, nick, avatar);
       router.push(`/room/${roomId}?playerId=${encodeURIComponent(playerId)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create room");
@@ -145,6 +150,15 @@ export default function Home() {
               placeholder="Your nickname"
               className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 placeholder-zinc-400 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
             />
+            <div>
+              <p className="mb-2 text-sm font-medium text-zinc-700">Avatar</p>
+              <AvatarPicker
+                selectedAvatar={selectedAvatar}
+                onSelect={setSelectedAvatar}
+                aria-label="Choose your avatar"
+                fullWidth
+              />
+            </div>
             <input
               type="text"
               value={roomName}

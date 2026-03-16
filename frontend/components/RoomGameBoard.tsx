@@ -53,6 +53,7 @@ type RoomGameBoardProps = {
   onRematch: () => void;
   onEndGame: () => void;
   onCloseRoom?: () => void;
+  onLeaveRoom?: () => void;
   onClearPlaceResult: () => void;
 };
 
@@ -72,6 +73,7 @@ export function RoomGameBoard({
   onRematch,
   onEndGame,
   onCloseRoom,
+  onLeaveRoom,
   onClearPlaceResult,
 }: RoomGameBoardProps) {
   const timeline = timelineFromRoomState(roomState);
@@ -355,6 +357,15 @@ export function RoomGameBoard({
               End game
             </button>
           )}
+          {!isEnded && !isHost && onLeaveRoom && (
+            <button
+              type="button"
+              onClick={onLeaveRoom}
+              className="rounded-[10px] border border-zinc-300 bg-zinc-100 px-[18px] py-2.5 text-sm font-semibold text-zinc-700 transition-all duration-200 ease hover:-translate-y-px hover:bg-zinc-200"
+            >
+              Leave game
+            </button>
+          )}
         </div>
       </header>
 
@@ -368,6 +379,15 @@ export function RoomGameBoard({
               <div className="results-content">
                 <div className="winner-card">
                   <div className="winner-icon" aria-hidden>🏆</div>
+                  {winner.avatar ? (
+                    <img
+                      src={winner.avatar}
+                      alt=""
+                      className="mx-auto mb-2 h-16 w-16 rounded-full object-cover"
+                      width={64}
+                      height={64}
+                    />
+                  ) : null}
                   <div className="winner-name">
                     {winner.nickname}
                     {winner.playerId === playerId && " (you)"}
@@ -380,7 +400,20 @@ export function RoomGameBoard({
                   </h3>
                   <ul className="player-ranking">
                     {restRanked.map((p, i) => (
-                      <li key={p.playerId}>
+                      <li key={p.playerId} className="flex items-center gap-3">
+                        {p.avatar ? (
+                          <img
+                            src={p.avatar}
+                            alt=""
+                            className="h-9 w-9 shrink-0 rounded-full object-cover"
+                            width={36}
+                            height={36}
+                          />
+                        ) : (
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-xs font-medium text-zinc-600">
+                            {(p.nickname || "?")[0]?.toUpperCase() ?? "?"}
+                          </div>
+                        )}
                         <span className="rank">{ordinal(i + 2)}</span>
                         <span className="name">
                           {p.nickname}
@@ -610,10 +643,25 @@ export function RoomGameBoard({
                     }`}
                   >
                     <div className="flex min-w-0 items-center justify-between gap-2">
-                      <span className="truncate font-medium text-zinc-900">
-                        {p.nickname}
-                        {p.playerId === playerId && " (you)"}
-                      </span>
+                      <div className="flex min-w-0 items-center gap-2">
+                        {p.avatar ? (
+                          <img
+                            src={p.avatar}
+                            alt=""
+                            className="h-9 w-9 shrink-0 rounded-full object-cover"
+                            width={36}
+                            height={36}
+                          />
+                        ) : (
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-xs font-medium text-zinc-600">
+                            {(p.nickname || "?")[0]?.toUpperCase() ?? "?"}
+                          </div>
+                        )}
+                        <span className="truncate font-medium text-zinc-900">
+                          {p.nickname}
+                          {p.playerId === playerId && " (you)"}
+                        </span>
+                      </div>
                       <span className="flex-shrink-0 text-sm font-medium text-zinc-600">
                         {score} pts
                       </span>
