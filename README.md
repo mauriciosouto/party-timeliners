@@ -8,6 +8,7 @@ A casual multiplayer browser game where players place historical events in chron
 
 ## Table of Contents
 
+- [Live Demo](#live-demo)
 - [Play the Game](#play-the-game)
 - [Gameplay Preview](#gameplay-preview)
 - [Why this project exists](#why-this-project-exists)
@@ -20,13 +21,27 @@ A casual multiplayer browser game where players place historical events in chron
 
 ---
 
+## Live Demo
+
+The game is deployed and playable online.
+
+| Service | URL |
+|--------|-----|
+| **Frontend (play the game)** | https://party-timeliners.vercel.app |
+| **Backend API** | https://party-timeliners.onrender.com |
+| **Health check** | https://party-timeliners.onrender.com/health |
+
+The **frontend** runs on [Vercel](https://vercel.com); the **backend** (REST API and WebSocket server) runs on [Render](https://render.com).
+
+**Note:** On Render’s free tier the backend may spin down after inactivity. The first request after idle can take a few seconds while the service wakes up.
+
+---
+
 ## Play the Game
 
-<!-- TODO: Add link when the game is deployed -->
+**[Play Party Timeliners online](https://party-timeliners.vercel.app)**
 
-**[Play Party Timeliners online](https://example.com)** *(coming soon)*
-
-Until then, run the game locally—see [Development](#development).
+Or run locally—see [Development](#development).
 
 ---
 
@@ -156,6 +171,15 @@ Node.js (v18+), npm (or yarn/pnpm).
 3. **Frontend** — Uses the local backend by default (`NEXT_PUBLIC_API_URL=http://localhost:3001`). See [Running the frontend](#running-the-frontend).
 
 4. **Environment** — Optional: create `backend/.env` or set `PORT`, `DB_PATH`, `SEED_PATH`. No `.env` is required for a basic run after seeding.
+
+### Local vs production
+
+| Environment | Frontend | Backend |
+|-------------|----------|---------|
+| **Local** | http://localhost:3000 | http://localhost:3001 |
+| **Production** | https://party-timeliners.vercel.app | https://party-timeliners.onrender.com |
+
+For local development the frontend uses the local backend by default (`NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_WS_URL`). In production the frontend is built with the production API and WebSocket URLs.
 
 ### Running the frontend
 

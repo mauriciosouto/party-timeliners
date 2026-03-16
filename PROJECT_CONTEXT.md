@@ -16,6 +16,25 @@ Players join a room via an invitation link and play together in real time.
 
 ---
 
+# Production Deployment
+
+The live environment runs as follows:
+
+**Frontend**
+
+- **Platform:** Vercel  
+- **URL:** https://party-timeliners.vercel.app  
+
+**Backend**
+
+- **Platform:** Render  
+- **URL:** https://party-timeliners.onrender.com  
+- **Health check:** https://party-timeliners.onrender.com/health  
+
+The frontend talks to the backend over **REST** (room creation, event data, admin) and **WebSockets** (multiplayer game state: join room, state updates, place event, turn/timeout, leave, close room).
+
+---
+
 # Core Gameplay
 
 Players take turns placing historical events into a shared timeline.

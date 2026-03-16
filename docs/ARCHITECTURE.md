@@ -39,6 +39,31 @@ External APIs
 
 ---
 
+# Production Hosting Architecture
+
+The deployed system uses the following hosting:
+
+```
+Client (Browser)
+      │
+      │ HTTPS / WSS
+      ▼
+Frontend (Next.js on Vercel)
+      │
+      │ REST + WebSocket
+      ▼
+Backend API + WebSocket (Node.js on Render)
+      │
+      ▼
+SQLite event database
+```
+
+- **Frontend (Vercel):** Serves the Next.js app. Users open the app in the browser and create/join rooms from the home page.
+- **Backend (Render):** Single Node.js process running Express (REST) and a WebSocket server. Handles room creation, game state, event pool, and real-time updates.
+- **Communication:** The frontend uses **REST** for room creation and event data, and **WebSocket** connections for multiplayer game state (joining rooms, state updates, placing events, turn and timeout handling).
+
+---
+
 # Frontend Architecture
 
 The frontend is responsible for:

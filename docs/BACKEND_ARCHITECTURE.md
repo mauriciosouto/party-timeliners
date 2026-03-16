@@ -200,3 +200,17 @@ backend/
 - Single SQLite file per environment; no connection pool. For multiple processes, use a single process or move to PostgreSQL later.
 - Events table is append-only (re-seed by truncate + insert). Games and related tables grow with play; add cleanup or archival if needed.
 - API is stateless; game state is always read from DB. Easy to add auth (e.g. player id or session) and scope games by user later.
+
+---
+
+## 6. Production Deployment
+
+**Backend hosting:** [Render](https://render.com)
+
+**Production URL:**  
+https://party-timeliners.onrender.com
+
+**Health check:**  
+`GET /health`
+
+Returns `{ "status": "ok" }`. This endpoint is used for monitoring and uptime checks (e.g. Render health checks or external ping services).
