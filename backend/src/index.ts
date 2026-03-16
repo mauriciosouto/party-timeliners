@@ -10,7 +10,7 @@ import { config } from "./config.js";
 import { roomsRouter } from "./routes/rooms.js";
 import { eventsRouter } from "./routes/events.js";
 import { adminRouter } from "./routes/admin.js";
-import { initDb } from "./db/index.js";
+import { initDb, getDb } from "./db/index.js";
 import { ensureEventPool } from "./db/ensureEventPool.js";
 import { attachRoomHub } from "./ws/roomHub.js";
 
@@ -32,6 +32,78 @@ app.use("/api/admin", adminRouter);
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
+});
+
+function getStatusMetrics(): {
+  eventsCount: number;
+  roomsTotal: number;
+  roomsInLobby: number;
+  roomsPlaying: number;
+  roomsEnded: number;
+} {
+  const db = getDb();
+  const eventsRow = db.prepare("SELECT COUNT(*) as count FROM events").get() as { count: number };
+  const eventsCount = eventsRow?.count ?? 0;
+  const roomsByStatus = db
+    .prepare(
+      "SELECT status, COUNT(*) as count FROM rooms GROUP BY status",
+    )
+    .all() as { status: string; count: number }[];
+  const map = new Map<string, number>();
+  for (const row of roomsByStatus) map.set(row.status, row.count);
+  const roomsInLobby = map.get("lobby") ?? 0;
+  const roomsPlaying = map.get("playing") ?? 0;
+  const roomsEnded = map.get("ended") ?? 0;
+  const roomsTotal = roomsInLobby + roomsPlaying + roomsEnded;
+  return {
+    eventsCount,
+    roomsTotal,
+    roomsInLobby,
+    roomsPlaying,
+    roomsEnded,
+  };
+}
+
+app.get("/", (req, res) => {
+  try {
+    const m = getStatusMetrics();
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Party Timeliners — Status</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 520px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+    h1 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    p { color: #555; margin: 0 0 1rem; }
+    .status { color: #0a0; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #eee; }
+    th { color: #666; font-weight: 500; }
+    .metric { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+  <h1>Party Timeliners — Backend</h1>
+  <p><span class="status">● Running</span></p>
+  <table>
+    <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Events in pool</td><td class="metric">${m.eventsCount}</td></tr>
+      <tr><td>Rooms (total)</td><td class="metric">${m.roomsTotal}</td></tr>
+      <tr><td>Rooms in lobby</td><td class="metric">${m.roomsInLobby}</td></tr>
+      <tr><td>Active games</td><td class="metric">${m.roomsPlaying}</td></tr>
+      <tr><td>Rooms ended</td><td class="metric">${m.roomsEnded}</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>`;
+    res.status(200).type("html").send(html);
+  } catch (err) {
+    console.error("Status page error:", err);
+    res.status(500).type("text/plain").send("Error loading status");
+  }
 });
 
 const wss = new WebSocketServer({ server, path: "/ws" });

@@ -39,6 +39,8 @@ npm run build && npm start
 Server listens on `http://localhost:3001` (or `PORT` env).  
 WebSocket: `ws://localhost:3001/ws`
 
+Opening the backend URL in a browser shows a **status page** with basic metrics: events in pool, total rooms, rooms in lobby, active games (playing), and rooms ended.
+
 ## API (REST)
 
 - `POST /api/rooms` — Create room. Body: `{ "nickname", "name"?(optional) }`. Returns `roomId`, `playerId`, `roomState`.
