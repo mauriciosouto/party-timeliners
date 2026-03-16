@@ -488,3 +488,13 @@ body {
   opacity: 0;
   transition: opacity 0.3s ease;
 }
+
+/* Brief flash when match starts (lobby → playing) */
+.game-start-flash {
+  background: rgba(255, 255, 255, 0.4);
+  animation: game-start-flash-out 0.5s ease forwards;
+}
+@keyframes game-start-flash-out {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}

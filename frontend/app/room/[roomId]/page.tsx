@@ -1,13 +1,14 @@
 "use client";
 
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { joinRoom, getRoomState, type RoomState } from "@/src/services/roomApi";
 import { JoinForm } from "@/components/JoinForm";
 import { Lobby } from "@/components/Lobby";
 import { RoomGameBoard } from "@/components/RoomGameBoard";
 import { useRoomSocket } from "@/src/hooks/useRoomSocket";
 import { getStoredPlayer, setStoredPlayer, clearRoomFromStorage } from "@/lib/roomStorage";
+import { playStartGameSound } from "@/src/utils/sound";
 
 export default function RoomPage() {
   const params = useParams();
@@ -71,6 +72,21 @@ export default function RoomPage() {
     if (roomClosed) router.push("/");
   }, [roomClosed, router]);
 
+  const prevStatusRef = useRef<string | null>(null);
+  const [gameJustStarted, setGameJustStarted] = useState(false);
+
+  useEffect(() => {
+    const status = roomState?.status ?? null;
+    if (prevStatusRef.current === "lobby" && status === "playing") {
+      playStartGameSound();
+      setGameJustStarted(true);
+      const t = setTimeout(() => setGameJustStarted(false), 500);
+      prevStatusRef.current = status;
+      return () => clearTimeout(t);
+    }
+    prevStatusRef.current = status;
+  }, [roomState?.status]);
+
   if (!roomId) {
     return (
       <div className="page-bg flex min-h-screen items-center justify-center p-6">
@@ -114,26 +130,34 @@ export default function RoomPage() {
 
   if (state?.status === "playing" || state?.status === "ended") {
     return (
-      <RoomGameBoard
-        roomId={roomId}
-        playerId={playerId}
-        roomState={state}
-        wsReady={wsReady}
-        placeResult={placeResult}
-        placeError={placeError}
-        onClearPlaceError={clearPlaceError}
-        roomError={roomError}
-        onClearRoomError={clearRoomError}
-        onPlaceEvent={sendPlaceEvent}
-        onTurnTimeout={sendTurnTimeout}
-        onRematch={sendRematch}
-        onEndGame={sendEndGame}
-        onCloseRoom={() => {
-          sendCloseRoom();
-          router.push("/");
-        }}
-        onClearPlaceResult={clearPlaceResult}
-      />
+      <>
+        {gameJustStarted && (
+          <div
+            className="game-start-flash fixed inset-0 z-[9998] pointer-events-none"
+            aria-hidden
+          />
+        )}
+        <RoomGameBoard
+          roomId={roomId}
+          playerId={playerId}
+          roomState={state}
+          wsReady={wsReady}
+          placeResult={placeResult}
+          placeError={placeError}
+          onClearPlaceError={clearPlaceError}
+          roomError={roomError}
+          onClearRoomError={clearRoomError}
+          onPlaceEvent={sendPlaceEvent}
+          onTurnTimeout={sendTurnTimeout}
+          onRematch={sendRematch}
+          onEndGame={sendEndGame}
+          onCloseRoom={() => {
+            sendCloseRoom();
+            router.push("/");
+          }}
+          onClearPlaceResult={clearPlaceResult}
+        />
+      </>
     );
   }
 

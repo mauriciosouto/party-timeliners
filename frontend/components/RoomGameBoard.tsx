@@ -11,7 +11,7 @@ import { formatYear } from "@/lib/format";
 import type { RoomState } from "@/src/services/roomApi";
 import { fireSuccessConfetti } from "@/src/utils/confetti";
 import { fireVictoryConfetti } from "@/src/utils/victoryConfetti";
-import { playSound } from "@/src/utils/sound";
+import { playSound, stopTickSound } from "@/src/utils/sound";
 
 const DRAGGABLE_ID = "current-card";
 
@@ -127,6 +127,7 @@ export function RoomGameBoard({
     if (!isMyTurn || turnTimeLimitSeconds == null || !currentTurnStartedAt) {
       setSecondsLeft(null);
       timeoutFiredRef.current = false;
+      stopTickSound();
       return;
     }
     const iso =
@@ -143,6 +144,7 @@ export function RoomGameBoard({
       const left = Math.ceil((limitMs - elapsed) / 1000);
       if (left <= 0) {
         setSecondsLeft(0);
+        stopTickSound();
         if (!timeoutFiredRef.current) {
           timeoutFiredRef.current = true;
           onTurnTimeout();

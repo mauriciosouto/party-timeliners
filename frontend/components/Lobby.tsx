@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { RoomState } from "@/src/services/roomApi";
+import { playJoinSound } from "@/src/utils/sound";
 
 type LobbyProps = {
   roomId: string;
@@ -24,6 +25,16 @@ export function Lobby({
 }: LobbyProps) {
   const isHost = roomState.hostPlayerId === playerId;
   const [copied, setCopied] = useState(false);
+  const prevPlayerCountRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const count = roomState.players.length;
+    const prev = prevPlayerCountRef.current;
+    prevPlayerCountRef.current = count;
+    if (prev !== null && count > prev) {
+      playJoinSound();
+    }
+  }, [roomState.players.length]);
 
   const inviteUrl =
     typeof window !== "undefined"
