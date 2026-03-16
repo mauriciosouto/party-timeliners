@@ -31,7 +31,7 @@ body {
   background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
 }
 
-/* Game room: full-screen blurred background behind all UI */
+/* Game room: full-screen blurred background behind all UI (same atmosphere as lobby) */
 .game-background {
   position: fixed;
   top: 0;
@@ -42,9 +42,10 @@ body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: blur(7px);
-  transform: scale(1.04);
+  filter: blur(6px);
+  transform: scale(1.05);
   z-index: -2;
+  pointer-events: none;
   animation: gameBackgroundShift 28s ease-in-out infinite alternate;
 }
 
@@ -53,6 +54,7 @@ body {
   to { background-position: 52% 52%; }
 }
 
+/* Dark overlay above background so UI stays readable */
 .game-background-overlay {
   position: fixed;
   top: 0;
@@ -62,6 +64,12 @@ body {
   background: rgba(0, 0, 0, 0.35);
   z-index: -1;
   pointer-events: none;
+}
+
+/* Gameplay UI sits above background layers */
+.game-room-root {
+  position: relative;
+  z-index: 0;
 }
 
 /* Hero background for Home and Lobby (full-page image + dark overlay) */

@@ -280,7 +280,7 @@ export function RoomGameBoard({
   }
 
   return (
-    <div className="page-bg flex min-h-screen flex-col text-zinc-900">
+    <div className="game-room-root flex min-h-screen flex-col text-zinc-900">
       <div className="game-background" aria-hidden />
       <div className="game-background-overlay" aria-hidden />
 
