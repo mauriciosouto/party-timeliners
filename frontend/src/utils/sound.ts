@@ -15,7 +15,13 @@ export function playSound(type: "correct" | "wrong" | "victory" | "defeat" | "ti
   if (!sound) return;
 
   sound.currentTime = 0;
-  sound.play().catch(() => {});
+  try {
+    sound.play().catch((err) => {
+      console.warn("Audio playback blocked or failed", err);
+    });
+  } catch (err) {
+    console.warn("Audio playback failed", err);
+  }
 
   if (type === "tick") {
     if (tickStopTimeoutId != null) clearTimeout(tickStopTimeoutId);
@@ -49,7 +55,11 @@ export function playJoinSound(): void {
   if (!joinSound) return;
   joinSound.volume = JOIN_VOLUME;
   joinSound.currentTime = 0;
-  joinSound.play().catch(() => {});
+  try {
+    joinSound.play().catch((err) => console.warn("Audio playback blocked or failed", err));
+  } catch (err) {
+    console.warn("Audio playback failed", err);
+  }
 }
 
 const startSound =
@@ -61,5 +71,9 @@ export function playStartGameSound(): void {
   if (!startSound) return;
   startSound.volume = START_VOLUME;
   startSound.currentTime = 0;
-  startSound.play().catch(() => {});
+  try {
+    startSound.play().catch((err) => console.warn("Audio playback blocked or failed", err));
+  } catch (err) {
+    console.warn("Audio playback failed", err);
+  }
 }

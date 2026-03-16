@@ -165,6 +165,19 @@ export function RoomGameBoard({
     [roomState.myHand],
   );
 
+  const myHandAsTimelineEvents = useMemo(
+    (): TimelineEvent[] =>
+      myHand.map((e) => ({
+        id: e.id,
+        title: e.title,
+        year: e.year,
+        description: e.displayTitle ?? e.title,
+        image: e.image,
+        wikipediaUrl: e.wikipediaUrl,
+      })),
+    [myHand],
+  );
+
   useEffect(() => {
     if (!placeResult) return;
     const t = setTimeout(onClearPlaceResult, 3000);
@@ -610,7 +623,7 @@ export function RoomGameBoard({
                 </div>
               ) : myHand.length > 0 ? (
                 <div className="flex flex-wrap justify-center gap-3 md:justify-start">
-                  {myHand.map((ev) => (
+                  {myHandAsTimelineEvents.map((ev) => (
                     <EventCard
                       key={ev.id}
                       event={ev}

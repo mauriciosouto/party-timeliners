@@ -19,6 +19,18 @@ export type CreateRoomOptions = {
   avatar?: string | null;
 };
 
+async function safeFetch(
+  url: string,
+  init?: RequestInit,
+): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (err) {
+    console.warn("API request failed:", url, err);
+    throw err;
+  }
+}
+
 export async function createRoom(
   nickname: string,
   roomName?: string,
@@ -32,7 +44,7 @@ export async function createRoom(
   if (options?.pointsToWin != null) body.pointsToWin = options.pointsToWin;
   if (options?.turnTimeLimitSeconds !== undefined) body.turnTimeLimitSeconds = options.turnTimeLimitSeconds;
   if (options?.avatar != null) body.avatar = options.avatar;
-  const res = await fetch(`${getApiUrl()}/api/rooms`, {
+  const res = await safeFetch(`${getApiUrl()}/api/rooms`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -48,7 +60,7 @@ export async function joinRoom(
 ): Promise<{ playerId: string; roomState: RoomState }> {
   const body: Record<string, unknown> = { nickname: nickname.trim() || "Player" };
   if (avatar) body.avatar = avatar;
-  const res = await fetch(`${getApiUrl()}/api/rooms/${roomId}/join`, {
+  const res = await safeFetch(`${getApiUrl()}/api/rooms/${roomId}/join`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -61,7 +73,7 @@ export async function joinRoom(
 }
 
 export async function getRoomState(roomId: string): Promise<RoomState | null> {
-  const res = await fetch(`${getApiUrl()}/api/rooms/${roomId}`);
+  const res = await safeFetch(`${getApiUrl()}/api/rooms/${roomId}`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error("Failed to load room");
   return res.json();
@@ -71,7 +83,7 @@ export async function startGame(
   roomId: string,
   playerId: string,
 ): Promise<RoomState> {
-  const res = await fetch(`${getApiUrl()}/api/rooms/${roomId}/start`, {
+  const res = await safeFetch(`${getApiUrl()}/api/rooms/${roomId}/start`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ playerId }),
@@ -87,7 +99,7 @@ export async function getNextEvent(
   roomId: string,
   playerId: string,
 ): Promise<ApiEvent | null> {
-  const res = await fetch(
+  const res = await safeFetch(
     `${getApiUrl()}/api/rooms/${roomId}/next-event?playerId=${encodeURIComponent(playerId)}`,
   );
   if (res.status === 404) return null;
@@ -104,7 +116,7 @@ export async function turnTimeout(
   nextEvent: ApiEvent | null;
   gameEnded?: boolean;
 }> {
-  const res = await fetch(`${getApiUrl()}/api/rooms/${roomId}/turn-timeout`, {
+  const res = await safeFetch(`${getApiUrl()}/api/rooms/${roomId}/turn-timeout`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ playerId }),
