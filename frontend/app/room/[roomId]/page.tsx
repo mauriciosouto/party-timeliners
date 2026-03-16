@@ -73,10 +73,13 @@ export default function RoomPage() {
     }
   }, [roomId, roomState?.status]);
 
-  // When host closed the room, redirect everyone to home.
+  // When host closed the room, clear storage and redirect everyone to home.
   useEffect(() => {
-    if (roomClosed) router.push("/");
-  }, [roomClosed, router]);
+    if (roomClosed && roomId) {
+      clearRoomFromStorage(roomId);
+      router.push("/");
+    }
+  }, [roomClosed, roomId, router]);
 
   // When this player left the room (leave_ack), clear storage and redirect.
   useEffect(() => {
@@ -146,6 +149,7 @@ export default function RoomPage() {
         onClearRoomError={clearRoomError}
         onStartGame={sendStartGame}
         onLeaveRoom={sendLeaveRoom}
+        onCloseRoom={sendCloseRoom}
       />
     );
   }

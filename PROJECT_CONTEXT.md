@@ -66,7 +66,7 @@ Lobby shows:
 - room settings
 - list of connected players
 
-The host can start the game at any time. Non-host players can **Leave room** at any time (button); they are removed from the room and redirected home.
+The host can **Start game** at any time or **Close room** to end the room permanently (everyone is sent to home and the room is deleted). Non-host players can **Leave room** at any time (button); they are removed from the room and redirected home.
 
 Minimum players required: 1.
 
@@ -108,9 +108,11 @@ Players stay in the room until they leave or the host starts a rematch.
 
 ---
 
-# Leaving a room
+# Leaving and closing a room
 
-Only **non-host** players can voluntarily leave a room. The host uses “End game” to return everyone to the lobby or “Close room” when the game has ended.
+Only **non-host** players can voluntarily **leave** a room (Leave room / Leave game). The host can **End game** to return everyone to the lobby, or **Close room** to end the room permanently.
+
+**Close room** is available in the lobby and after the game has ended. When the host chooses it, the room is deleted, all connected players (including the host) receive a “room closed” signal and are redirected to home. Stored credentials for that room are cleared so the room link no longer allows rejoin.
 
 **From the lobby:** The player clicks “Leave room”; they are removed from the participant list and redirected home. No other side effects.
 
@@ -375,4 +377,5 @@ The game is a playable multiplayer prototype with:
 - real-time multiplayer via WebSockets (invite link, lobby, turn-based play, leave room)
 - **Player avatars:** choose on create/join, shown in lobby, turn indicator, and results
 - **Leave room:** non-host can leave from lobby or during the game; turn advances if it was their turn; others get “X left the game” notification; room resets to lobby if &lt; 2 players remain
+- **Close room:** host can close the room from the lobby or after the game has ended; room is deleted, everyone receives room_closed and redirects to home
 - UI polish: hero/glass panels, results screen, confetti, sounds, timer feedback, error toasts, drag feedback, “player left” toast

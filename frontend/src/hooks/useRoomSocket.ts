@@ -17,6 +17,7 @@ type WsMessage =
   | { type: "leave_error"; message: string }
   | { type: "player_left"; nickname: string }
   | { type: "room_closed" }
+  | { type: "close_room_error"; message: string }
   | { type: "pong" };
 
 type ApiEvent = {
@@ -108,7 +109,7 @@ export function useRoomSocket(
             setRoomClosed(true);
           } else if (msg.type === "leave_ack") {
             setLeftRoom(true);
-          } else if (msg.type === "leave_error") {
+          } else if (msg.type === "leave_error" || msg.type === "close_room_error") {
             setRoomError(msg.message);
           } else if (msg.type === "player_left") {
             setPlayerLeftNotification(msg.nickname);

@@ -864,6 +864,21 @@ export function leaveRoom(
   return { roomState: roomState!, leftPlayerNickname };
 }
 
+/** Permanently close a room (host only). Deletes the room and all related data. Everyone must be redirected by the caller (broadcast room_closed). */
+export function closeRoomPermanently(
+  roomId: string,
+  playerId: string,
+): { ok: true } | { error: string } {
+  const db = getDb();
+  const room = db
+    .prepare("SELECT id, host_player_id FROM rooms WHERE id = ?")
+    .get(roomId) as { id: string; host_player_id: string | null } | undefined;
+  if (!room) return { error: "Room not found" };
+  if (room.host_player_id !== playerId) return { error: "Only the host can close the room" };
+  db.prepare("DELETE FROM rooms WHERE id = ?").run(roomId);
+  return { ok: true };
+}
+
 /** Mark player as disconnected (for WebSocket close). */
 export function setPlayerConnected(
   roomId: string,

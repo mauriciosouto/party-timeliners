@@ -78,7 +78,7 @@ frontend/
 │   ├── EventCard.tsx        # Draggable/reveal card, event image and year
 │   ├── GameBoard.tsx        # Single-player game (optional)
 │   ├── JoinForm.tsx         # Join room by ID/link + avatar
-│   ├── Lobby.tsx            # Pre-game: players list, start game, Leave room (non-host), join sound
+│   ├── Lobby.tsx            # Pre-game: players list, Start game / Close room (host), Leave room (non-host), join sound
 │   ├── RoomGameBoard.tsx    # Multiplayer: timeline, turn timer, results, Leave game (non-host), errors
 │   └── Timeline.tsx         # Horizontal timeline + droppable slots
 ├── lib/
@@ -92,7 +92,7 @@ frontend/
 │   └── ...
 └── src/
     ├── hooks/
-    │   └── useRoomSocket.ts  # WebSocket: join, state_update, place/start/rematch/leave_room, leave_ack, player_left
+    │   └── useRoomSocket.ts  # WebSocket: join, state_update, place/start/rematch/leave_room, leave_ack, player_left, close_room, room_closed
     ├── services/
     │   ├── EventService.ts
     │   └── roomApi.ts
@@ -124,5 +124,5 @@ The UI provides consistent feedback without changing game or sync logic:
 
 # Testing
 
-- **Backend:** Vitest (`backend npm run test`). Tests cover game logic (timeline, validation, deck, event quality), event ingestion, and room service integration. Room service tests include: create/join (with avatars), start/place/end/rematch, and **leaveRoom** (lobby: player removed; host cannot leave; during game: non-host leaves, turn advances if it was their turn; room resets to lobby when &lt; 2 players remain).
+- **Backend:** Vitest (`backend npm run test`). Tests cover game logic (timeline, validation, deck, event quality), event ingestion, and room service integration. Room service tests include: create/join (with avatars), start/place/end/rematch, **leaveRoom** (lobby: player removed; host cannot leave; during game: non-host leaves, turn advances if it was their turn; room resets to lobby when &lt; 2 players remain), and **closeRoomPermanently** (host closes from lobby or when ended: room deleted, getRoomState returns null; non-host cannot close; room not found).
 - **Frontend:** Vitest (`frontend npm run test`). Currently covers utility modules (e.g. `src/utils/sound.test.ts`: exports and no-throw behavior when `Audio` is unavailable in Node). UI/components are not yet under unit tests.

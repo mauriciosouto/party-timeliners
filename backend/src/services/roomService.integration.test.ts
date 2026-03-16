@@ -17,6 +17,7 @@ import {
   endGame,
   rematchRoom,
   leaveRoom,
+  closeRoomPermanently,
   setPlayerConnected,
 } from "./roomService.js";
 
@@ -376,9 +377,17 @@ describe("roomService (integration)", () => {
       const idB = j3.playerId;
       startGame(roomId, hostId);
 
+      // Force turn order: host first, then A, then B. Leaver will be A or B (non-host, not current).
+      const db = getDb();
+      db.prepare("UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?").run(0, roomId, hostId);
+      db.prepare("UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?").run(1, roomId, idA);
+      db.prepare("UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?").run(2, roomId, idB);
+      db.prepare("UPDATE rooms SET turn_index = 0 WHERE id = ?").run(roomId);
+
       const stateBefore = getRoomState(roomId)!;
       const currentId = stateBefore.currentTurnPlayerId!;
-      const leaverId = [hostId, idA, idB].find((id) => id !== currentId)!;
+      expect(currentId).toBe(hostId);
+      const leaverId = [idA, idB].find((id) => id !== currentId)!;
 
       const result = leaveRoom(roomId, leaverId);
       expect("error" in result).toBe(false);
@@ -395,8 +404,16 @@ describe("roomService (integration)", () => {
       const idB = j3.playerId;
       startGame(roomId, hostId);
 
+      // Force turn order so a non-host has the turn (host cannot leave)
+      const db = getDb();
+      db.prepare("UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?").run(0, roomId, idA);
+      db.prepare("UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?").run(1, roomId, hostId);
+      db.prepare("UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?").run(2, roomId, idB);
+      db.prepare("UPDATE rooms SET turn_index = 0 WHERE id = ?").run(roomId);
+
       const stateBefore = getRoomState(roomId)!;
       const currentId = stateBefore.currentTurnPlayerId!;
+      expect(currentId).toBe(idA);
       const orderedIds = stateBefore.turnOrder;
       const currentIndex = orderedIds.indexOf(currentId);
       const nextId = orderedIds[(currentIndex + 1) % orderedIds.length];
@@ -406,6 +423,48 @@ describe("roomService (integration)", () => {
       const stateAfter = getRoomState(roomId)!;
       expect(stateAfter.players).toHaveLength(2);
       expect(stateAfter.currentTurnPlayerId).toBe(nextId);
+    });
+  });
+
+  describe("closeRoomPermanently", () => {
+    it("host closes room from lobby: room is deleted and getRoomState returns null", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      expect(getRoomState(roomId)).not.toBeNull();
+
+      const result = closeRoomPermanently(roomId, hostId);
+      expect(result).toEqual({ ok: true });
+      expect(getRoomState(roomId)).toBeNull();
+    });
+
+    it("returns error when non-host tries to close room", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      const join = joinRoom(roomId, "P2") as { playerId: string };
+      const p2Id = join.playerId;
+
+      const result = closeRoomPermanently(roomId, p2Id);
+      expect(result).toEqual({ error: "Only the host can close the room" });
+      expect(getRoomState(roomId)).not.toBeNull();
+    });
+
+    it("returns error when room not found", () => {
+      const result = closeRoomPermanently("non-existent-room-id", "some-player-id");
+      expect(result).toEqual({ error: "Room not found" });
+    });
+
+    it("host can close room when status is ended", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+      getDb()
+        .prepare(
+          "UPDATE rooms SET status = 'ended', ended_at = datetime('now'), winner_player_id = ? WHERE id = ?",
+        )
+        .run(hostId, roomId);
+
+      const result = closeRoomPermanently(roomId, hostId);
+      expect(result).toEqual({ ok: true });
+      expect(getRoomState(roomId)).toBeNull();
     });
   });
 });

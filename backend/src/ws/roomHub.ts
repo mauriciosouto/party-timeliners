@@ -277,19 +277,24 @@ export function attachRoomHub(ws: WebSocket): void {
         return;
       }
 
-      /** Host ends and closes the room for everyone (when status is already ended). */
+      /** Host permanently closes the room (lobby or after game ended). Room is deleted; everyone receives room_closed and should redirect home. */
       if (msg.type === "close_room") {
         const room = roomService.getRoomState(client.roomId);
         if (!room) {
           ws.send(JSON.stringify({ type: "close_room_error", message: "Room not found" }));
           return;
         }
-        if (room.status !== "ended") {
-          ws.send(JSON.stringify({ type: "close_room_error", message: "Game is not finished" }));
+        if (room.status !== "lobby" && room.status !== "ended") {
+          ws.send(JSON.stringify({ type: "close_room_error", message: "Only the host can close the room when in lobby or after the game has ended" }));
           return;
         }
         if (room.hostPlayerId !== client.playerId) {
           ws.send(JSON.stringify({ type: "close_room_error", message: "Only the host can close the room" }));
+          return;
+        }
+        const result = roomService.closeRoomPermanently(client.roomId, client.playerId);
+        if ("error" in result) {
+          ws.send(JSON.stringify({ type: "close_room_error", message: result.error }));
           return;
         }
         const payload = JSON.stringify({ type: "room_closed" });

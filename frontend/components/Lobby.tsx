@@ -13,6 +13,7 @@ type LobbyProps = {
   onClearRoomError: () => void;
   onStartGame: () => void;
   onLeaveRoom: () => void;
+  onCloseRoom: () => void;
 };
 
 export function Lobby({
@@ -24,6 +25,7 @@ export function Lobby({
   onClearRoomError,
   onStartGame,
   onLeaveRoom,
+  onCloseRoom,
 }: LobbyProps) {
   const isHost = roomState.hostPlayerId === playerId;
   const [copied, setCopied] = useState(false);
@@ -144,12 +146,21 @@ export function Lobby({
           )}
 
           {isHost && wsReady && (
-            <button
-              onClick={onStartGame}
-              className="mt-8 w-full rounded-[10px] bg-violet-600 px-[18px] py-2.5 font-semibold text-white shadow-sm transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.15)] hover:bg-violet-700"
-            >
-              Start game
-            </button>
+            <div className="mt-8 flex flex-col gap-3">
+              <button
+                onClick={onStartGame}
+                className="w-full rounded-[10px] bg-violet-600 px-[18px] py-2.5 font-semibold text-white shadow-sm transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.15)] hover:bg-violet-700"
+              >
+                Start game
+              </button>
+              <button
+                type="button"
+                onClick={onCloseRoom}
+                className="w-full rounded-[10px] border border-zinc-300 bg-zinc-100 px-[18px] py-2.5 text-sm font-semibold text-zinc-600 transition-all duration-200 ease hover:bg-zinc-200"
+              >
+                Close room
+              </button>
+            </div>
           )}
 
           {!isHost && (

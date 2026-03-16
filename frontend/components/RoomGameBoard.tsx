@@ -313,7 +313,7 @@ export function RoomGameBoard({
       )}
       <header className="flex-shrink-0 border-b border-zinc-200/80 bg-white/90 px-6 py-5 shadow-sm backdrop-blur-md">
         <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-4">
-          <div>
+          <div className="min-w-0 flex-1">
             <h1 className="text-xl font-bold tracking-tight text-zinc-900 md:text-2xl">
               {roomState.name || "Party Timeliners"}
             </h1>
@@ -329,20 +329,27 @@ export function RoomGameBoard({
                     : "Loading…"}
             </p>
             {!isEnded && isMyTurn && turnTimeLimitSeconds != null && secondsLeft != null && (() => {
-              const { text: timerTextClass, bar: timerBarClass } = getTimerClasses(secondsLeft);
+              const { bar: timerBarClass } = getTimerClasses(secondsLeft);
+              const widthPct = Math.max(0, (secondsLeft / turnTimeLimitSeconds) * 100);
               return (
-                <div className="mt-2 w-full max-w-xs">
-                  <div className="flex justify-between text-xs text-zinc-500">
-                    <span className={`font-semibold tabular-nums ${timerTextClass}`}>{secondsLeft}s</span>
-                    <span>Limit: {turnTimeLimitSeconds}s</span>
-                  </div>
-                  <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-200">
+                <div className="turn-timer-container mt-3 w-full">
+                  <span className="turn-timer-label tabular-nums" aria-live="polite">
+                    {secondsLeft}s
+                  </span>
+                  <div className="turn-timer-track">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${timerBarClass}`}
-                      style={{
-                        width: `${Math.max(0, (secondsLeft / turnTimeLimitSeconds) * 100)}%`,
-                      }}
-                    />
+                      className={`turn-timer-progress ${timerBarClass}`}
+                      style={{ width: `${widthPct}%` }}
+                      role="progressbar"
+                      aria-valuenow={secondsLeft}
+                      aria-valuemin={0}
+                      aria-valuemax={turnTimeLimitSeconds}
+                      aria-label={`${secondsLeft} seconds remaining`}
+                    >
+                      <span className="turn-timer-spark" aria-hidden />
+                      <span className="turn-timer-spark" aria-hidden />
+                      <span className="turn-timer-spark" aria-hidden />
+                    </div>
                   </div>
                 </div>
               );
