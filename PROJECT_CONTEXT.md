@@ -66,7 +66,7 @@ Lobby shows:
 - room settings
 - list of connected players
 
-The host can start the game at any time.
+The host can start the game at any time. Non-host players can **Leave room** at any time (button); they are removed from the room and redirected home.
 
 Minimum players required: 1.
 
@@ -105,6 +105,24 @@ After the game ends the room shows a **Match Results** screen:
 - Play again (rematch) or End game
 
 Players stay in the room until they leave or the host starts a rematch.
+
+---
+
+# Leaving a room
+
+Only **non-host** players can voluntarily leave a room. The host uses “End game” to return everyone to the lobby or “Close room” when the game has ended.
+
+**From the lobby:** The player clicks “Leave room”; they are removed from the participant list and redirected home. No other side effects.
+
+**During the game:** The player clicks “Leave game” (header). Behaviour:
+
+- Their **already-placed cards remain** on the timeline.
+- They are **removed from the participant list** and their **score is not counted** in the final results.
+- If it was **their turn**, the turn is considered finished (no card is placed) and the turn passes to the next player normally.
+- If it was **not their turn**, they simply leave; the current turn is unchanged.
+- If fewer than 2 players remain after someone leaves, the room **resets to lobby** (same as “End game”): timeline and hands are cleared, host remains.
+
+All other players in the room receive a **notification** that “X left the game” (toast, auto-dismiss). The client that left receives an acknowledgment and is redirected home; their stored credentials for that room are cleared so they are not offered rejoin.
 
 ---
 
@@ -147,19 +165,14 @@ Settings cannot be changed once the match starts.
 
 # Player Disconnections
 
-If a player disconnects during their turn:
+**Voluntary leave** is handled separately: see “Leaving a room”. The player explicitly clicks “Leave room” or “Leave game” and is removed from the room; others are notified.
 
-- the turn is skipped
+**Involuntary disconnect** (network drop, close tab, refresh):
 
-Players can reconnect using the same nickname and email.
-
-If the host disconnects:
-
-- the match continues normally
-
-If a player refreshes the browser:
-
-- they should automatically reconnect.
+- If a player disconnects during their turn, the turn can be skipped (e.g. by a timeout or host action).
+- Players can reconnect using the same nickname (and stored credentials for that room).
+- If the host disconnects, the match can continue; when they reconnect they rejoin as host.
+- If a player refreshes the browser, they should automatically reconnect using stored room credentials.
 
 ---
 
@@ -359,5 +372,7 @@ The game is a playable multiplayer prototype with:
 
 - timeline component and draggable event cards with droppable slots
 - event placement validation and scoring on the server
-- real-time multiplayer via WebSockets (invite link, lobby, turn-based play)
-- UI polish: hero/glass panels, results screen, confetti, sounds, timer feedback, error toasts, drag feedback
+- real-time multiplayer via WebSockets (invite link, lobby, turn-based play, leave room)
+- **Player avatars:** choose on create/join, shown in lobby, turn indicator, and results
+- **Leave room:** non-host can leave from lobby or during the game; turn advances if it was their turn; others get “X left the game” notification; room resets to lobby if &lt; 2 players remain
+- UI polish: hero/glass panels, results screen, confetti, sounds, timer feedback, error toasts, drag feedback, “player left” toast

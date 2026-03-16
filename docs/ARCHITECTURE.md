@@ -74,13 +74,15 @@ frontend/
 │   ├── page.tsx             # Home (create/join room)
 │   └── room/[roomId]/page.tsx  # Room: JoinForm | Lobby | RoomGameBoard
 ├── components/
-│   ├── EventCard.tsx         # Draggable/reveal card, event image and year
-│   ├── GameBoard.tsx         # Single-player game (optional)
-│   ├── JoinForm.tsx          # Join room by ID/link
-│   ├── Lobby.tsx             # Pre-game: players list, start game, join sound
-│   ├── RoomGameBoard.tsx     # Multiplayer: timeline, turn timer, results, errors
-│   └── Timeline.tsx          # Horizontal timeline + droppable slots
+│   ├── AvatarPicker.tsx     # Avatar grid for create/join
+│   ├── EventCard.tsx        # Draggable/reveal card, event image and year
+│   ├── GameBoard.tsx        # Single-player game (optional)
+│   ├── JoinForm.tsx         # Join room by ID/link + avatar
+│   ├── Lobby.tsx            # Pre-game: players list, start game, Leave room (non-host), join sound
+│   ├── RoomGameBoard.tsx    # Multiplayer: timeline, turn timer, results, Leave game (non-host), errors
+│   └── Timeline.tsx         # Horizontal timeline + droppable slots
 ├── lib/
+│   ├── avatars.ts           # AVAILABLE_AVATARS list (public/avatars/)
 │   ├── eventPool.ts
 │   ├── eventTypeStyles.ts
 │   ├── format.ts
@@ -90,14 +92,14 @@ frontend/
 │   └── ...
 └── src/
     ├── hooks/
-    │   └── useRoomSocket.ts  # WebSocket, room state, place/start/rematch
+    │   └── useRoomSocket.ts  # WebSocket: join, state_update, place/start/rematch/leave_room, leave_ack, player_left
     ├── services/
     │   ├── EventService.ts
     │   └── roomApi.ts
     └── utils/
         ├── confetti.ts       # fireSuccessConfetti (correct place)
         ├── victoryConfetti.ts
-        ├── sound.ts          # playSound, stopTickSound, playJoinSound, playStartGameSound
+        ├── sound.ts         # playSound, stopTickSound, playJoinSound, playStartGameSound
         └── ...
 ```
 
@@ -115,10 +117,12 @@ The UI provides consistent feedback without changing game or sync logic:
 - **Errors:** Place and room errors appear as top-center toasts and auto-dismiss after a few seconds.
 - **Drag feedback:** Timeline glows while dragging; target slot is highlighted; card scales and shadows while dragging; card has a short “settle” animation on correct place.
 - **Game start:** When the room goes from lobby to playing, a short sound plays and a brief full-screen flash animates.
+- **Leave room:** Non-host can leave from the lobby (“Leave room” button) or during the game (“Leave game” in the header). On leave they receive `leave_ack` and are redirected home; storage for that room is cleared. Other players receive `state_update` and a `player_left` message (nickname) and see a toast “X left the game” (auto-dismiss and dismiss button).
+- **Avatars:** Players choose an avatar when creating or joining a room (AvatarPicker). Avatars are stored in room_players and shown in lobby, turn indicator, and results.
 
 ---
 
 # Testing
 
-- **Backend:** Vitest (`backend npm run test`). Tests cover game logic (timeline, validation, deck, event quality), event ingestion, and room service integration. No changes to gameplay or sync logic were made in the UI work; these tests remain valid.
+- **Backend:** Vitest (`backend npm run test`). Tests cover game logic (timeline, validation, deck, event quality), event ingestion, and room service integration. Room service tests include: create/join (with avatars), start/place/end/rematch, and **leaveRoom** (lobby: player removed; host cannot leave; during game: non-host leaves, turn advances if it was their turn; room resets to lobby when &lt; 2 players remain).
 - **Frontend:** Vitest (`frontend npm run test`). Currently covers utility modules (e.g. `src/utils/sound.test.ts`: exports and no-throw behavior when `Audio` is unavailable in Node). UI/components are not yet under unit tests.

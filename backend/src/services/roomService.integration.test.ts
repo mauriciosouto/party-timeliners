@@ -16,6 +16,7 @@ import {
   placeEvent,
   endGame,
   rematchRoom,
+  leaveRoom,
   setPlayerConnected,
 } from "./roomService.js";
 
@@ -307,5 +308,104 @@ describe("roomService (integration)", () => {
     const result = rematchRoom(roomId, hostId);
     expect("error" in result).toBe(true);
     expect((result as { error: string }).error).toContain("2 players");
+  });
+
+  describe("leaveRoom", () => {
+    it("in lobby: non-host leaves and is removed from players", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      const join = joinRoom(roomId, "P2") as { playerId: string; roomState: NonNullable<ReturnType<typeof getRoomState>> };
+      const p2Id = join.playerId;
+      expect(join.roomState.players).toHaveLength(2);
+
+      const result = leaveRoom(roomId, p2Id);
+      expect("error" in result).toBe(false);
+      const { roomState, leftPlayerNickname } = result as {
+        roomState: NonNullable<ReturnType<typeof getRoomState>>;
+        leftPlayerNickname: string;
+      };
+      expect(leftPlayerNickname).toBe("P2");
+      expect(roomState.players).toHaveLength(1);
+      expect(roomState.players[0]?.playerId).toBe(hostId);
+      expect(roomState.status).toBe("lobby");
+    });
+
+    it("returns error when host tries to leave", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+
+      const result = leaveRoom(roomId, hostId);
+      expect(result).toEqual({
+        error: "Host cannot leave; use End game to return to lobby",
+      });
+    });
+
+    it("returns error when room not found", () => {
+      const result = leaveRoom("non-existent-room-id", "some-player-id");
+      expect(result).toEqual({ error: "Room not found" });
+    });
+
+    it("returns error when player not in room", () => {
+      const { roomId } = createRoom("Host");
+      const result = leaveRoom(roomId, "other-player-id");
+      expect(result).toEqual({ error: "Player not in room" });
+    });
+
+    it("during game with 2 players: non-host leaves and room resets to lobby", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      const join = joinRoom(roomId, "P2") as { playerId: string };
+      const p2Id = join.playerId;
+      startGame(roomId, hostId);
+
+      const result = leaveRoom(roomId, p2Id);
+      expect("error" in result).toBe(false);
+      const { roomState } = result as {
+        roomState: NonNullable<ReturnType<typeof getRoomState>>;
+        leftPlayerNickname: string;
+      };
+      expect(roomState.status).toBe("lobby");
+      expect(roomState.players).toHaveLength(1);
+      expect(roomState.players[0]?.playerId).toBe(hostId);
+      expect(roomState.timeline).toHaveLength(0);
+    });
+
+    it("during game with 3 players: leaver not on turn leaves, turn unchanged", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      const j2 = joinRoom(roomId, "A") as { playerId: string };
+      const j3 = joinRoom(roomId, "B") as { playerId: string };
+      const idA = j2.playerId;
+      const idB = j3.playerId;
+      startGame(roomId, hostId);
+
+      const stateBefore = getRoomState(roomId)!;
+      const currentId = stateBefore.currentTurnPlayerId!;
+      const leaverId = [hostId, idA, idB].find((id) => id !== currentId)!;
+
+      const result = leaveRoom(roomId, leaverId);
+      expect("error" in result).toBe(false);
+      const stateAfter = getRoomState(roomId)!;
+      expect(stateAfter.players).toHaveLength(2);
+      expect(stateAfter.currentTurnPlayerId).toBe(currentId);
+    });
+
+    it("during game with 3 players: leaver on turn leaves, turn advances to next", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      const j2 = joinRoom(roomId, "A") as { playerId: string };
+      const j3 = joinRoom(roomId, "B") as { playerId: string };
+      const idA = j2.playerId;
+      const idB = j3.playerId;
+      startGame(roomId, hostId);
+
+      const stateBefore = getRoomState(roomId)!;
+      const currentId = stateBefore.currentTurnPlayerId!;
+      const orderedIds = stateBefore.turnOrder;
+      const currentIndex = orderedIds.indexOf(currentId);
+      const nextId = orderedIds[(currentIndex + 1) % orderedIds.length];
+
+      const result = leaveRoom(roomId, currentId);
+      expect("error" in result).toBe(false);
+      const stateAfter = getRoomState(roomId)!;
+      expect(stateAfter.players).toHaveLength(2);
+      expect(stateAfter.currentTurnPlayerId).toBe(nextId);
+    });
   });
 });
