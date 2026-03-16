@@ -358,36 +358,33 @@ describe("roomService (integration)", () => {
     });
 
     it("multiple correct and incorrect placements keep timeline chronological", () => {
-      const { roomId, playerId: hostId } = createRoom("Host", undefined, { maxTimelineSize: 10 });
+      const { roomId, playerId: hostId } = createRoom("Host", undefined, { maxTimelineSize: 8 });
       joinRoom(roomId, "P2");
       startGame(roomId, hostId);
+      setTimelineToEventIds(roomId, ["e6"]);
 
-      for (let round = 0; round < 4; round++) {
-        const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!);
-        if (!state || state.timeline.length >= 10) break;
-        const hand = state.myHand;
-        if (hand.length === 0) break;
-        const eventId = hand[0]!.id;
-        const eventYear = hand[0]!.year;
-        const timelineYears = state.timeline.map((t) => t.event.year);
-        const correctPos = findCorrectPosition(timelineYears, eventYear);
-        const wrongPos =
-          correctPos === 0
-            ? Math.min(1, state.timeline.length)
-            : correctPos === state.timeline.length
-              ? Math.max(0, state.timeline.length - 1)
-              : 0;
-        const placeWrongFirst = round % 2 === 0;
-        const position = placeWrongFirst ? wrongPos : correctPos;
+      setCurrentPlayerHand(roomId, ["e1", "e2", "e3"]);
+      let state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      let result = placeEvent(roomId, state.currentTurnPlayerId!, "e1", 1);
+      expect("error" in result).toBe(false);
+      expect((result as { correct: boolean }).correct).toBe(false);
+      expectTimelineChronological((result as { timeline: TimelineEntry[] }).timeline);
 
-        const result = placeEvent(roomId, state.currentTurnPlayerId!, eventId, position);
-        expect("error" in result).toBe(false);
-        const place = result as { timeline: TimelineEntry[] };
-        expectTimelineChronological(place.timeline);
-      }
+      setCurrentPlayerHand(roomId, ["e8", "e7", "e5"]);
+      state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      result = placeEvent(roomId, state.currentTurnPlayerId!, "e8", state.timeline.length);
+      expect("error" in result).toBe(false);
+      expect((result as { correct: boolean }).correct).toBe(true);
+      expectTimelineChronological((result as { timeline: TimelineEntry[] }).timeline);
 
-      const finalState = getRoomState(roomId)!;
-      expectTimelineChronological(finalState.timeline);
+      setCurrentPlayerHand(roomId, ["e2", "e4", "e5"]);
+      state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      result = placeEvent(roomId, state.currentTurnPlayerId!, state.myHand[0]!.id, 0);
+      expect("error" in result).toBe(false);
+      expect((result as { correct: boolean }).correct).toBe(false);
+      expectTimelineChronological((result as { timeline: TimelineEntry[] }).timeline);
+
+      expectTimelineChronological(getRoomState(roomId)!.timeline);
     });
 
     it("correct placement at beginning (deterministic setup): event before all", () => {
