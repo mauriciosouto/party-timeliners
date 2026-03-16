@@ -88,40 +88,45 @@ const INSERT_SQL = `
   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
+/** Minimum events required to start a game (1 initial + 3*players + draw pool). Wait for this when pool is empty on startup. */
+const MIN_EVENTS_TO_START = 160;
+
 /**
- * Fetches from Wikidata, merges with existing pool, and writes to DB. Runs in background; errors are logged only.
+ * Fetches from Wikidata, merges with existing pool, and writes to DB.
+ * Returns a promise that resolves when done (for optional await on startup).
  */
-function refreshEventPoolInBackground(): void {
-  console.log("[events] Background refresh started (Wikidata, merge with existing, max " + LIMIT_PER_CATEGORY + " per category).");
-  (async () => {
-    try {
-      const db = getDb();
-      const existing = loadExistingPool(db);
-      const candidates = await fetchAndPrepareEventPool();
-      const merged = mergeWithExistingPool(existing, candidates, LIMIT_PER_CATEGORY);
-      const runTx = db.transaction(() => {
-        db.exec("DELETE FROM events");
-        const insert = db.prepare(INSERT_SQL);
-        for (const e of merged) {
-          insert.run(
-            e.id,
-            e.title,
-            e.type,
-            e.displayTitle,
-            e.year,
-            e.image ?? null,
-            e.wikipediaUrl ?? null,
-            e.popularityScore ?? null,
-          );
-        }
-        setLastRefreshed(db);
-      });
-      runTx();
-      console.log(`[events] Background refresh done: ${existing.length} existing + ${candidates.length} candidates → ${merged.length} events.`);
-    } catch (err) {
-      console.error("[events] Background refresh failed:", err);
-    }
+function runRefreshEventPool(): Promise<void> {
+  console.log("[events] Refresh started (Wikidata, merge with existing, max " + LIMIT_PER_CATEGORY + " per category).");
+  return (async () => {
+    const db = getDb();
+    const existing = loadExistingPool(db);
+    const candidates = await fetchAndPrepareEventPool();
+    const merged = mergeWithExistingPool(existing, candidates, LIMIT_PER_CATEGORY);
+    const runTx = db.transaction(() => {
+      db.exec("DELETE FROM events");
+      const insert = db.prepare(INSERT_SQL);
+      for (const e of merged) {
+        insert.run(
+          e.id,
+          e.title,
+          e.type,
+          e.displayTitle,
+          e.year,
+          e.image ?? null,
+          e.wikipediaUrl ?? null,
+          e.popularityScore ?? null,
+        );
+      }
+      setLastRefreshed(db);
+    });
+    runTx();
+    console.log(`[events] Refresh done: ${existing.length} existing + ${candidates.length} candidates → ${merged.length} events.`);
   })();
+}
+
+/** Fire-and-forget wrapper; errors are logged only. */
+function refreshEventPoolInBackground(): void {
+  runRefreshEventPool().catch((err) => console.error("[events] Background refresh failed:", err));
 }
 
 export async function ensureEventPool(): Promise<void> {
@@ -162,9 +167,25 @@ export async function ensureEventPool(): Promise<void> {
   }
 
   if (count === 0) {
-    console.log("[events] Pool empty. Server starting; refreshing from Wikidata in background (play once events are loaded).");
+    console.log("[events] Pool empty. Waiting for initial refresh from Wikidata (up to 90s)...");
+    const timeoutMs = 90_000;
+    try {
+      await Promise.race([
+        runRefreshEventPool(),
+        new Promise<void>((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs)),
+      ]);
+    } catch (err) {
+      const msg = err instanceof Error && err.message === "timeout" ? "Timeout waiting for events." : err;
+      console.warn("[events]", msg);
+    }
+    const after = getEventCount(db);
+    if (after >= MIN_EVENTS_TO_START) {
+      console.log(`[events] Pool ready: ${after} events.`);
+    } else {
+      console.log(`[events] Pool has ${after} events (need ${MIN_EVENTS_TO_START}+ for full games). Server starting; refresh may still be running.`);
+    }
   } else {
     console.log(`[events] Pool expired (${count} events). Server starting with existing events; refreshing from Wikidata in background.`);
+    refreshEventPoolInBackground();
   }
-  refreshEventPoolInBackground();
 }
