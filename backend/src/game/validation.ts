@@ -10,8 +10,8 @@ export type ValidatePlaceContext = {
   currentTurnPlayerId: string | null;
   turnOrder: string[];
   turnIndex: number;
-  nextDeckSequence: number;
-  deckEventIdAtSequence: string | null;
+  /** Event IDs in the current player's hand (player may place any one). */
+  handEventIds: Set<string>;
   timelineYears: number[];
   timelineLength: number;
   maxTimelineSize: number;
@@ -36,8 +36,8 @@ export function validatePlace(
   if (ctx.currentTurnPlayerId !== playerId) {
     return { valid: false, error: "Not your turn" };
   }
-  if (!ctx.deckEventIdAtSequence || ctx.deckEventIdAtSequence !== eventId) {
-    return { valid: false, error: "Wrong event for this turn" };
+  if (!ctx.handEventIds.has(eventId)) {
+    return { valid: false, error: "Event not in your hand" };
   }
   if (!isValidPosition(position, ctx.timelineLength)) {
     return { valid: false, error: "Invalid position" };

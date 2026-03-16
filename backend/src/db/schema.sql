@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS room_timeline (
   PRIMARY KEY (room_id, position)
 );
 
--- Deck per room (shuffled when game starts)
+-- Deck per room (draw pile; shuffled when game starts)
 CREATE TABLE IF NOT EXISTS room_deck (
   room_id TEXT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
   event_id TEXT NOT NULL REFERENCES events(id),
@@ -75,6 +75,16 @@ CREATE TABLE IF NOT EXISTS room_deck (
   PRIMARY KEY (room_id, sequence)
 );
 
+-- Per-player hand (3 cards each when playing)
+CREATE TABLE IF NOT EXISTS room_hand (
+  room_id TEXT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+  player_id TEXT NOT NULL,
+  event_id TEXT NOT NULL REFERENCES events(id),
+  slot_index INTEGER NOT NULL CHECK (slot_index >= 0 AND slot_index <= 2),
+  PRIMARY KEY (room_id, player_id, slot_index)
+);
+
 CREATE INDEX IF NOT EXISTS idx_room_timeline_room ON room_timeline(room_id);
 CREATE INDEX IF NOT EXISTS idx_room_deck_room ON room_deck(room_id);
+CREATE INDEX IF NOT EXISTS idx_room_hand_room ON room_hand(room_id);
 CREATE INDEX IF NOT EXISTS idx_room_players_room ON room_players(room_id);

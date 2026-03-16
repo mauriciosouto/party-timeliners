@@ -12,7 +12,6 @@ import { fireSuccessConfetti } from "@/src/utils/confetti";
 import { fireVictoryConfetti } from "@/src/utils/victoryConfetti";
 import { playSound, stopTickSound } from "@/src/utils/sound";
 
-const DRAGGABLE_ID = "current-card";
 
 /** Wrapper so Timeline can show drag-active glow; must be used inside DndContext. */
 function TimelineWithDragState(props: Omit<TimelineProps, "dragActive">) {
@@ -159,19 +158,9 @@ export function RoomGameBoard({
     return () => clearInterval(interval);
   }, [isMyTurn, turnTimeLimitSeconds, currentTurnStartedAt, onTurnTimeout]);
 
-  const currentTurnEvent = useMemo(
-    () =>
-      roomState.status === "playing" && roomState.currentTurnEvent
-        ? ({
-            id: roomState.currentTurnEvent.id,
-            title: roomState.currentTurnEvent.title,
-            year: roomState.currentTurnEvent.year,
-            description: roomState.currentTurnEvent.displayTitle,
-            image: roomState.currentTurnEvent.image,
-            wikipediaUrl: roomState.currentTurnEvent.wikipediaUrl,
-          } as TimelineEvent)
-        : null,
-    [roomState.status, roomState.currentTurnEvent],
+  const myHand = useMemo(
+    () => roomState.myHand ?? [],
+    [roomState.myHand],
   );
 
   useEffect(() => {
@@ -233,7 +222,9 @@ export function RoomGameBoard({
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      if (!currentTurnEvent || event.active.id !== DRAGGABLE_ID) return;
+      const eventId = event.active.id as string;
+      const handIds = new Set(myHand.map((e) => e.id));
+      if (!handIds.has(eventId)) return;
       const slotIndex = parseSlotIndexFromId(
         (event.over?.id as string | null | undefined) ?? null,
       );
@@ -244,10 +235,10 @@ export function RoomGameBoard({
         return;
       }
       setDropHint(null);
-      setLastPlacedId(currentTurnEvent.id);
-      onPlaceEvent(currentTurnEvent.id, slotIndex);
+      setLastPlacedId(eventId);
+      onPlaceEvent(eventId, slotIndex);
     },
-    [currentTurnEvent, onPlaceEvent, timeline.length],
+    [myHand, onPlaceEvent, timeline.length],
   );
 
   const isEnded = roomState.status === "ended";
@@ -565,11 +556,11 @@ export function RoomGameBoard({
             >
               <div className="flex flex-col gap-0.5">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
-                  Card to place
+                  Your hand
                 </h2>
                 {currentTurnPlayer && (
                   <p className={isMyTurn ? "text-sm font-semibold text-violet-700" : "text-xs text-zinc-500"}>
-                    {isMyTurn ? "Your turn — drag the card to the timeline" : `Active: ${currentTurnPlayer.nickname}`}
+                    {isMyTurn ? "Your turn — drag a card to the timeline" : `Active: ${currentTurnPlayer.nickname}`}
                   </p>
                 )}
               </div>
@@ -577,16 +568,19 @@ export function RoomGameBoard({
                 <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 text-sm text-zinc-400">
                   Connecting…
                 </div>
-              ) : currentTurnEvent ? (
-                <div className="flex justify-center md:justify-start">
-                  <EventCard
-                    event={currentTurnEvent}
-                    showYear={false}
-                    revealed={false}
-                    draggable={isMyTurn}
-                    draggableId={DRAGGABLE_ID}
-                    className={isMyTurn ? "touch-manipulation ring-2 ring-violet-400 ring-offset-2 ring-offset-white" : undefined}
-                  />
+              ) : myHand.length > 0 ? (
+                <div className="flex flex-wrap justify-center gap-3 md:justify-start">
+                  {myHand.map((ev) => (
+                    <EventCard
+                      key={ev.id}
+                      event={ev}
+                      showYear={false}
+                      revealed={false}
+                      draggable={isMyTurn}
+                      draggableId={ev.id}
+                      className={isMyTurn ? "touch-manipulation ring-2 ring-violet-400 ring-offset-2 ring-offset-white" : undefined}
+                    />
+                  ))}
                 </div>
               ) : (
                 <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/80 text-center text-sm text-zinc-500">

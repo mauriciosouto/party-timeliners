@@ -53,8 +53,8 @@ export type RoomState = {
   turnOrder: string[];
   currentTurnPlayerId: string | null;
   currentTurnStartedAt: string | null;
-  /** Event the active player must place; visible to all players when status is playing. */
-  currentTurnEvent: ApiEvent | null;
+  /** Requesting player's hand (up to 3 cards). Only populated when forPlayerId is passed to getRoomState. */
+  myHand: ApiEvent[];
   nextDeckSequence: number;
   initialEventId: string | null;
   endedAt: string | null;

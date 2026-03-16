@@ -129,8 +129,11 @@ export function joinRoom(
   return { playerId, roomState };
 }
 
-/** Build full RoomState from DB. */
-export function getRoomState(roomId: string): RoomState | null {
+const CARDS_PER_HAND = 3;
+const DRAW_POOL_SIZE = 150;
+
+/** Build full RoomState from DB. Optionally pass forPlayerId to include that player's hand (private). */
+export function getRoomState(roomId: string, forPlayerId?: string): RoomState | null {
   const db = getDb();
 
   const room = db
@@ -212,8 +215,8 @@ export function getRoomState(roomId: string): RoomState | null {
   let turnOrder: string[] = [];
   let currentTurnPlayerId: string | null = null;
   let currentTurnStartedAt: string | null = null;
+  let myHand: ApiEvent[] = [];
 
-  let currentTurnEvent: ApiEvent | null = null;
   if (room.status === "playing" && playerRows.length > 0) {
     const ordered = [...playerRows].sort(
       (a, b) => (a.turn_order ?? 999) - (b.turn_order ?? 999),
@@ -225,14 +228,16 @@ export function getRoomState(roomId: string): RoomState | null {
       raw && typeof raw === "string" && raw.length === 19 && !raw.endsWith("Z")
         ? `${raw}Z`
         : raw;
-    const deckRow = db
-      .prepare(
-        `SELECT e.* FROM room_deck rd
-         JOIN events e ON e.id = rd.event_id
-         WHERE rd.room_id = ? AND rd.sequence = ?`,
-      )
-      .get(roomId, room.next_deck_sequence) as EventRecord | undefined;
-    currentTurnEvent = deckRow ? eventToApi(deckRow) : null;
+    if (forPlayerId) {
+      const handRows = db
+        .prepare(
+          `SELECT e.id, e.title, e.type, e.display_title, e.year, e.image, e.wikipedia_url
+           FROM room_hand rh JOIN events e ON e.id = rh.event_id
+           WHERE rh.room_id = ? AND rh.player_id = ? ORDER BY rh.slot_index`,
+        )
+        .all(roomId, forPlayerId) as EventRecord[];
+      myHand = handRows.map(eventToApi);
+    }
   }
 
   return {
@@ -249,7 +254,7 @@ export function getRoomState(roomId: string): RoomState | null {
     turnOrder,
     currentTurnPlayerId,
     currentTurnStartedAt,
-    currentTurnEvent,
+    myHand,
     nextDeckSequence: room.next_deck_sequence,
     initialEventId: room.initial_event_id,
     endedAt: room.ended_at,
@@ -279,19 +284,21 @@ export function startGame(roomId: string, playerId: string): RoomState | { error
     return { error: "At least 2 players are required to start. Wait for another player to join." };
 
   const events = db.prepare("SELECT * FROM events").all() as EventRecord[];
-  if (events.length < 2) return { error: "Not enough events in pool. Run seed first." };
-
-  const deckWithInitial = buildDeck(
-    events.map(eventToEventLike),
-    INITIAL_DECK_SIZE + 1,
-  );
-  const initialEvent = deckWithInitial[0] as EventRecord | undefined;
-  const deckEvents = deckWithInitial.slice(1, INITIAL_DECK_SIZE + 1);
-  if (!initialEvent) return { error: "Failed to build deck" };
-
   const playerIds = db
     .prepare("SELECT player_id FROM room_players WHERE room_id = ? ORDER BY joined_at")
     .all(roomId) as { player_id: string }[];
+  const N = playerIds.length;
+  const totalCardsNeeded = 1 + CARDS_PER_HAND * N + DRAW_POOL_SIZE;
+  if (events.length < totalCardsNeeded) {
+    return { error: "Not enough events in pool. Run seed first." };
+  }
+
+  const fullDeck = buildDeck(events.map(eventToEventLike), totalCardsNeeded);
+  const initialEvent = fullDeck[0] as EventRecord | undefined;
+  const handEvents = fullDeck.slice(1, 1 + CARDS_PER_HAND * N);
+  const drawEvents = fullDeck.slice(1 + CARDS_PER_HAND * N);
+  if (!initialEvent) return { error: "Failed to build deck" };
+
   const turnOrderShuffle = shuffle(playerIds.map((p) => p.player_id));
 
   db.transaction(() => {
@@ -310,34 +317,68 @@ export function startGame(roomId: string, playerId: string): RoomState | { error
       ).run(i, roomId, pid);
     });
 
+    const insertHand = db.prepare(
+      "INSERT INTO room_hand (room_id, player_id, event_id, slot_index) VALUES (?, ?, ?, ?)",
+    );
+    turnOrderShuffle.forEach((pid: string, playerIndex: number) => {
+      for (let s = 0; s < CARDS_PER_HAND; s++) {
+        const ev = handEvents[playerIndex * CARDS_PER_HAND + s];
+        if (ev) insertHand.run(roomId, pid, ev.id, s);
+      }
+    });
+
     const insertDeck = db.prepare(
       "INSERT INTO room_deck (room_id, event_id, sequence) VALUES (?, ?, ?)",
     );
-    deckEvents.forEach((e, i) => insertDeck.run(roomId, e.id, i));
+    drawEvents.forEach((e, i) => insertDeck.run(roomId, e.id, i));
   })();
 
-  return getRoomState(roomId)!;
+  return getRoomState(roomId, turnOrderShuffle[0] ?? undefined)!;
 }
 
-/** Get the next event to place (only for the current turn player). */
+/** Get the first card in the current turn player's hand (for backward compatibility). */
 export function getNextEventForCurrentTurn(
   roomId: string,
   playerId: string,
 ): ApiEvent | null {
-  const state = getRoomState(roomId);
-  if (!state || state.status !== "playing") return null;
+  const state = getRoomState(roomId, playerId);
+  if (!state || state.status !== "playing" || state.myHand.length === 0) return null;
   if (state.currentTurnPlayerId !== playerId) return null;
+  return state.myHand[0] ?? null;
+}
 
-  const db = getDb();
-  const row = db
+/** Remove one card from player's hand and draw one from deck into hand. Used after place/timeout. */
+function removeFromHandAndDraw(
+  db: ReturnType<typeof getDb>,
+  roomId: string,
+  playerId: string,
+  eventId: string,
+): void {
+  db.prepare(
+    "DELETE FROM room_hand WHERE room_id = ? AND player_id = ? AND event_id = ?",
+  ).run(roomId, playerId, eventId);
+
+  const drawRow = db
     .prepare(
-      `SELECT e.* FROM room_deck rd
-       JOIN events e ON e.id = rd.event_id
-       WHERE rd.room_id = ? AND rd.sequence = ?`,
+      `SELECT event_id, sequence FROM room_deck WHERE room_id = ? ORDER BY sequence ASC LIMIT 1`,
     )
-    .get(roomId, state.nextDeckSequence) as EventRecord | undefined;
+    .get(roomId) as { event_id: string; sequence: number } | undefined;
+  if (!drawRow) return;
 
-  return row ? eventToApi(row) : null;
+  db.prepare(
+    "DELETE FROM room_deck WHERE room_id = ? AND event_id = ? AND sequence = ?",
+  ).run(roomId, drawRow.event_id, drawRow.sequence);
+
+  const usedSlots = db
+    .prepare(
+      "SELECT slot_index FROM room_hand WHERE room_id = ? AND player_id = ?",
+    )
+    .all(roomId, playerId) as { slot_index: number }[];
+  const used = new Set(usedSlots.map((r) => r.slot_index));
+  const freeSlot = [0, 1, 2].find((s) => !used.has(s)) ?? 0;
+  db.prepare(
+    "INSERT INTO room_hand (room_id, player_id, event_id, slot_index) VALUES (?, ?, ?, ?)",
+  ).run(roomId, playerId, drawRow.event_id, freeSlot);
 }
 
 /** Place event (current turn player only). Same validation as before; score is per-player. */
@@ -379,11 +420,12 @@ export function placeEvent(
     .get(eventId) as EventRecord | undefined;
   if (!event) return { error: "Event not found" };
 
-  const deckRow = db
+  const handRows = db
     .prepare(
-      "SELECT event_id FROM room_deck WHERE room_id = ? AND sequence = ?",
+      "SELECT event_id FROM room_hand WHERE room_id = ? AND player_id = ?",
     )
-    .get(roomId, room.next_deck_sequence) as { event_id: string } | undefined;
+    .all(roomId, playerId) as { event_id: string }[];
+  const handEventIds = new Set(handRows.map((r) => r.event_id));
 
   const timelineRows = db
     .prepare(
@@ -409,8 +451,7 @@ export function placeEvent(
       currentTurnPlayerId: currentPlayerId,
       turnOrder,
       turnIndex: room.turn_index,
-      nextDeckSequence: room.next_deck_sequence,
-      deckEventIdAtSequence: deckRow?.event_id ?? null,
+      handEventIds,
       timelineYears,
       timelineLength: timelineYears.length,
       maxTimelineSize: room.max_timeline_size ?? DEFAULT_MAX_TIMELINE_SIZE,
@@ -429,13 +470,14 @@ export function placeEvent(
 
   if (!correct) {
     db.transaction(() => {
+      removeFromHandAndDraw(db, roomId, playerId, eventId);
       shiftTimelinePositions(db, roomId, correctPosition);
       db.prepare(
         `INSERT INTO room_timeline (room_id, event_id, position, placed_by_player_id, placed_at)
          VALUES (?, ?, ?, ?, datetime('now'))`,
       ).run(roomId, eventId, correctPosition, playerId);
       db.prepare(
-        `UPDATE rooms SET next_deck_sequence = next_deck_sequence + 1, turn_index = ?, turn_started_at = datetime('now') WHERE id = ?`,
+        `UPDATE rooms SET turn_index = ?, turn_started_at = datetime('now') WHERE id = ?`,
       ).run(nextTurnIndex, roomId);
     })();
 
@@ -470,14 +512,12 @@ export function placeEvent(
       };
     }
 
-    const nextEvent = getNextEventForCurrentTurn(roomId, nextTurnPlayerId ?? "");
     return {
       correct: false,
       gameEnded: false,
       correctPosition,
       score: playerScore.score,
       timeline: state.timeline,
-      nextEvent: nextEvent ?? null,
       nextTurnPlayerId,
     };
   }
@@ -490,6 +530,7 @@ export function placeEvent(
   const gameEndsByScore = newScore >= pointsToWin;
 
   db.transaction(() => {
+    removeFromHandAndDraw(db, roomId, playerId, eventId);
     shiftTimelinePositions(db, roomId, position);
     db.prepare(
       `INSERT INTO room_timeline (room_id, event_id, position, placed_by_player_id, placed_at)
@@ -499,7 +540,7 @@ export function placeEvent(
       "UPDATE room_players SET score = score + 1 WHERE room_id = ? AND player_id = ?",
     ).run(roomId, playerId);
     db.prepare(
-      `UPDATE rooms SET next_deck_sequence = next_deck_sequence + 1, turn_index = ?, turn_started_at = datetime('now') WHERE id = ?`,
+      `UPDATE rooms SET turn_index = ?, turn_started_at = datetime('now') WHERE id = ?`,
     ).run(nextTurnIndex, roomId);
   })();
 
@@ -522,17 +563,14 @@ export function placeEvent(
       gameEnded: true,
       score: state.scores[playerId] ?? 0,
       timeline: state.timeline,
-      nextEvent: null,
       nextTurnPlayerId: null,
     };
   }
 
-  const nextEvent = getNextEventForCurrentTurn(roomId, nextTurnPlayerId ?? "");
   return {
     correct: true,
     score: state.scores[playerId] ?? 0,
     timeline: state.timeline,
-    nextEvent: nextEvent ?? null,
     nextTurnPlayerId,
   };
 }
@@ -577,18 +615,19 @@ export function timeoutTurn(
   const currentPlayerId = turnOrderRows[room.turn_index]?.player_id;
   if (currentPlayerId !== playerId) return { error: "Not your turn" };
 
-  const deckRow = db
+  const handRow = db
     .prepare(
-      "SELECT event_id FROM room_deck WHERE room_id = ? AND sequence = ?",
+      `SELECT rh.event_id FROM room_hand rh WHERE rh.room_id = ? AND rh.player_id = ? ORDER BY rh.slot_index LIMIT 1`,
     )
-    .get(roomId, room.next_deck_sequence) as { event_id: string } | undefined;
-  if (!deckRow) {
-    return { error: "No event in deck for this turn" };
+    .get(roomId, playerId) as { event_id: string } | undefined;
+  if (!handRow) {
+    return { error: "No card in hand for this turn" };
   }
+  const eventId = handRow.event_id;
 
   const event = db
     .prepare("SELECT * FROM events WHERE id = ?")
-    .get(deckRow.event_id) as EventRecord | undefined;
+    .get(eventId) as EventRecord | undefined;
   if (!event) return { error: "Event not found" };
 
   const timelineRows = db
@@ -605,13 +644,14 @@ export function timeoutTurn(
   const nextTurnPlayerId = turnOrderRows[nextTurnIndex]?.player_id ?? null;
 
   db.transaction(() => {
+    removeFromHandAndDraw(db, roomId, playerId, eventId);
     shiftTimelinePositions(db, roomId, correctPosition);
     db.prepare(
       `INSERT INTO room_timeline (room_id, event_id, position, placed_by_player_id, placed_at)
        VALUES (?, ?, ?, ?, datetime('now'))`,
-    ).run(roomId, deckRow.event_id, correctPosition, playerId);
+    ).run(roomId, eventId, correctPosition, playerId);
     db.prepare(
-      `UPDATE rooms SET next_deck_sequence = next_deck_sequence + 1, turn_index = ?, turn_started_at = datetime('now') WHERE id = ?`,
+      `UPDATE rooms SET turn_index = ?, turn_started_at = datetime('now') WHERE id = ?`,
     ).run(nextTurnIndex, roomId);
   })();
 
@@ -640,13 +680,9 @@ export function timeoutTurn(
     };
   }
 
-  const nextEvent = nextTurnPlayerId
-    ? getNextEventForCurrentTurn(roomId, nextTurnPlayerId)
-    : null;
-
   return {
     nextTurnPlayerId,
-    nextEvent: nextEvent ?? null,
+    nextEvent: null,
     gameEnded: false,
     timeline: state.timeline,
   };
@@ -707,6 +743,7 @@ export function rematchRoom(roomId: string, playerId: string): RoomState | { err
   db.transaction(() => {
     db.prepare("DELETE FROM room_timeline WHERE room_id = ?").run(roomId);
     db.prepare("DELETE FROM room_deck WHERE room_id = ?").run(roomId);
+    db.prepare("DELETE FROM room_hand WHERE room_id = ?").run(roomId);
     db.prepare(
       `UPDATE rooms SET status = 'lobby', initial_event_id = NULL, next_deck_sequence = 0,
        turn_index = 0, turn_started_at = NULL, started_at = NULL, ended_at = NULL, winner_player_id = NULL

@@ -35,7 +35,8 @@ roomsRouter.post("/", (req, res) => {
 });
 
 roomsRouter.get("/:id", (req, res) => {
-  const state = roomService.getRoomState(req.params.id);
+  const playerId = (req.query?.playerId as string)?.trim() || undefined;
+  const state = roomService.getRoomState(req.params.id, playerId);
   if (!state) {
     res.status(404).json({ error: "Room not found" });
     return;

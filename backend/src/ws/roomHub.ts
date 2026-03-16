@@ -14,13 +14,13 @@ function getRoomClients(roomId: string): Set<Client> {
   return set;
 }
 
-/** Broadcast full room state to all clients in the room. Single source of truth. */
+/** Broadcast room state to each client with their own hand (private). */
 function broadcastStateUpdate(roomId: string): void {
-  const room = roomService.getRoomState(roomId);
-  if (!room) return;
-  const payload = JSON.stringify({ type: "state_update", room });
   getRoomClients(roomId).forEach((c) => {
-    if (c.ws.readyState === 1) c.ws.send(payload);
+    if (c.ws.readyState !== 1) return;
+    const room = roomService.getRoomState(roomId, c.playerId);
+    if (!room) return;
+    c.ws.send(JSON.stringify({ type: "state_update", room }));
   });
 }
 
@@ -95,7 +95,7 @@ export function attachRoomHub(ws: WebSocket): void {
         }
         client = { ws, playerId: joinedPlayerId, roomId };
         getRoomClients(roomId).add(client);
-        const room = roomService.getRoomState(roomId)!;
+        const room = roomService.getRoomState(roomId, joinedPlayerId)!;
         ws.send(
           JSON.stringify({
             type: "join_ack",
@@ -177,13 +177,12 @@ export function attachRoomHub(ws: WebSocket): void {
           broadcastStateUpdate(client.roomId);
           return;
         }
-        const stateAfter = roomService.getRoomState(client.roomId);
+        const stateAfter = roomService.getRoomState(client.roomId, client.playerId);
         ws.send(
           JSON.stringify({
             type: "place_result",
             ...result,
             currentTurnStartedAt: stateAfter?.currentTurnStartedAt ?? null,
-            nextDeckSequence: stateAfter?.nextDeckSequence ?? 0,
           }),
         );
         broadcastStateUpdate(client.roomId);
@@ -203,14 +202,13 @@ export function attachRoomHub(ws: WebSocket): void {
           broadcastStateUpdate(client.roomId);
           return;
         }
-        const state = roomService.getRoomState(client.roomId);
+        const state = roomService.getRoomState(client.roomId, client.playerId);
         ws.send(
           JSON.stringify({
             type: "place_result",
             correct: false,
             score: state?.scores[client.playerId] ?? 0,
             timeline: result.timeline ?? state?.timeline ?? [],
-            nextEvent: result.nextEvent ?? null,
             nextTurnPlayerId: result.nextTurnPlayerId,
             gameEnded: result.gameEnded,
           }),
@@ -289,7 +287,7 @@ export function attachRoomHub(ws: WebSocket): void {
 
   ws.on("close", () => {
     if (client) {
-      const state = roomService.getRoomState(client.roomId);
+      const state = roomService.getRoomState(client.roomId, client.playerId);
       if (
         state?.status === "playing" &&
         state.currentTurnPlayerId === client.playerId

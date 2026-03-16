@@ -42,10 +42,21 @@ function seedTestEvents(): void {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(e.id, e.title, e.type, e.display_title, e.year, e.image, e.wikipedia_url, null);
   }
+  const base = TEST_EVENTS.length;
+  const needed = 160 - base;
+  for (let i = 0; i < needed; i++) {
+    const id = `e-extra-${i}`;
+    const year = 1900 + (i % 120);
+    db.prepare(`
+      INSERT OR REPLACE INTO events (id, title, type, display_title, year, image, wikipedia_url, popularity_score)
+      VALUES (?, ?, 'Film', ?, ?, ?, ?, ?)
+    `).run(id, `Event ${year}`, `Event ${year} (Film)`, year, null, null, null);
+  }
 }
 
 function clearRoomTables(): void {
   const db = getDb();
+  db.prepare("DELETE FROM room_hand").run();
   db.prepare("DELETE FROM room_deck").run();
   db.prepare("DELETE FROM room_timeline").run();
   db.prepare("DELETE FROM room_players").run();
@@ -113,25 +124,24 @@ describe("roomService (integration)", () => {
     expect(state.status).toBe("playing");
     expect(state.timeline).toHaveLength(1);
     expect(state.currentTurnPlayerId).toBeDefined();
-    expect(state.nextDeckSequence).toBe(0);
+    expect(state.myHand).toBeDefined();
+    expect(state.myHand).toHaveLength(3);
   });
 
-  it("getNextEventForCurrentTurn returns event for current turn player only", () => {
+  it("getRoomState returns myHand only for requested player", () => {
     const { roomId, playerId: hostId } = createRoom("Host");
     const join = joinRoom(roomId, "P2") as { playerId: string };
     const p2Id = join.playerId;
     startGame(roomId, hostId);
 
-    const state = getRoomState(roomId)!;
-    const currentId = state.currentTurnPlayerId!;
-    const otherId = currentId === hostId ? p2Id : hostId;
+    const stateForHost = getRoomState(roomId, hostId)!;
+    const stateForP2 = getRoomState(roomId, p2Id)!;
 
-    const forCurrent = getNextEventForCurrentTurn(roomId, currentId);
-    const forOther = getNextEventForCurrentTurn(roomId, otherId);
-
-    expect(forCurrent).not.toBeNull();
-    expect(forCurrent?.id).toBeDefined();
-    expect(forOther).toBeNull();
+    expect(stateForHost.myHand).toHaveLength(3);
+    expect(stateForP2.myHand).toHaveLength(3);
+    const hostHandIds = new Set(stateForHost.myHand.map((e) => e.id));
+    const p2HandIds = new Set(stateForP2.myHand.map((e) => e.id));
+    hostHandIds.forEach((id) => expect(p2HandIds.has(id)).toBe(false));
   });
 
   it("placeEvent validates turn and returns correct/score when placement is correct", () => {
@@ -140,12 +150,13 @@ describe("roomService (integration)", () => {
     const p2Id = join.playerId;
     startGame(roomId, hostId);
 
-    const state = getRoomState(roomId)!;
-    const currentId = state.currentTurnPlayerId!;
-    const nextEvent = getNextEventForCurrentTurn(roomId, currentId);
-    expect(nextEvent).not.toBeNull();
-    const eventId = nextEvent!.id;
-    const eventYear = nextEvent!.year;
+    const roomState = getRoomState(roomId)!;
+    const currentId = roomState.currentTurnPlayerId!;
+    const state = getRoomState(roomId, currentId)!;
+    const hand = state.myHand;
+    expect(hand.length).toBeGreaterThanOrEqual(1);
+    const eventId = hand[0]!.id;
+    const eventYear = hand[0]!.year;
     const timelineYears = state.timeline.map((t) => t.event.year);
     const correctPos = timelineYears.findIndex((y) => y > eventYear) === -1 ? timelineYears.length : timelineYears.findIndex((y) => y > eventYear);
 
@@ -155,6 +166,9 @@ describe("roomService (integration)", () => {
     expect(place.correct).toBe(true);
     expect(place.score).toBe(1);
     expect(place.timeline).toHaveLength(2);
+
+    const stateAfter = getRoomState(roomId, currentId)!;
+    expect(stateAfter.myHand).toHaveLength(3);
   });
 
   it("placeEvent returns error when not player turn", () => {
@@ -163,12 +177,13 @@ describe("roomService (integration)", () => {
     const p2Id = join.playerId;
     startGame(roomId, hostId);
 
-    const state = getRoomState(roomId)!;
-    const currentId = state.currentTurnPlayerId!;
+    const roomState = getRoomState(roomId)!;
+    const currentId = roomState.currentTurnPlayerId!;
     const otherId = currentId === hostId ? p2Id : hostId;
-    const nextEvent = getNextEventForCurrentTurn(roomId, currentId)!;
+    const stateForCurrent = getRoomState(roomId, currentId)!;
+    const eventId = stateForCurrent.myHand[0]!.id;
 
-    const result = placeEvent(roomId, otherId, nextEvent.id, 1);
+    const result = placeEvent(roomId, otherId, eventId, 1);
     expect(result).toEqual({ error: "Not your turn" });
   });
 

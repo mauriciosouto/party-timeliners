@@ -45,8 +45,8 @@ export type GameState = {
   turnOrder: string[];
   currentTurnPlayerId: string | null;
   currentTurnStartedAt: string | null;
-  /** Event the active player must place; visible to all players when status is playing. */
-  currentTurnEvent: ApiEvent | null;
+  /** Current player's hand (3 cards). Only present for the requesting player; others do not see card details. */
+  myHand: ApiEvent[];
   nextDeckSequence: number;
   initialEventId: string | null;
   endedAt: string | null;

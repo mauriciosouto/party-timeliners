@@ -10,8 +10,7 @@ describe("validation", () => {
       currentTurnPlayerId: "player2",
       turnOrder,
       turnIndex: 1,
-      nextDeckSequence: 5,
-      deckEventIdAtSequence: "event-123",
+      handEventIds: new Set(["event-123"]),
       timelineYears,
       timelineLength: 3,
       maxTimelineSize: 50,
@@ -30,7 +29,7 @@ describe("validation", () => {
       expect(result).toEqual({ valid: false, error: "Not your turn" });
     });
 
-    it("returns error when event does not match deck", () => {
+    it("returns error when event not in hand", () => {
       const result = validatePlace(
         "player2",
         "other-event",
@@ -38,18 +37,18 @@ describe("validation", () => {
         { year: 1975, title: "X", image: "x", wikipediaUrl: "x" },
         baseCtx,
       );
-      expect(result).toEqual({ valid: false, error: "Wrong event for this turn" });
+      expect(result).toEqual({ valid: false, error: "Event not in your hand" });
     });
 
-    it("returns error when deck has no event for this sequence", () => {
+    it("returns error when hand is empty for event", () => {
       const result = validatePlace(
         "player2",
         "event-123",
         2,
         { year: 1975, title: "X", image: "x", wikipediaUrl: "x" },
-        { ...baseCtx, deckEventIdAtSequence: null },
+        { ...baseCtx, handEventIds: new Set() },
       );
-      expect(result).toEqual({ valid: false, error: "Wrong event for this turn" });
+      expect(result).toEqual({ valid: false, error: "Event not in your hand" });
     });
 
     it("returns error when position is invalid", () => {

@@ -20,25 +20,29 @@ Players join a room via an invitation link and play together in real time.
 
 Players take turns placing historical events into a shared timeline.
 
-Each player receives a hidden event card containing:
+**Hand system:** At the start of the match each player receives **3 event cards** (their hand). All cards are unique and drawn from the same event pool; no event is duplicated between players or on the timeline.
+
+Each card shows (hidden until placed):
 
 - title
 - description
 - optional image
 
-The player must drag the card into the correct position on the timeline.
-
-After placement the game reveals the event's year and determines if the placement was correct.
+On a player's turn they choose **one card from their hand** and drag it to the correct position on the timeline. After placement the game reveals the event's year and determines if the placement was correct.
 
 ### If correct
 
 - event stays in the timeline
 - player gains 1 point
+- player draws **one new card** from the pool (hand stays at 3)
 
 ### If incorrect
 
 - correct position is revealed
 - player gains 0 points
+- player still draws **one replacement card** (hand stays at 3)
+
+Hand size is always 3: after every placement (correct or not) the played card is removed from the hand and one new card is drawn from the remaining pool. No event appears twice in the game.
 
 Events are always sorted chronologically.
 
@@ -74,14 +78,14 @@ Once the game starts no new players may join.
 
 The timeline begins with one revealed historical event.
 
-Players take turns in a predefined random order.
+Each player is dealt 3 unique event cards from the pool (no duplicates). Players take turns in a predefined random order.
 
 Each turn:
 
-1. Player receives a hidden event card.
-2. Player drags the card onto the timeline.
-3. Player selects a position between existing events.
-4. The game validates the placement.
+1. The active player chooses one card from their hand.
+2. They drag it onto the timeline and select a position between existing events.
+3. The game validates the placement.
+4. The card is removed from their hand and they draw one new card from the pool (hand remains 3).
 
 ---
 
