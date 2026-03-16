@@ -108,7 +108,25 @@ Integration tests use `test-data/integration.db`; they seed the `events` table a
 |-----------|----------------|--------------------|
 | PORT      | 3001           | Server port        |
 | DB_PATH   | data/game.db   | SQLite file path   |
+| NODE_ENV  | development    | Environment (development / production) |
 | SEED_PATH | data/eventPool.json | Used by `npm run seed` |
+
+## Running in production
+
+Set environment variables (e.g. on Render or in `.env`):
+
+- **PORT** — Port the server will listen on (hosting platforms often set this).
+- **DB_PATH** — Path to the SQLite database file. Use an absolute path in production if needed (e.g. `/data/game.db`).
+- **NODE_ENV** — Set to `production` in production.
+
+Example:
+
+```bash
+npm run build
+npm run start
+```
+
+The server binds to `0.0.0.0` so it accepts connections from the platform’s proxy. The `/health` endpoint returns `{ "status": "ok" }` with HTTP 200 for health checks.
 
 ## Frontend
 

@@ -104,9 +104,14 @@ function runSchema(database: { exec: (sql: string) => void }): void {
 export async function initDb(): Promise<void> {
   if (db) return;
   const SQL = await initSqlJs();
-  dbPath = path.isAbsolute(config.dbPath)
-    ? config.dbPath
-    : path.join(process.cwd(), config.dbPath);
+  dbPath =
+    config.dbPath && path.isAbsolute(config.dbPath)
+      ? config.dbPath
+      : path.resolve(process.cwd(), config.dbPath);
+  const dir = path.dirname(dbPath);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
   const buffer = existsSync(dbPath)
     ? readFileSync(dbPath)
     : undefined;

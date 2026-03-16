@@ -4,18 +4,19 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "tsx src/index.ts",
     "build": "tsc && cp src/db/schema.sql dist/db/",
     "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts",
+    "test": "vitest run",
     "seed": "tsx src/db/seed.ts",
     "refresh-events": "tsx scripts/refreshEvents.ts",
-    "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:coverage:integration": "vitest run --coverage src/**/*.integration.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "sql.js": "^1.11.0",
     "ws": "^8.18.0"
