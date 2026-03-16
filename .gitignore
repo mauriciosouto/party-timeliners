@@ -5,6 +5,7 @@ node_modules/
 backend/dist/
 backend/data/
 backend/test-data/
+backend/coverage/
 *.db
 *.sqlite
 *.sqlite3

@@ -4,7 +4,7 @@ import type {
   ApiEvent,
   TimelineEntry,
   RoomPlayer,
-} from "shared/types";
+} from "@shared/types";
 
 /** Canonical game state types (shared with backend). */
 export type { GameState, ApiEvent, TimelineEntry, RoomPlayer };
