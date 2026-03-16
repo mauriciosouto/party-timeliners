@@ -20,15 +20,19 @@ import {
   closeRoomPermanently,
   setPlayerConnected,
 } from "./roomService.js";
+import { findCorrectPosition } from "../game/timeline.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const TEST_EVENTS = [
   { id: "e1", title: "Event 1900", type: "Film", display_title: "Event 1900 (Film)", year: 1900, image: "https://x/1.jpg", wikipedia_url: "https://en.wikipedia.org/wiki/X" },
-  { id: "e2", title: "Event 1950", type: "Film", display_title: "Event 1950 (Film)", year: 1950, image: "https://x/2.jpg", wikipedia_url: "https://en.wikipedia.org/wiki/X" },
-  { id: "e3", title: "Event 2000", type: "Film", display_title: "Event 2000 (Film)", year: 2000, image: "https://x/3.jpg", wikipedia_url: "https://en.wikipedia.org/wiki/X" },
-  { id: "e4", title: "Event 2005", type: "Film", display_title: "Event 2005 (Film)", year: 2005, image: "https://x/4.jpg", wikipedia_url: "https://en.wikipedia.org/wiki/X" },
-  { id: "e5", title: "Event 2010", type: "Film", display_title: "Event 2010 (Film)", year: 2010, image: "https://x/5.jpg", wikipedia_url: "https://en.wikipedia.org/wiki/X" },
+  { id: "e2", title: "Event 1920", type: "Film", display_title: "Event 1920 (Film)", year: 1920, image: "https://x/2.jpg", wikipedia_url: "https://en.wikipedia.org/wiki/X" },
+  { id: "e3", title: "Event 1950", type: "Film", display_title: "Event 1950 (Film)", year: 1950, image: "https://x/3.jpg", wikipedia_url: "https://en.wikipedia.org/wiki/X" },
+  { id: "e4", title: "Event 1975", type: "Film", display_title: "Event 1975 (Film)", year: 1975, image: "https://x/4.jpg", wikipedia_url: "https://en.wikipedia.org/wiki/X" },
+  { id: "e5", title: "Event 1985", type: "Film", display_title: "Event 1985 (Film)", year: 1985, image: "https://x/5.jpg", wikipedia_url: "https://en.wikipedia.org/wiki/X" },
+  { id: "e6", title: "Event 2000", type: "Film", display_title: "Event 2000 (Film)", year: 2000, image: "https://x/6.jpg", wikipedia_url: "https://en.wikipedia.org/wiki/X" },
+  { id: "e7", title: "Event 2005", type: "Film", display_title: "Event 2005 (Film)", year: 2005, image: "https://x/7.jpg", wikipedia_url: "https://en.wikipedia.org/wiki/X" },
+  { id: "e8", title: "Event 2010", type: "Film", display_title: "Event 2010 (Film)", year: 2010, image: "https://x/8.jpg", wikipedia_url: "https://en.wikipedia.org/wiki/X" },
 ];
 
 function ensureTestDataDir(): void {
@@ -63,6 +67,33 @@ function clearRoomTables(): void {
   db.prepare("DELETE FROM room_timeline").run();
   db.prepare("DELETE FROM room_players").run();
   db.prepare("DELETE FROM rooms").run();
+}
+
+/** Override current turn player's hand with given event IDs (for deterministic timeline tests). */
+function setCurrentPlayerHand(roomId: string, eventIds: string[]): void {
+  const state = getRoomState(roomId)!;
+  const currentId = state.currentTurnPlayerId!;
+  const db = getDb();
+  db.prepare("DELETE FROM room_hand WHERE room_id = ? AND player_id = ?").run(roomId, currentId);
+  eventIds.slice(0, 3).forEach((eventId, slot) => {
+    db.prepare(
+      "INSERT INTO room_hand (room_id, player_id, event_id, slot_index) VALUES (?, ?, ?, ?)",
+    ).run(roomId, currentId, eventId, slot);
+  });
+}
+
+/** Replace timeline with exactly these event IDs in order (position 0, 1, ...). Use after startGame for deterministic setups. */
+function setTimelineToEventIds(roomId: string, eventIds: string[]): void {
+  const db = getDb();
+  db.prepare("DELETE FROM room_timeline WHERE room_id = ?").run(roomId);
+  for (let position = 0; position < eventIds.length; position++) {
+    db.prepare(
+      "INSERT INTO room_timeline (room_id, event_id, position, placed_at) VALUES (?, ?, ?, datetime('now'))",
+    ).run(roomId, eventIds[position], position);
+  }
+  if (eventIds.length > 0) {
+    db.prepare("UPDATE rooms SET initial_event_id = ? WHERE id = ?").run(eventIds[0], roomId);
+  }
 }
 
 describe("roomService avatar (integration)", () => {
@@ -226,6 +257,328 @@ describe("roomService (integration)", () => {
 
     const result = placeEvent(roomId, otherId, eventId, 1);
     expect(result).toEqual({ error: "Not your turn" });
+  });
+
+  describe("timeline order after placement", () => {
+    type TimelineEntry = { event: { year: number }; position: number };
+
+    function getTimelineYears(timeline: TimelineEntry[]): number[] {
+      return [...timeline].sort((a, b) => a.position - b.position).map((t) => t.event.year);
+    }
+
+    function expectTimelineChronological(timeline: TimelineEntry[]): void {
+      const years = getTimelineYears(timeline);
+      for (let i = 1; i < years.length; i++) {
+        expect(years[i]).toBeGreaterThanOrEqual(years[i - 1]!);
+      }
+    }
+
+    it("timeline stays chronological after correct placement at beginning", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+
+      let state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const hand = state.myHand;
+      const timelineYears = state.timeline.map((t) => t.event.year);
+      const eventYear = hand[0]!.year;
+      const correctPos = findCorrectPosition(timelineYears, eventYear);
+      const placeAtBeginning = 0;
+      const position = correctPos === 0 ? placeAtBeginning : correctPos;
+
+      const result = placeEvent(roomId, state.currentTurnPlayerId!, hand[0]!.id, position);
+      expect("error" in result).toBe(false);
+      const place = result as { timeline: TimelineEntry[] };
+      expectTimelineChronological(place.timeline);
+
+      const stateAfter = getRoomState(roomId)!;
+      expectTimelineChronological(stateAfter.timeline);
+    });
+
+    it("timeline stays chronological after correct placement in middle", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+
+      const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const timelineYears = state.timeline.map((t) => t.event.year);
+      const eventYear = state.myHand[0]!.year;
+      const correctPos = findCorrectPosition(timelineYears, eventYear);
+      const mid = Math.floor((state.timeline.length + 1) / 2);
+      const position = correctPos >= 0 && correctPos <= state.timeline.length ? correctPos : mid;
+
+      const result = placeEvent(roomId, state.currentTurnPlayerId!, state.myHand[0]!.id, position);
+      expect("error" in result).toBe(false);
+      expectTimelineChronological((result as { timeline: TimelineEntry[] }).timeline);
+      expectTimelineChronological(getRoomState(roomId)!.timeline);
+    });
+
+    it("timeline stays chronological after correct placement at end", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+
+      const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const timelineYears = state.timeline.map((t) => t.event.year);
+      const eventYear = state.myHand[0]!.year;
+      const correctPos = findCorrectPosition(timelineYears, eventYear);
+      const position = correctPos === state.timeline.length ? state.timeline.length : correctPos;
+
+      const result = placeEvent(roomId, state.currentTurnPlayerId!, state.myHand[0]!.id, position);
+      expect("error" in result).toBe(false);
+      expectTimelineChronological((result as { timeline: TimelineEntry[] }).timeline);
+      expectTimelineChronological(getRoomState(roomId)!.timeline);
+    });
+
+    it("timeline stays chronological after incorrect placement (player drops at wrong slot)", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+
+      const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const eventId = state.myHand[0]!.id;
+      const eventYear = state.myHand[0]!.year;
+      const timelineYears = state.timeline.map((t) => t.event.year);
+      const correctPosition = findCorrectPosition(timelineYears, eventYear);
+      const wrongPosition =
+        correctPosition === 0
+          ? state.timeline.length
+          : correctPosition === state.timeline.length
+            ? 0
+            : (correctPosition + 1) % (state.timeline.length + 1);
+
+      const result = placeEvent(roomId, state.currentTurnPlayerId!, eventId, wrongPosition);
+      expect("error" in result).toBe(false);
+      const place = result as { correct: boolean; timeline: TimelineEntry[]; correctPosition?: number };
+      expect(place.correct).toBe(false);
+      expectTimelineChronological(place.timeline);
+      expect(getRoomState(roomId)!.timeline.map((t) => t.event.year)).toEqual(
+        getTimelineYears(place.timeline),
+      );
+    });
+
+    it("multiple correct and incorrect placements keep timeline chronological", () => {
+      const { roomId, playerId: hostId } = createRoom("Host", undefined, { maxTimelineSize: 10 });
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+
+      for (let round = 0; round < 4; round++) {
+        const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!);
+        if (!state || state.timeline.length >= 10) break;
+        const hand = state.myHand;
+        if (hand.length === 0) break;
+        const eventId = hand[0]!.id;
+        const eventYear = hand[0]!.year;
+        const timelineYears = state.timeline.map((t) => t.event.year);
+        const correctPos = findCorrectPosition(timelineYears, eventYear);
+        const wrongPos =
+          correctPos === 0
+            ? Math.min(1, state.timeline.length)
+            : correctPos === state.timeline.length
+              ? Math.max(0, state.timeline.length - 1)
+              : 0;
+        const placeWrongFirst = round % 2 === 0;
+        const position = placeWrongFirst ? wrongPos : correctPos;
+
+        const result = placeEvent(roomId, state.currentTurnPlayerId!, eventId, position);
+        expect("error" in result).toBe(false);
+        const place = result as { timeline: TimelineEntry[] };
+        expectTimelineChronological(place.timeline);
+      }
+
+      const finalState = getRoomState(roomId)!;
+      expectTimelineChronological(finalState.timeline);
+    });
+
+    it("correct placement at beginning (deterministic setup): event before all", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+      setTimelineToEventIds(roomId, ["e6"]);
+      setCurrentPlayerHand(roomId, ["e1", "e2", "e4"]);
+
+      const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const result = placeEvent(roomId, state.currentTurnPlayerId!, "e1", 0);
+      expect("error" in result).toBe(false);
+      expect((result as { correct: boolean }).correct).toBe(true);
+      expectTimelineChronological((result as { timeline: TimelineEntry[] }).timeline);
+      expect(getTimelineYears((result as { timeline: TimelineEntry[] }).timeline)).toEqual([1900, 2000]);
+    });
+
+    it("correct placement at end (deterministic setup): event after all", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+      setTimelineToEventIds(roomId, ["e1"]);
+      setCurrentPlayerHand(roomId, ["e8", "e7", "e6"]);
+
+      const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const position = state.timeline.length;
+      const result = placeEvent(roomId, state.currentTurnPlayerId!, "e8", position);
+      expect("error" in result).toBe(false);
+      expect((result as { correct: boolean }).correct).toBe(true);
+      expectTimelineChronological((result as { timeline: TimelineEntry[] }).timeline);
+      expect(getTimelineYears((result as { timeline: TimelineEntry[] }).timeline)).toEqual([1900, 2010]);
+    });
+
+    it("correct placement in middle (deterministic setup)", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+      setTimelineToEventIds(roomId, ["e1", "e6"]);
+      setCurrentPlayerHand(roomId, ["e3", "e4", "e5"]);
+
+      const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const result = placeEvent(roomId, state.currentTurnPlayerId!, "e3", 1);
+      expect("error" in result).toBe(false);
+      expect((result as { correct: boolean }).correct).toBe(true);
+      expectTimelineChronological((result as { timeline: TimelineEntry[] }).timeline);
+      expect(getTimelineYears((result as { timeline: TimelineEntry[] }).timeline)).toEqual([1900, 1950, 2000]);
+    });
+
+    it("incorrect placement: should be at beginning but player places at end → event moved to correct position", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+      setTimelineToEventIds(roomId, ["e6"]);
+      setCurrentPlayerHand(roomId, ["e1", "e2", "e4"]);
+
+      const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const result = placeEvent(roomId, state.currentTurnPlayerId!, "e1", 1);
+      expect("error" in result).toBe(false);
+      const place = result as { correct: boolean; timeline: TimelineEntry[]; correctPosition: number };
+      expect(place.correct).toBe(false);
+      expect(place.correctPosition).toBe(0);
+      expectTimelineChronological(place.timeline);
+      expect(getTimelineYears(place.timeline)).toEqual([1900, 2000]);
+    });
+
+    it("incorrect placement: should be at end but player places at beginning → event moved to correct position", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+      setTimelineToEventIds(roomId, ["e1"]);
+      setCurrentPlayerHand(roomId, ["e8", "e7", "e6"]);
+
+      const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const result = placeEvent(roomId, state.currentTurnPlayerId!, "e8", 0);
+      expect("error" in result).toBe(false);
+      const place = result as { correct: boolean; timeline: TimelineEntry[]; correctPosition: number };
+      expect(place.correct).toBe(false);
+      expect(place.correctPosition).toBe(1);
+      expectTimelineChronological(place.timeline);
+      expect(getTimelineYears(place.timeline)).toEqual([1900, 2010]);
+    });
+
+    it("incorrect placement: should be in middle but player places at beginning → event moved to correct position", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+      setTimelineToEventIds(roomId, ["e1", "e6"]);
+      setCurrentPlayerHand(roomId, ["e3", "e4", "e5"]);
+
+      const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const result = placeEvent(roomId, state.currentTurnPlayerId!, "e3", 0);
+      expect("error" in result).toBe(false);
+      const place = result as { correct: boolean; timeline: TimelineEntry[]; correctPosition: number };
+      expect(place.correct).toBe(false);
+      expect(place.correctPosition).toBe(1);
+      expectTimelineChronological(place.timeline);
+      expect(getTimelineYears(place.timeline)).toEqual([1900, 1950, 2000]);
+    });
+
+    it("incorrect placement: should be in middle but player places at end → event moved to correct position", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+      setTimelineToEventIds(roomId, ["e1", "e6"]);
+      setCurrentPlayerHand(roomId, ["e3", "e4", "e5"]);
+
+      const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const result = placeEvent(roomId, state.currentTurnPlayerId!, "e3", 2);
+      expect("error" in result).toBe(false);
+      const place = result as { correct: boolean; timeline: TimelineEntry[]; correctPosition: number };
+      expect(place.correct).toBe(false);
+      expect(place.correctPosition).toBe(1);
+      expectTimelineChronological(place.timeline);
+      expect(getTimelineYears(place.timeline)).toEqual([1900, 1950, 2000]);
+    });
+
+    it("two incorrect placements in a row (different players): timeline stays chronological", () => {
+      const { roomId, playerId: hostId } = createRoom("Host");
+      const join = joinRoom(roomId, "P2") as { playerId: string };
+      const p2Id = join.playerId;
+      startGame(roomId, hostId);
+      setTimelineToEventIds(roomId, ["e4"]);
+      setCurrentPlayerHand(roomId, ["e1", "e2", "e3"]);
+
+      const state1 = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const r1 = placeEvent(roomId, state1.currentTurnPlayerId!, "e1", 1);
+      expect("error" in r1).toBe(false);
+      expect((r1 as { correct: boolean }).correct).toBe(false);
+      expectTimelineChronological((r1 as { timeline: TimelineEntry[] }).timeline);
+
+      setCurrentPlayerHand(roomId, ["e8", "e7", "e6"]);
+      const state2 = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!)!;
+      const r2 = placeEvent(roomId, state2.currentTurnPlayerId!, "e8", 0);
+      expect("error" in r2).toBe(false);
+      expect((r2 as { correct: boolean }).correct).toBe(false);
+      expectTimelineChronological((r2 as { timeline: TimelineEntry[] }).timeline);
+      expect(getTimelineYears((r2 as { timeline: TimelineEntry[] }).timeline)).toEqual([1900, 1975, 2010]);
+    });
+
+    it("correct then incorrect then correct: timeline always chronological", () => {
+      const { roomId, playerId: hostId } = createRoom("Host", undefined, { maxTimelineSize: 8 });
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+      setTimelineToEventIds(roomId, ["e4"]);
+      setCurrentPlayerHand(roomId, ["e1", "e2", "e3"]);
+
+      const r1 = placeEvent(roomId, getRoomState(roomId)!.currentTurnPlayerId!, "e1", 0);
+      expect("error" in r1).toBe(false);
+      expect((r1 as { correct: boolean }).correct).toBe(true);
+      expectTimelineChronological((r1 as { timeline: TimelineEntry[] }).timeline);
+
+      setCurrentPlayerHand(roomId, ["e8", "e7", "e6"]);
+      const r2 = placeEvent(roomId, getRoomState(roomId)!.currentTurnPlayerId!, "e8", 0);
+      expect("error" in r2).toBe(false);
+      expect((r2 as { correct: boolean }).correct).toBe(false);
+      expectTimelineChronological((r2 as { timeline: TimelineEntry[] }).timeline);
+
+      setCurrentPlayerHand(roomId, ["e5", "e6", "e7"]);
+      const r3 = placeEvent(roomId, getRoomState(roomId)!.currentTurnPlayerId!, "e5", 2);
+      expect("error" in r3).toBe(false);
+      expect((r3 as { correct: boolean }).correct).toBe(true);
+      expectTimelineChronological((r3 as { timeline: TimelineEntry[] }).timeline);
+    });
+
+    it("long sequence: correct, incorrect, incorrect, correct, incorrect → timeline always chronological", () => {
+      const { roomId, playerId: hostId } = createRoom("Host", undefined, { maxTimelineSize: 12 });
+      joinRoom(roomId, "P2");
+      startGame(roomId, hostId);
+      setTimelineToEventIds(roomId, ["e6"]);
+
+      const placements: { hand: string[]; position: number; expectCorrect: boolean }[] = [
+        { hand: ["e1", "e2", "e3"], position: 0, expectCorrect: true },
+        { hand: ["e8", "e7", "e5"], position: 0, expectCorrect: false },
+        { hand: ["e4", "e3", "e2"], position: 3, expectCorrect: false },
+        { hand: ["e5", "e7", "e8"], position: 2, expectCorrect: true },
+        { hand: ["e2", "e3", "e4"], position: 0, expectCorrect: false },
+      ];
+
+      for (const { hand, position, expectCorrect } of placements) {
+        setCurrentPlayerHand(roomId, hand);
+        const state = getRoomState(roomId, getRoomState(roomId)!.currentTurnPlayerId!);
+        if (!state || state.myHand.length === 0) break;
+        const eventId = state.myHand[0]!.id;
+        const result = placeEvent(roomId, state.currentTurnPlayerId!, eventId, position);
+        expect("error" in result).toBe(false);
+        expect((result as { correct: boolean }).correct).toBe(expectCorrect);
+        expectTimelineChronological((result as { timeline: TimelineEntry[] }).timeline);
+      }
+
+      expectTimelineChronological(getRoomState(roomId)!.timeline);
+    });
   });
 
   it("endGame returns room to lobby with no winner", () => {

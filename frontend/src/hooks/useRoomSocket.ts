@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { getWsUrl } from "@/lib/api";
 import type { RoomState } from "@/src/services/roomApi";
 
+/** Ensure timeline is always ordered by position (for placer and non-active players). */
+function sortTimelineByPosition<T extends { position: number }>(timeline: T[]): T[] {
+  return timeline.length <= 1 ? timeline : [...timeline].sort((a, b) => a.position - b.position);
+}
+
 type WsMessage =
   | { type: "join_ack"; playerId: string; roomState: RoomState; room?: RoomState }
   | { type: "join_error"; code: string; message: string }
@@ -80,11 +85,17 @@ export function useRoomSocket(
           const msg = JSON.parse(event.data as string) as WsMessage;
           if (msg.type === "join_ack") {
             const state = msg.room ?? msg.roomState;
-            setRoomState(state);
+            setRoomState({
+              ...state,
+              timeline: sortTimelineByPosition(state.timeline ?? []),
+            });
             setWsReady(true);
           } else if (msg.type === "state_update" || msg.type === "room_state") {
             const state = msg.type === "state_update" ? msg.room : msg.roomState;
-            setRoomState(state);
+            setRoomState({
+              ...state,
+              timeline: sortTimelineByPosition(state.timeline ?? []),
+            });
             setRoomError(null);
             setPlaceError(null);
           } else if (msg.type === "start_error" || msg.type === "rematch_error") {
@@ -102,7 +113,9 @@ export function useRoomSocket(
             });
             if (msg.timeline && msg.timeline.length > 0) {
               setRoomState((prev) =>
-                prev ? { ...prev, timeline: msg.timeline! } : null,
+                prev
+                  ? { ...prev, timeline: sortTimelineByPosition(msg.timeline!) }
+                  : null,
               );
             }
           } else if (msg.type === "room_closed") {
