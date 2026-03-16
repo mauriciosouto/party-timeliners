@@ -55,7 +55,6 @@ Players join a room using a shared link.
 Players must enter:
 
 - nickname
-- email (used only for reconnection)
 
 Lobby shows:
 
@@ -95,13 +94,13 @@ The game ends when:
 
 The player with the highest score wins.
 
-After the game ends players return to the lobby.
+After the game ends the room shows a **Match Results** screen:
 
-The lobby displays:
+- winner (highlighted card or podium for 2+ players)
+- full player ranking with scores
+- Play again (rematch) or End game
 
-- final scores
-- winner
-- option to play again
+Players stay in the room until they leave or the host starts a rematch.
 
 ---
 
@@ -201,9 +200,32 @@ Design goals:
 - bright colors
 - clear feedback for correct vs incorrect placement
 
-Timeline interactions should feel smooth and responsive.
+**Screens and layout:**
 
-Drag and drop interactions must be intuitive.
+- **Home / Lobby / Join:** Hero background image with dark overlay; glass-style panels for forms and player list.
+- **Game room:** Blurred background with dark overlay; header, timeline, “card to place” section, and player list (sidebar).
+- **Match results:** Horizontal layout with winner card (or podium for 2+ players), ranking list, and Play again / End game.
+
+**Timeline and cards:**
+
+- Horizontal scrollable timeline with a visible line; droppable slots between events with hover/drag feedback.
+- Event cards: rounded corners, soft shadow, hover lift; when dragging, scale and stronger shadow; on correct place, brief “settle” animation.
+- Timeline glows subtly when a card is being dragged; slot under the cursor is highlighted.
+
+**Audio feedback:**
+
+- Correct placement: short sound + confetti.
+- Incorrect placement: short sound.
+- Game end (winner): victory confetti + victory sound.
+- Game end (loser): defeat sound + brief overlay pulse.
+- Turn timer: last 3 seconds play a tick (stops when turn ends); timer bar and number change color (green → yellow → orange → red) and pulse when low.
+- New player joins lobby: short join sound.
+- Match starts (lobby → playing): short game-start sound + brief screen flash.
+
+**Other UI:**
+
+- Errors (e.g. placement failed, room error): fixed top-center toast, auto-dismiss after a few seconds, red accent.
+- Turn timer: progress bar and seconds; optional per-turn time limit.
 
 ---
 
@@ -303,14 +325,11 @@ Development should follow these principles:
 
 ---
 
-# Current Development Goal
+# Current State
 
-Build the first playable prototype including:
+The game is a playable multiplayer prototype with:
 
-- timeline component
-- draggable event card
-- droppable timeline slots
-- event placement validation
-- simple scoring logic
-
-Multiplayer functionality will be added after the core gameplay loop works locally.
+- timeline component and draggable event cards with droppable slots
+- event placement validation and scoring on the server
+- real-time multiplayer via WebSockets (invite link, lobby, turn-based play)
+- UI polish: hero/glass panels, results screen, confetti, sounds, timer feedback, error toasts, drag feedback
