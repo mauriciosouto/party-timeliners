@@ -49,7 +49,7 @@ export function EventCard({
   const styleMap = getTypeStyle(typeLabel);
 
   useEffect(() => {
-    setImageError(false);
+    queueMicrotask(() => setImageError(false));
   }, [event.id, event.image]);
 
   useEffect(() => {
@@ -99,6 +99,7 @@ export function EventCard({
         {event.image && (
           <div className="flex h-[120px] shrink-0 w-full items-center justify-center overflow-hidden rounded-t-[12px] -mt-4 -mx-4 mb-2 bg-zinc-100/50">
             {!imageError ? (
+              // eslint-disable-next-line @next/next/no-img-element -- external Wikimedia URL, no next/image config
               <img
                 src={getWikimediaThumbnail(event.image)}
                 alt=""

@@ -31,7 +31,7 @@ export default function Home() {
   useEffect(() => {
     const last = getLastRoom();
     if (!last) {
-      setCheckingPrevious(false);
+      queueMicrotask(() => setCheckingPrevious(false));
       return;
     }
     getRoomState(last.roomId)

@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { DndContext, pointerWithin, useDndContext, type DragEndEvent } from "@dnd-kit/core";
 import type { TimelineEvent } from "@/lib/types";
 import type { TimelineProps } from "@/components/Timeline";
 import { Timeline, parseSlotIndexFromId } from "@/components/Timeline";
 import { EventCard } from "@/components/EventCard";
-import { formatYear } from "@/lib/format";
 import type { RoomState } from "@/src/services/roomApi";
 import { fireSuccessConfetti } from "@/src/utils/confetti";
 import { fireVictoryConfetti } from "@/src/utils/victoryConfetti";
@@ -59,7 +58,8 @@ type RoomGameBoardProps = {
 };
 
 export function RoomGameBoard({
-  roomId,
+  // roomId required by parent type but not used in this component
+  roomId: _roomId, // eslint-disable-line @typescript-eslint/no-unused-vars
   playerId,
   roomState,
   wsReady,
@@ -125,7 +125,7 @@ export function RoomGameBoard({
 
   useEffect(() => {
     if (!isMyTurn || turnTimeLimitSeconds == null || !currentTurnStartedAt) {
-      setSecondsLeft(null);
+      queueMicrotask(() => setSecondsLeft(null));
       timeoutFiredRef.current = false;
       stopTickSound();
       return;
@@ -159,16 +159,20 @@ export function RoomGameBoard({
     return () => clearInterval(interval);
   }, [isMyTurn, turnTimeLimitSeconds, currentTurnStartedAt, onTurnTimeout]);
 
-  const currentTurnEvent = roomState.status === "playing" && roomState.currentTurnEvent
-    ? {
-        id: roomState.currentTurnEvent.id,
-        title: roomState.currentTurnEvent.title,
-        year: roomState.currentTurnEvent.year,
-        description: roomState.currentTurnEvent.displayTitle,
-        image: roomState.currentTurnEvent.image,
-        wikipediaUrl: roomState.currentTurnEvent.wikipediaUrl,
-      } as TimelineEvent
-    : null;
+  const currentTurnEvent = useMemo(
+    () =>
+      roomState.status === "playing" && roomState.currentTurnEvent
+        ? ({
+            id: roomState.currentTurnEvent.id,
+            title: roomState.currentTurnEvent.title,
+            year: roomState.currentTurnEvent.year,
+            description: roomState.currentTurnEvent.displayTitle,
+            image: roomState.currentTurnEvent.image,
+            wikipediaUrl: roomState.currentTurnEvent.wikipediaUrl,
+          } as TimelineEvent)
+        : null,
+    [roomState.status, roomState.currentTurnEvent],
+  );
 
   useEffect(() => {
     if (!placeResult) return;
@@ -187,7 +191,7 @@ export function RoomGameBoard({
     if (placeResult && !placeResult.correct) {
       playSound("wrong");
     }
-  }, [placeResult?.correct]);
+  }, [placeResult]);
 
   useEffect(() => {
     if (roomState.status !== "ended" || !roomState.winnerPlayerId) {
@@ -205,7 +209,7 @@ export function RoomGameBoard({
       if (defeatEffectFiredRef.current) return;
       defeatEffectFiredRef.current = true;
       playSound("defeat");
-      setShowDefeatOverlay(true);
+      queueMicrotask(() => setShowDefeatOverlay(true));
       const t = setTimeout(() => setShowDefeatOverlay(false), 800);
       return () => clearTimeout(t);
     }
@@ -246,7 +250,6 @@ export function RoomGameBoard({
     [currentTurnEvent, onPlaceEvent, timeline.length],
   );
 
-  const myScore = roomState.scores[playerId] ?? 0;
   const isEnded = roomState.status === "ended";
   const winner = roomState.players.find(
     (p) => p.playerId === roomState.winnerPlayerId,
@@ -259,7 +262,6 @@ export function RoomGameBoard({
   const playerCount = rankedPlayers.length;
   const podiumCount =
     playerCount <= 3 ? 1 : playerCount <= 5 ? 2 : 3;
-  const podiumPlayers = rankedPlayers.slice(0, podiumCount);
   const restRanked = rankedPlayers.slice(podiumCount);
 
   function ordinal(n: number): string {

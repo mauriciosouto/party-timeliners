@@ -12,14 +12,6 @@ export type Event = {
   wikipediaUrl?: string;
 };
 
-type WikidataBinding = {
-  event: { value: string };
-  eventLabel?: { value: string };
-  date?: { value: string };
-  image?: { value: string };
-  article?: { value: string };
-};
-
 const globalPool: Event[] = (poolData as Event[]) ?? [];
 
 export async function ensureGlobalPoolFilled(): Promise<void> {

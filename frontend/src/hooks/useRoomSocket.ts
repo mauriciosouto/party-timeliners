@@ -133,7 +133,8 @@ export function useRoomSocket(
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, [roomId, nickname]); // intentionally not including playerId so reconnect reuses it
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- playerId omitted so reconnect reuses it
+  }, [roomId, nickname]);
 
   const sendStartGame = () => {
     if (wsRef.current?.readyState === 1) {

@@ -2,7 +2,6 @@
 
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { joinRoom, getRoomState, type RoomState } from "@/src/services/roomApi";
 import { JoinForm } from "@/components/JoinForm";
 import { Lobby } from "@/components/Lobby";
 import { RoomGameBoard } from "@/components/RoomGameBoard";
@@ -22,14 +21,17 @@ export default function RoomPage() {
   useEffect(() => {
     const fromQuery = searchParams?.get("playerId");
     const fromStorage = roomId ? getStoredPlayer(roomId) : null;
-    if (fromQuery) {
-      setPlayerId(fromQuery);
-      setNickname(fromStorage?.nickname ?? "Player");
-    } else if (fromStorage) {
-      setPlayerId(fromStorage.playerId);
-      setNickname(fromStorage.nickname);
-    }
-    setInitialLoad(false);
+    const run = () => {
+      if (fromQuery) {
+        setPlayerId(fromQuery);
+        setNickname(fromStorage?.nickname ?? "Player");
+      } else if (fromStorage) {
+        setPlayerId(fromStorage.playerId);
+        setNickname(fromStorage.nickname);
+      }
+      setInitialLoad(false);
+    };
+    queueMicrotask(run);
   }, [roomId, searchParams]);
 
   const handleJoined = useCallback(
@@ -79,7 +81,7 @@ export default function RoomPage() {
     const status = roomState?.status ?? null;
     if (prevStatusRef.current === "lobby" && status === "playing") {
       playStartGameSound();
-      setGameJustStarted(true);
+      queueMicrotask(() => setGameJustStarted(true));
       const t = setTimeout(() => setGameJustStarted(false), 500);
       prevStatusRef.current = status;
       return () => clearTimeout(t);
