@@ -1,62 +1,35 @@
 /**
- * Fetch events from Wikidata and merge with existing pool (cumulative; max 200 per category).
+ * Fetch events from Wikidata category by category; merge and write to DB after each category.
  * Run: npm run refresh-events
  */
 import { initDb, getDb } from "../src/db/index.js";
+import { loadExistingPool, writePoolToDb } from "../src/db/ensureEventPool.js";
 import {
-  fetchAndPrepareEventPool,
+  fetchCategoriesIncremental,
   mergeWithExistingPool,
   LIMIT_PER_CATEGORY,
+  TARGET_POOL_SIZE,
 } from "../src/services/eventIngestion.js";
 
 async function main() {
-  console.log("Fetching events from Wikidata (merge with existing, max " + LIMIT_PER_CATEGORY + " per category)...");
-  const candidates = await fetchAndPrepareEventPool();
-  console.log(`Prepared ${candidates.length} candidates.`);
+  console.log("Fetching events from Wikidata (incremental: merge + write after each category)...");
 
   await initDb();
   const db = getDb();
+  let existing = loadExistingPool(db);
+  const initialCount = existing.length;
 
-  const existing = db
-    .prepare("SELECT id, title, type, display_title, year, image, wikipedia_url, popularity_score FROM events")
-    .all() as { id: string; title: string; type: string; display_title: string; year: number; image: string | null; wikipedia_url: string | null; popularity_score: number | null }[];
-  const existingPool = existing.map((r) => ({
-    id: r.id,
-    title: r.title,
-    type: r.type,
-    displayTitle: r.display_title,
-    year: r.year,
-    image: r.image ?? undefined,
-    wikipediaUrl: r.wikipedia_url ?? undefined,
-    popularityScore: r.popularity_score ?? undefined,
-  }));
-  const merged = mergeWithExistingPool(existingPool, candidates, LIMIT_PER_CATEGORY);
+  for await (const { categoryKey: _key, events } of fetchCategoriesIncremental()) {
+    if (events.length === 0) continue;
+    const merged = mergeWithExistingPool(existing, events, LIMIT_PER_CATEGORY);
+    merged.sort((a, b) => (b.popularityScore ?? 0) - (a.popularityScore ?? 0));
+    const capped = merged.slice(0, TARGET_POOL_SIZE);
+    writePoolToDb(db, capped);
+    existing = capped;
+  }
 
-  const deleteStmt = db.prepare("DELETE FROM events");
-  const insertStmt = db.prepare(`
-    INSERT INTO events (id, title, type, display_title, year, image, wikipedia_url, popularity_score)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const runTransaction = db.transaction(() => {
-    deleteStmt.run();
-    for (const e of merged) {
-      insertStmt.run(
-        e.id,
-        e.title,
-        e.type,
-        e.displayTitle,
-        e.year,
-        e.image,
-        e.wikipediaUrl,
-        e.popularityScore ?? null,
-      );
-    }
-    db.prepare("INSERT OR REPLACE INTO event_pool_meta (key, value) VALUES (?, ?)").run("last_refreshed_at", new Date().toISOString());
-  });
-
-  runTransaction();
-  console.log(`Pool: ${existingPool.length} existing + ${candidates.length} candidates → ${merged.length} events (TTL reset).`);
+  const finalCount = existing.length;
+  console.log(`Pool: ${initialCount} → ${finalCount} events (TTL reset).`);
 }
 
 main().catch((err) => {

@@ -9,7 +9,7 @@ const CURRENT_YEAR = new Date().getUTCFullYear();
 const PHASE1_LIMIT = 25;
 const HISTORICAL_PHASE1_LIMIT = 15;
 const CELEBRITY_PHASE1_LIMIT = 25;
-const TARGET_POOL_SIZE = 300;
+export const TARGET_POOL_SIZE = 300;
 /** Max events per category when merging; above this, new events replace a random one in that category. */
 export const LIMIT_PER_CATEGORY = 200;
 /** Pause between category requests to avoid overloading the endpoint. */
@@ -493,6 +493,38 @@ async function fetchCategoryTwoPhaseWithRuns(
   return mergePhase1AndEnrich(phase1, enrich, typeLabel, enrichEntityKey);
 }
 
+/** Fetch events for a single category (Wikidata). Used by fetchAllCategories and fetchCategoriesIncremental. */
+async function fetchOneCategory(
+  categoryKey: string,
+  qid: string,
+): Promise<IngestedEvent[]> {
+  const typeLabel = (key: string) => TYPE_LABELS[key] ?? key;
+  const label = typeLabel(categoryKey);
+
+  if (categoryKey === "celebrityBirths") {
+    const ranges = getYearRanges(1950, MAX_YEAR);
+    const phase1Sparqls = ranges.map(([a, b]) => getCelebrityBirthQueryPhase1(a, b));
+    return fetchCategoryTwoPhaseWithRuns(phase1Sparqls, "person", label);
+  }
+  if (categoryKey === "historicalEvents") {
+    const all: IngestedEvent[] = [];
+    const ranges = getYearRanges(1914, MAX_YEAR);
+    for (const typeQid of HISTORICAL_EVENT_TYPE_QIDS) {
+      const phase1Sparqls = ranges.map(([a, b]) =>
+        buildHistoricalEventTypePhase1(typeQid, a, b),
+      );
+      const events = await fetchCategoryTwoPhaseWithRuns(phase1Sparqls, "event", label);
+      all.push(...events);
+      await delay(CATEGORY_DELAY_MS);
+    }
+    return all;
+  }
+  const minYear = CATEGORY_MIN_YEAR[categoryKey] ?? 1900;
+  const ranges = getYearRanges(minYear, MAX_YEAR);
+  const phase1Sparqls = ranges.map(([a, b]) => buildCategoryQueryPhase1(qid, a, b));
+  return fetchCategoryTwoPhaseWithRuns(phase1Sparqls, "event", label);
+}
+
 async function fetchAllCategories(): Promise<IngestedEvent[]> {
   const all: IngestedEvent[] = [];
   const typeLabel = (key: string) => TYPE_LABELS[key] ?? key;
@@ -500,36 +532,10 @@ async function fetchAllCategories(): Promise<IngestedEvent[]> {
   for (const [categoryKey, qid] of Object.entries(EVENT_CATEGORIES)) {
     const label = typeLabel(categoryKey);
     try {
-      if (categoryKey === "celebrityBirths") {
-        console.log(`[events] Loading category: ${label} (${PHASE1_RUNS_PER_CATEGORY} ranges)...`);
-        const ranges = getYearRanges(1950, MAX_YEAR);
-        const phase1Sparqls = ranges.map(([a, b]) => getCelebrityBirthQueryPhase1(a, b));
-        const events = await fetchCategoryTwoPhaseWithRuns(phase1Sparqls, "person", label);
-        all.push(...events);
-        console.log(`[events] ${label}: ${events.length} eventos`);
-      } else if (categoryKey === "historicalEvents") {
-        console.log(`[events] Loading category: ${label} (by type, ${PHASE1_RUNS_PER_CATEGORY} ranges)...`);
-        let total = 0;
-        const ranges = getYearRanges(1914, MAX_YEAR);
-        for (const typeQid of HISTORICAL_EVENT_TYPE_QIDS) {
-          const phase1Sparqls = ranges.map(([a, b]) =>
-            buildHistoricalEventTypePhase1(typeQid, a, b),
-          );
-          const events = await fetchCategoryTwoPhaseWithRuns(phase1Sparqls, "event", label);
-          all.push(...events);
-          total += events.length;
-          await delay(CATEGORY_DELAY_MS);
-        }
-        console.log(`[events] ${label}: ${total} eventos`);
-      } else {
-        console.log(`[events] Loading category: ${label} (${PHASE1_RUNS_PER_CATEGORY} ranges)...`);
-        const minYear = CATEGORY_MIN_YEAR[categoryKey] ?? 1900;
-        const ranges = getYearRanges(minYear, MAX_YEAR);
-        const phase1Sparqls = ranges.map(([a, b]) => buildCategoryQueryPhase1(qid, a, b));
-        const events = await fetchCategoryTwoPhaseWithRuns(phase1Sparqls, "event", label);
-        all.push(...events);
-        console.log(`[events] ${label}: ${events.length} eventos`);
-      }
+      console.log(`[events] Loading category: ${label}...`);
+      const events = await fetchOneCategory(categoryKey, qid);
+      all.push(...events);
+      console.log(`[events] ${label}: ${events.length} eventos`);
     } catch (error) {
       console.warn(`Failed to fetch ${label}:`, error);
     }
@@ -537,6 +543,33 @@ async function fetchAllCategories(): Promise<IngestedEvent[]> {
   }
 
   return all;
+}
+
+/**
+ * Yields each category's events as soon as they are fetched and filtered.
+ * Caller can merge into the DB after each yield so the pool is usable incrementally.
+ */
+export async function* fetchCategoriesIncremental(): AsyncGenerator<
+  { categoryKey: string; events: IngestedEvent[] },
+  void,
+  void
+> {
+  const typeLabel = (key: string) => TYPE_LABELS[key] ?? key;
+
+  for (const [categoryKey, qid] of Object.entries(EVENT_CATEGORIES)) {
+    const label = typeLabel(categoryKey);
+    try {
+      console.log(`[events] Loading category: ${label}...`);
+      const raw = await fetchOneCategory(categoryKey, qid);
+      const events = raw.filter(isGoodEvent);
+      await fetchPageviewsForEvents(events);
+      console.log(`[events] ${label}: ${events.length} eventos (after filter)`);
+      yield { categoryKey, events };
+    } catch (error) {
+      console.warn(`Failed to fetch ${label}:`, error);
+    }
+    await delay(CATEGORY_DELAY_MS);
+  }
 }
 
 /**
@@ -559,11 +592,15 @@ export async function fetchAndPrepareEventPool(): Promise<IngestedEvent[]> {
   return unique;
 }
 
-/** Event-like shape used when merging; existing pool may come from DB with optional fields. */
-export type PoolEventLike = Pick<IngestedEvent, "id" | "type"> & Partial<IngestedEvent>;
+/** Event-like shape used when merging; existing pool may come from DB with optional fields and refreshed_at for per-event TTL. */
+export type PoolEventLike = Pick<IngestedEvent, "id" | "type"> & Partial<IngestedEvent> & { refreshed_at?: string };
+
+/** IngestedEvent with optional refreshed_at (set when event was last written to the pool; used for per-event TTL). */
+export type PoolEventWithRefreshed = IngestedEvent & { refreshed_at?: string };
 
 /**
  * Merge new candidates into existing pool without wiping it.
+ * Preserves refreshed_at from existing events so per-event TTL is respected.
  * - If candidate.id is already in existing, skip.
  * - If category has < limitPerCategory: add candidate.
  * - If category has >= limitPerCategory: replace a random event of that category with candidate.
@@ -573,12 +610,15 @@ export function mergeWithExistingPool(
   existing: PoolEventLike[],
   newCandidates: IngestedEvent[],
   limitPerCategory: number = LIMIT_PER_CATEGORY,
-): IngestedEvent[] {
+): PoolEventWithRefreshed[] {
   const byId = new Map<string, PoolEventLike>();
   for (const e of existing) {
     byId.set(e.id, e);
   }
-  const merged = existing.map((e) => toIngestedEvent(e));
+  const merged: PoolEventWithRefreshed[] = existing.map((e) => ({
+    ...toIngestedEvent(e),
+    refreshed_at: e.refreshed_at,
+  }));
   const byTypeIndices = new Map<string, number[]>();
   merged.forEach((e, i) => {
     const list = byTypeIndices.get(e.type) ?? [];

@@ -33,9 +33,10 @@ type PoolEvent = {
 await initDb();
 const db = getDb();
 
+const now = new Date().toISOString();
 const insertSql = `
-  INSERT OR REPLACE INTO events (id, title, type, display_title, year, image, wikipedia_url, popularity_score)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT OR REPLACE INTO events (id, title, type, display_title, year, image, wikipedia_url, popularity_score, refreshed_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
 if (seedPath && existsSync(seedPath)) {
@@ -53,6 +54,7 @@ if (seedPath && existsSync(seedPath)) {
         e.image ?? null,
         e.wikipediaUrl ?? null,
         e.popularityScore ?? null,
+        now,
       );
     }
   });
@@ -61,8 +63,8 @@ if (seedPath && existsSync(seedPath)) {
 } else {
   console.log("No seed file found. Fetching from Wikidata (merge with existing, max " + LIMIT_PER_CATEGORY + " per category)...");
   const existing = db
-    .prepare("SELECT id, title, type, display_title, year, image, wikipedia_url, popularity_score FROM events")
-    .all() as { id: string; title: string; type: string; display_title: string; year: number; image: string | null; wikipedia_url: string | null; popularity_score: number | null }[];
+    .prepare("SELECT id, title, type, display_title, year, image, wikipedia_url, popularity_score, refreshed_at FROM events")
+    .all() as { id: string; title: string; type: string; display_title: string; year: number; image: string | null; wikipedia_url: string | null; popularity_score: number | null; refreshed_at: string | null }[];
   const existingPool = existing.map((r) => ({
     id: r.id,
     title: r.title,
@@ -72,6 +74,7 @@ if (seedPath && existsSync(seedPath)) {
     image: r.image ?? undefined,
     wikipediaUrl: r.wikipedia_url ?? undefined,
     popularityScore: r.popularity_score ?? undefined,
+    refreshed_at: r.refreshed_at ?? undefined,
   }));
   const candidates = await fetchAndPrepareEventPool();
   const merged = mergeWithExistingPool(existingPool, candidates, LIMIT_PER_CATEGORY);
@@ -88,6 +91,7 @@ if (seedPath && existsSync(seedPath)) {
         e.image,
         e.wikipediaUrl,
         e.popularityScore ?? null,
+        e.refreshed_at ?? now,
       );
     }
     db.prepare("INSERT OR REPLACE INTO event_pool_meta (key, value) VALUES (?, ?)").run("last_refreshed_at", new Date().toISOString());

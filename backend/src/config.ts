@@ -6,6 +6,6 @@ export const config = {
   nodeEnv: env.NODE_ENV || "development",
   /** Optional: set REFRESH_SECRET to require x-refresh-secret header on POST /api/admin/refresh-events */
   refreshSecret: env.REFRESH_SECRET || undefined,
-  /** Event pool TTL in minutes. After this time, events are replaced on next startup. Default 15 for testing; use 1440 for 24h. */
-  eventPoolTtlMinutes: Number(env.EVENT_POOL_TTL_MINUTES) || 15,
+  /** Per-event TTL in minutes. Events with refreshed_at older than this are removed on each refresh; new ingestion refills. Default: 1 month (43200). Override with EVENT_POOL_TTL_MINUTES. */
+  eventPoolTtlMinutes: Number(env.EVENT_POOL_TTL_MINUTES) || 43200,
 };

@@ -76,7 +76,7 @@ The frontend is responsible for:
 The frontend **does not validate gameplay rules**.  
 All authoritative game logic lives on the server.
 
-**Event pool:** Obtaining events (Wikidata), seeding, storing the pool, and refreshing it are done on the server. Events are stored in the database (`events` table). The pool has a configurable TTL: when the server starts, if the pool is empty or older than the TTL, it is replaced (from JSON or Wikidata). Set `EVENT_POOL_TTL_MINUTES` (default 15 for testing; use 1440 for 24h). The backend exposes `GET /api/events/next` (single-player) and builds room decks from the DB when a game starts. To refresh manually: `npm run refresh-events` or `POST /api/admin/refresh-events` (optional `x-refresh-secret` header).
+**Event pool:** Obtaining events (Wikidata), seeding, storing the pool, and refreshing it are done on the server. Events are stored in the database (`events` table). The pool has a configurable TTL: when the server starts, if the pool is empty or older than the TTL, it is replaced (from JSON or Wikidata). Set `EVENT_POOL_TTL_MINUTES` (default 43200 = 1 month). Per-event TTL: events with `refreshed_at` older than this are pruned on each refresh; new ingestion refills so only the oldest events are lost over time. The backend exposes `GET /api/events/next` (single-player) and builds room decks from the DB when a game starts. To refresh manually: `npm run refresh-events` or `POST /api/admin/refresh-events` (optional `x-refresh-secret` header).
 
 Frontend stack:
 
