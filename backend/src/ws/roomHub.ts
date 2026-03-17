@@ -185,6 +185,7 @@ export function attachRoomHub(ws: WebSocket): void {
             type: "place_result",
             ...result,
             currentTurnStartedAt: stateAfter?.currentTurnStartedAt ?? null,
+            lastPlacedEvent: stateAfter?.lastPlacedEvent ?? null,
           }),
         );
         broadcastStateUpdate(client.roomId);
@@ -213,6 +214,7 @@ export function attachRoomHub(ws: WebSocket): void {
             timeline: result.timeline ?? state?.timeline ?? [],
             nextTurnPlayerId: result.nextTurnPlayerId,
             gameEnded: result.gameEnded,
+            lastPlacedEvent: state?.lastPlacedEvent ?? null,
           }),
         );
         broadcastStateUpdate(client.roomId);

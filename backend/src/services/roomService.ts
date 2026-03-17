@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type {
   ApiEvent,
   ApiTimelineEntry,
+  LastPlacedEvent,
   PlaceResult,
   RoomState,
   RoomPlayerState,
@@ -217,6 +218,22 @@ export function getRoomState(roomId: string, forPlayerId?: string): RoomState | 
     placedAt: r.placed_at,
   }));
 
+  const lastPlacedEntry = timeline
+    .filter((e) => e.placedByPlayerId != null && e.placedAt != null)
+    .sort(
+      (a, b) =>
+        new Date(b.placedAt!).getTime() - new Date(a.placedAt!).getTime(),
+    )[0];
+  const lastPlacedEvent: LastPlacedEvent | null = lastPlacedEntry
+    ? {
+        eventId: lastPlacedEntry.event.id,
+        title: lastPlacedEntry.event.title,
+        year: lastPlacedEntry.event.year,
+        image: lastPlacedEntry.event.image ?? null,
+        placedByPlayerId: lastPlacedEntry.placedByPlayerId!,
+      }
+    : null;
+
   let turnOrder: string[] = [];
   let currentTurnPlayerId: string | null = null;
   let currentTurnStartedAt: string | null = null;
@@ -264,6 +281,7 @@ export function getRoomState(roomId: string, forPlayerId?: string): RoomState | 
     initialEventId: room.initial_event_id,
     endedAt: room.ended_at,
     winnerPlayerId: room.winner_player_id,
+    lastPlacedEvent,
   };
 }
 

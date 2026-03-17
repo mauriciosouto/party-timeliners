@@ -617,6 +617,13 @@ body {
   animation: toast-slide-in 0.25s ease forwards;
 }
 
+/* Subtle temporary highlight for the last-placed event in the timeline */
+.last-placed-highlight {
+  box-shadow: 0 0 0 2px rgba(67, 56, 202, 0.5), 0 4px 12px rgba(67, 56, 202, 0.15);
+  border-radius: 10px;
+  transition: box-shadow 0.3s ease;
+}
+
 /* Brief flash when match starts (lobby → playing) */
 .game-start-flash {
   background: rgba(255, 255, 255, 0.4);

@@ -47,6 +47,8 @@ export type TimelineProps = {
   events: TimelineEvent[];
   /** Id of the event that was just placed (triggers flip + scroll) */
   lastPlacedId?: string | null;
+  /** Event id to highlight in the timeline (e.g. last placed from server); subtle temporary highlight */
+  highlightEventId?: string | null;
   /** Ref callback for the card that was just placed (for scrollIntoView) */
   onPlacedCardRef?: (el: HTMLDivElement | null) => void;
   /** When true, timeline shows drag-active glow (set by parent when inside DndContext) */
@@ -58,6 +60,7 @@ const FLIP_TRANSITION = "transform 0.35s ease-out";
 export function Timeline({
   events,
   lastPlacedId,
+  highlightEventId,
   onPlacedCardRef,
   dragActive = false,
 }: TimelineProps) {
@@ -139,7 +142,7 @@ export function Timeline({
                   ? onPlacedCardRef
                   : undefined
               }
-              className="flex-shrink-0"
+              className={`flex-shrink-0 ${events[slotIndex - 1].id === highlightEventId ? "last-placed-highlight" : ""}`}
             />
           ) : null}
           <TimelineSlot index={slotIndex} />

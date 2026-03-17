@@ -29,6 +29,15 @@ export type ApiTimelineEntry = {
   placedAt?: string;
 };
 
+/** Last successfully placed event (for "just placed" UI). */
+export type LastPlacedEvent = {
+  eventId: string;
+  title: string;
+  year: number;
+  image: string | null;
+  placedByPlayerId: string;
+};
+
 export type RoomPlayerState = {
   playerId: string;
   nickname: string;
@@ -60,6 +69,8 @@ export type RoomState = {
   initialEventId: string | null;
   endedAt: string | null;
   winnerPlayerId: string | null;
+  /** Most recently placed event (by any player); for "last placed" card and timeline highlight. */
+  lastPlacedEvent: LastPlacedEvent | null;
 };
 
 /** API: place response (single player score = current player's score) */

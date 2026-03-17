@@ -139,12 +139,16 @@ async function fetchPageviewsForTitle(title: string): Promise<number> {
   const encoded = encodeURIComponent(title.replace(/ /g, "_"));
   const url = `https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/${encoded}/monthly/${PAGEVIEWS_START}/${PAGEVIEWS_END}`;
   try {
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "PartyTimeliners/0.1 (https://party-timeliners.local; contact: dev@party-timeliners.local)",
-      },
-    });
+    const res = await withRetry(
+      () =>
+        fetch(url, {
+          headers: {
+            "User-Agent":
+              "PartyTimeliners/0.1 (https://party-timeliners.local; contact: dev@party-timeliners.local)",
+          },
+        }),
+      "Pageviews",
+    );
     if (!res.ok) {
       PAGEVIEWS_CACHE.set(title, 0);
       return 0;
@@ -429,19 +433,48 @@ function isGoodEvent(event: IngestedEvent): boolean {
 }
 
 const SPARQL_TIMEOUT_SEC = 60;
+const FETCH_MAX_RETRIES = 3;
+const FETCH_RETRY_DELAY_MS = 2000;
+
+function isRetryableNetworkError(err: unknown): boolean {
+  const code = err && typeof err === "object" && "code" in err ? (err as NodeJS.ErrnoException).code : null;
+  if (code === "ECONNRESET" || code === "ETIMEDOUT" || code === "ECONNREFUSED" || code === "ENOTFOUND") return true;
+  const cause = err && typeof err === "object" && "cause" in err ? (err as { cause?: unknown }).cause : undefined;
+  return cause != null && isRetryableNetworkError(cause);
+}
+
+async function withRetry<T>(fn: () => Promise<T>, label: string): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= FETCH_MAX_RETRIES; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt < FETCH_MAX_RETRIES && isRetryableNetworkError(err)) {
+        console.warn(`[events] ${label} failed (attempt ${attempt}/${FETCH_MAX_RETRIES}), retrying in ${FETCH_RETRY_DELAY_MS}ms:`, err instanceof Error ? err.message : err);
+        await new Promise((r) => setTimeout(r, FETCH_RETRY_DELAY_MS));
+      } else {
+        throw err;
+      }
+    }
+  }
+  throw lastErr;
+}
 
 async function runSparql(sparql: string): Promise<Binding[]> {
   const url = `${WIKIDATA_ENDPOINT}?query=${encodeURIComponent(sparql)}&format=json&timeout=${SPARQL_TIMEOUT_SEC * 1000}`;
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/sparql-results+json",
-      "User-Agent":
-        "PartyTimeliners/0.1 (https://party-timeliners.local; contact: dev@party-timeliners.local)",
-    },
-  });
-  if (!res.ok) throw new Error(`Wikidata request failed with status ${res.status}`);
-  const json = await res.json();
-  return (json.results?.bindings ?? []) as Binding[];
+  return withRetry(async () => {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/sparql-results+json",
+        "User-Agent":
+          "PartyTimeliners/0.1 (https://party-timeliners.local; contact: dev@party-timeliners.local)",
+      },
+    });
+    if (!res.ok) throw new Error(`Wikidata request failed with status ${res.status}`);
+    const json = await res.json();
+    return (json.results?.bindings ?? []) as Binding[];
+  }, "Wikidata SPARQL");
 }
 
 function delay(ms: number): Promise<void> {

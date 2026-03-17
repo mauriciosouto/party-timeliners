@@ -78,6 +78,7 @@ export function RoomGameBoard({
 }: RoomGameBoardProps) {
   const timeline = timelineFromRoomState(roomState);
   const [lastPlacedId, setLastPlacedId] = useState<string | null>(null);
+  const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null);
   const [dropHint, setDropHint] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const placedCardRef = useRef<HTMLDivElement | null>(null);
@@ -234,6 +235,17 @@ export function RoomGameBoard({
       clearTimeout(t2);
     };
   }, [lastPlacedId]);
+
+  const lastPlacedEvent = roomState.lastPlacedEvent ?? null;
+  useEffect(() => {
+    if (!lastPlacedEvent?.eventId) {
+      setHighlightedEventId(null);
+      return;
+    }
+    setHighlightedEventId(lastPlacedEvent.eventId);
+    const t = setTimeout(() => setHighlightedEventId(null), 4000);
+    return () => clearTimeout(t);
+  }, [lastPlacedEvent?.eventId]);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -508,6 +520,7 @@ export function RoomGameBoard({
                 <Timeline
                   events={timeline}
                   lastPlacedId={null}
+                  highlightEventId={highlightedEventId}
                   onPlacedCardRef={() => {}}
                 />
               </div>
@@ -593,6 +606,7 @@ export function RoomGameBoard({
                 <TimelineWithDragState
                   events={timeline}
                   lastPlacedId={lastPlacedId}
+                  highlightEventId={highlightedEventId}
                   onPlacedCardRef={(el) => {
                     placedCardRef.current = el;
                   }}
@@ -646,6 +660,42 @@ export function RoomGameBoard({
         </main>
 
         <aside className="flex w-56 flex-shrink-0 flex-col gap-4 rounded-[14px] bg-white p-4 shadow-[0_6px_20px_rgba(0,0,0,0.08)]">
+          {(roomState.status === "playing" || roomState.status === "ended") && (
+            <section
+              className="last-placed-panel flex flex-col gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-3"
+              aria-label="Last placed event"
+            >
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                Last Placed Event
+              </h2>
+              {lastPlacedEvent ? (
+                <>
+                  <p className="text-xs text-zinc-600">
+                    Placed by:{" "}
+                    {roomState.players.find(
+                      (p) => p.playerId === lastPlacedEvent.placedByPlayerId,
+                    )?.nickname ?? "—"}
+                  </p>
+                  <EventCard
+                    event={{
+                      id: lastPlacedEvent.eventId,
+                      title: lastPlacedEvent.title,
+                      year: lastPlacedEvent.year,
+                      description: lastPlacedEvent.title,
+                      image: lastPlacedEvent.image ?? undefined,
+                    }}
+                    showYear
+                    revealed
+                    className="w-full flex-shrink-0"
+                  />
+                </>
+              ) : (
+                <p className="text-xs text-zinc-400">
+                  No event placed yet
+                </p>
+              )}
+            </section>
+          )}
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
             Players
           </h2>

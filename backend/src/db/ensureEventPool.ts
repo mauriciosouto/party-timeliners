@@ -1,11 +1,16 @@
 /**
  * Ensures the event pool is populated on server startup.
- * - If the pool is valid (not expired): does nothing; server starts immediately.
+ * - Always attempts to load/refresh events from Wikidata in the background so the pool
+ *   can grow (or stay topped up). If the pool exceeds TARGET_POOL_SIZE after merge,
+ *   the cap keeps the best by popularity (existing events may be replaced when merging
+ *   by category via mergeWithExistingPool).
  * - If the pool is empty and a seed file exists: loads from seed synchronously (fast), then
- *   starts a background refresh from Wikidata so the list can be updated without blocking.
- * - If the pool is empty and no seed file, or the pool is expired: server starts immediately
- *   with existing events (if any), and a background job fetches from Wikidata and updates
- *   the pool. You can play with existing events while the update runs.
+ *   starts a background refresh from Wikidata.
+ * - If the pool is empty and no seed file: waits for initial refresh (up to 90s) so the
+ *   server has at least some events before accepting games.
+ * - If the pool has events (any count): server starts immediately and a background
+ *   refresh runs to add more events; useful when count < MIN_EVENTS_TO_START (e.g. TTL
+ *   valid but only 132 events) so the pool can reach a playable size.
  * Call after initDb().
  */
 import { readFileSync, existsSync } from "node:fs";
@@ -88,14 +93,6 @@ export function deleteExpiredEvents(db: ReturnType<typeof getDb>): number {
   return count;
 }
 
-/** True if pool is empty or has at least one expired event (refreshed_at older than TTL or null). */
-function isPoolExpired(db: ReturnType<typeof getDb>): boolean {
-  if (getEventCount(db) === 0) return true;
-  const cutoff = getTtlCutoff();
-  const row = db.prepare("SELECT 1 FROM events WHERE refreshed_at IS NULL OR refreshed_at < ? LIMIT 1").get(cutoff) as { "1"?: number } | undefined;
-  return row != null;
-}
-
 function setLastRefreshed(db: ReturnType<typeof getDb>): void {
   const stmt = db.prepare("INSERT OR REPLACE INTO event_pool_meta (key, value) VALUES (?, ?)");
   stmt.run(META_KEY_LAST_REFRESHED, new Date().toISOString());
@@ -167,14 +164,8 @@ function refreshEventPoolInBackground(): void {
 export async function ensureEventPool(): Promise<void> {
   const db = getDb();
   const count = getEventCount(db);
-  const expired = isPoolExpired(db);
 
-  if (!expired) {
-    console.log(`[events] Pool has ${count} events and is still valid (per-event TTL ${config.eventPoolTtlMinutes} min).`);
-    return;
-  }
-
-  // Pool empty or expired: start server immediately and refresh in background (or load seed first if empty + seed exists).
+  // Pool empty: load from seed if available, or wait for initial refresh; then always trigger background refresh.
   if (count === 0 && seedPath && existsSync(seedPath)) {
     const raw = readFileSync(seedPath, "utf8");
     const pool: PoolEvent[] = JSON.parse(raw);
@@ -221,8 +212,14 @@ export async function ensureEventPool(): Promise<void> {
     } else {
       console.log(`[events] Pool has ${after} events (need ${MIN_EVENTS_TO_START}+ for full games). Server starting; refresh may still be running.`);
     }
-  } else {
-    console.log(`[events] Pool expired (${count} events). Server starting with existing events; refreshing from Wikidata in background.`);
-    refreshEventPoolInBackground();
+    return;
   }
+
+  // Pool has events: always try to add more on startup (e.g. count < MIN_EVENTS_TO_START or just to top up).
+  if (count < MIN_EVENTS_TO_START) {
+    console.log(`[events] Pool has ${count} events (need ${MIN_EVENTS_TO_START}+ for full games). Refreshing from Wikidata in background to add more.`);
+  } else {
+    console.log(`[events] Pool has ${count} events. Refreshing from Wikidata in background to top up.`);
+  }
+  refreshEventPoolInBackground();
 }

@@ -20,6 +20,15 @@ export type TimelineEntry = {
   placedAt?: string;
 };
 
+/** Last successfully placed event (for "just placed" UI). */
+export type LastPlacedEvent = {
+  eventId: string;
+  title: string;
+  year: number;
+  image: string | null;
+  placedByPlayerId: string;
+};
+
 export type RoomPlayer = {
   playerId: string;
   nickname: string;
@@ -52,4 +61,6 @@ export type GameState = {
   initialEventId: string | null;
   endedAt: string | null;
   winnerPlayerId: string | null;
+  /** Most recently placed event (by any player); for "last placed" card and timeline highlight. */
+  lastPlacedEvent: LastPlacedEvent | null;
 };
