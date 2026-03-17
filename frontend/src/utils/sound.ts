@@ -77,3 +77,21 @@ export function playStartGameSound(): void {
     console.warn("Audio playback failed", err);
   }
 }
+
+const yourTurnSound =
+  typeof Audio !== "undefined" ? new Audio("/sounds/your_turn.mp3") : null;
+const YOUR_TURN_VOLUME = 0.4;
+
+/** Short, non-intrusive sound when it becomes the local player's turn. Fails gracefully if autoplay is blocked or file is missing. */
+export function playYourTurnSound(): void {
+  if (!yourTurnSound) return;
+  yourTurnSound.volume = YOUR_TURN_VOLUME;
+  yourTurnSound.currentTime = 0;
+  try {
+    yourTurnSound.play().catch(() => {
+      /* Autoplay blocked or file missing — fail silently */
+    });
+  } catch {
+    /* Fail gracefully */
+  }
+}

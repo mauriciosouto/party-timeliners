@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getWsUrl } from "@/lib/api";
 import type { RoomState } from "@/src/services/roomApi";
+import { playYourTurnSound } from "@/src/utils/sound";
 
 /** Ensure timeline is always ordered by position (for placer and non-active players). */
 function sortTimelineByPosition<T extends { position: number }>(timeline: T[]): T[] {
@@ -56,6 +57,25 @@ export function useRoomSocket(
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
+  const prevTurnPlayerIdRef = useRef<string | null>(null);
+  const [yourTurnToast, setYourTurnToast] = useState(false);
+
+  useEffect(() => {
+    if (!roomState || roomState.status !== "playing" || !playerId) {
+      prevTurnPlayerIdRef.current = null;
+      return;
+    }
+    const current = roomState.currentTurnPlayerId ?? null;
+    if (
+      current === playerId &&
+      prevTurnPlayerIdRef.current !== null &&
+      prevTurnPlayerIdRef.current !== playerId
+    ) {
+      playYourTurnSound();
+      setYourTurnToast(true);
+    }
+    prevTurnPlayerIdRef.current = current;
+  }, [roomState?.currentTurnPlayerId, roomState?.status, playerId]);
 
   useEffect(() => {
     if (!roomId || !nickname) return;
@@ -209,6 +229,7 @@ export function useRoomSocket(
   const clearRoomError = () => setRoomError(null);
   const clearPlaceError = () => setPlaceError(null);
   const clearPlayerLeftNotification = () => setPlayerLeftNotification(null);
+  const clearYourTurnToast = () => setYourTurnToast(false);
 
   return {
     roomState,
@@ -216,6 +237,8 @@ export function useRoomSocket(
     roomClosed,
     leftRoom,
     playerLeftNotification,
+    yourTurnToast,
+    clearYourTurnToast,
     clearPlayerLeftNotification,
     placeResult,
     placeError,

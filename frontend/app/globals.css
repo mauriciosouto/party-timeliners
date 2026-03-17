@@ -598,6 +598,25 @@ body {
   transition: opacity 0.3s ease;
 }
 
+/* "Your turn" toast — fixed top-center, positive styling */
+.your-turn-toast {
+  position: fixed;
+  left: 50%;
+  top: 20px;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: rgba(67, 56, 202, 0.95);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border-left: 4px solid rgb(129, 140, 248);
+  box-shadow: 0 6px 20px rgba(67, 56, 202, 0.4);
+  font-size: 15px;
+  font-weight: 600;
+  pointer-events: none;
+  animation: toast-slide-in 0.25s ease forwards;
+}
+
 /* Brief flash when match starts (lobby → playing) */
 .game-start-flash {
   background: rgba(255, 255, 255, 0.4);

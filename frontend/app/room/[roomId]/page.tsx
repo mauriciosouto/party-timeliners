@@ -51,6 +51,8 @@ export default function RoomPage() {
     leftRoom,
     playerLeftNotification,
     clearPlayerLeftNotification,
+    yourTurnToast,
+    clearYourTurnToast,
     placeResult,
     placeError,
     clearPlaceError,
@@ -95,6 +97,13 @@ export default function RoomPage() {
     const t = setTimeout(clearPlayerLeftNotification, 5000);
     return () => clearTimeout(t);
   }, [playerLeftNotification, clearPlayerLeftNotification]);
+
+  // Auto-dismiss "Your turn" toast after 2.5s.
+  useEffect(() => {
+    if (!yourTurnToast) return;
+    const t = setTimeout(clearYourTurnToast, 2500);
+    return () => clearTimeout(t);
+  }, [yourTurnToast, clearYourTurnToast]);
 
   const prevStatusRef = useRef<string | null>(null);
   const [gameJustStarted, setGameJustStarted] = useState(false);
@@ -162,6 +171,15 @@ export default function RoomPage() {
             className="game-start-flash fixed inset-0 z-[9998] pointer-events-none"
             aria-hidden
           />
+        )}
+        {yourTurnToast && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="your-turn-toast"
+          >
+            Your turn
+          </div>
         )}
         {playerLeftNotification && (
           <div
