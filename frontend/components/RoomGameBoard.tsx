@@ -239,12 +239,15 @@ export function RoomGameBoard({
   const lastPlacedEvent = roomState.lastPlacedEvent ?? null;
   useEffect(() => {
     if (!lastPlacedEvent?.eventId) {
-      setHighlightedEventId(null);
-      return;
+      const id = setTimeout(() => setHighlightedEventId(null), 0);
+      return () => clearTimeout(id);
     }
-    setHighlightedEventId(lastPlacedEvent.eventId);
+    const id = setTimeout(() => setHighlightedEventId(lastPlacedEvent.eventId), 0);
     const t = setTimeout(() => setHighlightedEventId(null), 4000);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(id);
+      clearTimeout(t);
+    };
   }, [lastPlacedEvent?.eventId]);
 
   const handleDragEnd = useCallback(
