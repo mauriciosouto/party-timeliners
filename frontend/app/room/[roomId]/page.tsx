@@ -211,10 +211,7 @@ export default function RoomPage() {
           onTurnTimeout={sendTurnTimeout}
           onRematch={sendRematch}
           onEndGame={sendEndGame}
-          onCloseRoom={() => {
-            sendCloseRoom();
-            router.push("/");
-          }}
+          onCloseRoom={sendCloseRoom}
           onLeaveRoom={sendLeaveRoom}
           onClearPlaceResult={clearPlaceResult}
         />
