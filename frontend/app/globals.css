@@ -633,3 +633,25 @@ body {
   0% { opacity: 1; }
   100% { opacity: 0; }
 }
+
+/* Mobile game layout: horizontal scroll areas */
+.mobile-timeline {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.mobile-place-slot {
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.mobile-place-slot:not(:disabled):active {
+  transform: scale(0.98);
+}
+.mobile-timeline-year {
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-hand-card {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.mobile-hand-card:active {
+  transform: scale(0.98);
+}

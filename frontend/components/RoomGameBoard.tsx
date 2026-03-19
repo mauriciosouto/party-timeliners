@@ -7,7 +7,9 @@ import type { TimelineEvent } from "@/lib/types";
 import type { TimelineProps } from "@/components/Timeline";
 import { Timeline, parseSlotIndexFromId } from "@/components/Timeline";
 import { EventCard } from "@/components/EventCard";
+import { MobileGameBoard } from "@/components/MobileGameBoard";
 import type { RoomState } from "@/src/services/roomApi";
+import { useIsMobile } from "@/src/hooks/useIsMobile";
 import { fireSuccessConfetti } from "@/src/utils/confetti";
 import { fireVictoryConfetti } from "@/src/utils/victoryConfetti";
 import { playSound, stopTickSound } from "@/src/utils/sound";
@@ -57,25 +59,27 @@ type RoomGameBoardProps = {
   onClearPlaceResult: () => void;
 };
 
-export function RoomGameBoard({
-  // roomId required by parent type but not used in this component
-  roomId: _roomId, // eslint-disable-line @typescript-eslint/no-unused-vars
-  playerId,
-  roomState,
-  wsReady,
-  placeResult,
-  placeError,
-  onClearPlaceError,
-  roomError,
-  onClearRoomError,
-  onPlaceEvent,
-  onTurnTimeout,
-  onRematch,
-  onEndGame,
-  onCloseRoom,
-  onLeaveRoom,
-  onClearPlaceResult,
-}: RoomGameBoardProps) {
+export function RoomGameBoard(props: RoomGameBoardProps) {
+  const {
+    roomId: _roomId, // eslint-disable-line @typescript-eslint/no-unused-vars
+    playerId,
+    roomState,
+    wsReady,
+    placeResult,
+    placeError,
+    onClearPlaceError,
+    roomError,
+    onClearRoomError,
+    onPlaceEvent,
+    onTurnTimeout,
+    onRematch,
+    onEndGame,
+    onCloseRoom,
+    onLeaveRoom,
+    onClearPlaceResult,
+  } = props;
+
+  const isMobile = useIsMobile();
   const timeline = timelineFromRoomState(roomState);
   const [lastPlacedId, setLastPlacedId] = useState<string | null>(null);
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null);
@@ -298,6 +302,10 @@ export function RoomGameBoard({
       default:
         return `${n}th`;
     }
+  }
+
+  if (isMobile) {
+    return <MobileGameBoard {...props} />;
   }
 
   return (
