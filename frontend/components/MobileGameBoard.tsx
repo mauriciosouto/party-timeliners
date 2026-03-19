@@ -9,6 +9,7 @@ import { PlayersModal } from "@/components/PlayersModal";
 import { getWikimediaThumbnail } from "@/lib/imageUtils";
 import { formatYear } from "@/lib/format";
 import type { RoomState } from "@/src/services/roomApi";
+import { getMobileResultsGroups, ordinal } from "@/src/utils/mobileResults";
 import { fireSuccessConfetti } from "@/src/utils/confetti";
 import { fireVictoryConfetti } from "@/src/utils/victoryConfetti";
 import { playSound, stopTickSound } from "@/src/utils/sound";
@@ -181,41 +182,10 @@ export function MobileGameBoard({
     (p) => p.playerId === roomState.winnerPlayerId,
   );
   const isHost = roomState.hostPlayerId === playerId;
-
-  const rankedPlayers = useMemo(
-    () =>
-      [...roomState.players].sort(
-        (a, b) => (b.score ?? 0) - (a.score ?? 0),
-      ),
-    [roomState.players],
+  const { rankedPlayers, podiumCount, restRanked, podiumExtraPlayers } = useMemo(
+    () => getMobileResultsGroups(roomState.players, roomState.winnerPlayerId),
+    [roomState.players, roomState.winnerPlayerId],
   );
-  const playerCount = rankedPlayers.length;
-  const podiumCount =
-    playerCount <= 3 ? 1 : playerCount <= 5 ? 2 : 3;
-  const podiumPlayers = rankedPlayers.slice(0, podiumCount);
-  const restRanked = rankedPlayers.slice(podiumCount);
-  const podiumExtraPlayers = winner ? podiumPlayers.slice(1) : [];
-
-  const [showResultsModal, setShowResultsModal] = useState(false);
-  useEffect(() => {
-    if (!isEnded) setShowResultsModal(false);
-    else setShowResultsModal(true);
-  }, [isEnded]);
-
-  function ordinal(n: number): string {
-    const s = n % 100;
-    if (s >= 11 && s <= 13) return `${n}th`;
-    switch (n % 10) {
-      case 1:
-        return `${n}st`;
-      case 2:
-        return `${n}nd`;
-      case 3:
-        return `${n}rd`;
-      default:
-        return `${n}th`;
-    }
-  }
 
   const handlePlaceAt = useCallback(
     (position: number) => {
@@ -562,7 +532,7 @@ export function MobileGameBoard({
         </section>
       </div>
 
-      {isEnded && showResultsModal && (
+      {isEnded && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
             role="dialog"
@@ -717,7 +687,6 @@ export function MobileGameBoard({
                     <button
                       type="button"
                       onClick={() => {
-                        setShowResultsModal(false);
                         onCloseRoom();
                       }}
                       className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700"
@@ -728,7 +697,6 @@ export function MobileGameBoard({
                   <button
                     type="button"
                     onClick={() => {
-                      setShowResultsModal(false);
                       onRematch();
                     }}
                     className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white"
@@ -741,7 +709,6 @@ export function MobileGameBoard({
                   {onLeaveRoom && (
                     <Link
                       href="/"
-                      onClick={() => setShowResultsModal(false)}
                       className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700"
                     >
                       Leave

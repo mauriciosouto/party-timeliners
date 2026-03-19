@@ -123,6 +123,8 @@ After the game ends the room shows a **Match Results** screen:
 - full player ranking with scores
 - Play again (rematch) or End game
 
+Mobile UI note: the results are shown in a full-screen modal (no manual “Close” button), with the same winner/podium/rest-of-participants content and mobile-appropriate actions.
+
 Players stay in the room until they leave or the host starts a rematch.
 
 ---
