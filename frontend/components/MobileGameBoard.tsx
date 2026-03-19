@@ -533,12 +533,12 @@ export function MobileGameBoard({
       </div>
 
       {isEnded && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 pointer-events-none">
           <div
             role="dialog"
             aria-modal="true"
             aria-label="Match results"
-            className="w-full max-w-[520px] overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+            className="pointer-events-auto w-full max-w-[520px] overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
           >
             <div className="flex items-center justify-between gap-3 border-b border-zinc-200/80 bg-white p-4">
               <div className="min-w-0">
