@@ -137,6 +137,18 @@ export async function initDb(): Promise<void> {
   } catch {
     // Column already exists (e.g. new schema)
   }
+  try {
+    db.run("ALTER TABLE events ADD COLUMN created_at TEXT");
+  } catch {
+    // Column already exists (e.g. new schema)
+  }
+  try {
+    db.run(
+      "UPDATE events SET created_at = COALESCE(created_at, refreshed_at, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) WHERE created_at IS NULL OR created_at = ''",
+    );
+  } catch {
+    // ignore
+  }
   if (!buffer) save();
   wrapper = wrap(db);
 }

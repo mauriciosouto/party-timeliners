@@ -8,11 +8,9 @@ import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { initDb, getDb } from "./index.js";
-import {
-  fetchAndPrepareEventPool,
-  mergeWithExistingPool,
-  LIMIT_PER_CATEGORY,
-} from "../services/eventIngestion.js";
+import { fetchAndPrepareEventPool, mergeWithExistingPool } from "../services/eventIngestion.js";
+import { commitMergedPool } from "./ensureEventPool.js";
+import { config } from "../config.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendData = path.join(__dirname, "../../data/eventPool.json");
@@ -55,16 +53,34 @@ if (seedPath && existsSync(seedPath)) {
         e.wikipediaUrl ?? null,
         e.popularityScore ?? null,
         now,
+        now,
       );
     }
   });
   runTx();
   console.log(`Seeded ${pool.length} events from ${seedPath}`);
 } else {
-  console.log("No seed file found. Fetching from Wikidata (merge with existing, max " + LIMIT_PER_CATEGORY + " per category)...");
+  console.log(
+    "No seed file found. Fetching from Wikidata (merge with existing, max " +
+      config.eventStoreLimitPerCategory +
+      " per category, then upsert + TTL)...",
+  );
   const existing = db
-    .prepare("SELECT id, title, type, display_title, year, image, wikipedia_url, popularity_score, refreshed_at FROM events")
-    .all() as { id: string; title: string; type: string; display_title: string; year: number; image: string | null; wikipedia_url: string | null; popularity_score: number | null; refreshed_at: string | null }[];
+    .prepare(
+      "SELECT id, title, type, display_title, year, image, wikipedia_url, popularity_score, refreshed_at, created_at FROM events",
+    )
+    .all() as {
+      id: string;
+      title: string;
+      type: string;
+      display_title: string;
+      year: number;
+      image: string | null;
+      wikipedia_url: string | null;
+      popularity_score: number | null;
+      refreshed_at: string | null;
+      created_at: string | null;
+    }[];
   const existingPool = existing.map((r) => ({
     id: r.id,
     title: r.title,
@@ -75,27 +91,12 @@ if (seedPath && existsSync(seedPath)) {
     wikipediaUrl: r.wikipedia_url ?? undefined,
     popularityScore: r.popularity_score ?? undefined,
     refreshed_at: r.refreshed_at ?? undefined,
+    created_at: r.created_at ?? undefined,
   }));
   const candidates = await fetchAndPrepareEventPool();
-  const merged = mergeWithExistingPool(existingPool, candidates, LIMIT_PER_CATEGORY);
-  const runTx = db.transaction(() => {
-    db.exec("DELETE FROM events");
-    const insert = db.prepare(insertSql);
-    for (const e of merged) {
-      insert.run(
-        e.id,
-        e.title,
-        e.type,
-        e.displayTitle,
-        e.year,
-        e.image,
-        e.wikipediaUrl,
-        e.popularityScore ?? null,
-        e.refreshed_at ?? now,
-      );
-    }
-    db.prepare("INSERT OR REPLACE INTO event_pool_meta (key, value) VALUES (?, ?)").run("last_refreshed_at", new Date().toISOString());
-  });
-  runTx();
-  console.log(`Pool: ${existingPool.length} existing + ${candidates.length} candidates → ${merged.length} events.`);
+  const merged = mergeWithExistingPool(existingPool, candidates, config.eventStoreLimitPerCategory);
+  const { finalCount, orphansRemoved, expiredRemoved } = commitMergedPool(db, merged);
+  console.log(
+    `Pool: ${existingPool.length} existing + ${candidates.length} candidates → ${finalCount} rows (orphans: ${orphansRemoved}, TTL: ${expiredRemoved}).`,
+  );
 }

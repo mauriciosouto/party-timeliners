@@ -112,6 +112,11 @@ Integration tests use `test-data/integration.db`; they seed the `events` table a
 | DB_PATH   | data/game.db   | SQLite file path   |
 | NODE_ENV  | development    | Environment (development / production) |
 | SEED_PATH | data/eventPool.json | Used by `npm run seed` |
+| EVENT_STORE_LIMIT_PER_CATEGORY | 400 | Max events **stored** per category when merging Wikidata into the pool (separate from SPARQL phase1 limits). |
+| EVENT_POOL_TTL_DAYS | 30 | Per-event TTL by `created_at` (≈1 month). Ignored if `EVENT_POOL_TTL_MINUTES` is set. |
+| EVENT_POOL_TTL_MINUTES | _(from days)_ | Override TTL in minutes (e.g. `43200` = 30 days). |
+| EVENT_POOL_MAX_TOTAL | 10000 | Global cap after merge (by popularity). Set `0` or `unlimited` for no cap. |
+| REFRESH_SECRET | _(unset)_ | If set, `POST /api/admin/refresh-events` requires header `x-refresh-secret`. |
 
 ## Running in production
 

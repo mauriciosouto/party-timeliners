@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  mergeWithExistingPool,
-  LIMIT_PER_CATEGORY,
-  type IngestedEvent,
-  type PoolEventLike,
-} from "./eventIngestion.js";
+import { mergeWithExistingPool, type IngestedEvent, type PoolEventLike } from "./eventIngestion.js";
 
 function ev(
   id: string,

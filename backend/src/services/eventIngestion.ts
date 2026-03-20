@@ -3,15 +3,16 @@
  * Used by the refresh-events script and optionally by seed when DB is empty.
  */
 
+import { config } from "../config.js";
+
 const WIKIDATA_ENDPOINT = "https://query.wikidata.org/sparql";
 const CURRENT_YEAR = new Date().getUTCFullYear();
 /** Phase1: lightweight query limit (no article/label). Keep low to avoid 504. */
 const PHASE1_LIMIT = 25;
 const HISTORICAL_PHASE1_LIMIT = 15;
 const CELEBRITY_PHASE1_LIMIT = 25;
+/** Cap when building a one-shot fetch list for seed (not DB storage per category). */
 export const TARGET_POOL_SIZE = 300;
-/** Max events per category when merging; above this, new events replace a random one in that category. */
-export const LIMIT_PER_CATEGORY = 200;
 /** Pause between category requests to avoid overloading the endpoint. */
 const CATEGORY_DELAY_MS = 800;
 /** Number of phase1 runs per category (different year ranges); results combined then one enrich. */
@@ -625,15 +626,16 @@ export async function fetchAndPrepareEventPool(): Promise<IngestedEvent[]> {
   return unique;
 }
 
-/** Event-like shape used when merging; existing pool may come from DB with optional fields and refreshed_at for per-event TTL. */
-export type PoolEventLike = Pick<IngestedEvent, "id" | "type"> & Partial<IngestedEvent> & { refreshed_at?: string };
+/** Event-like shape used when merging; DB rows may include refreshed_at / created_at. */
+export type PoolEventLike = Pick<IngestedEvent, "id" | "type"> &
+  Partial<IngestedEvent> & { refreshed_at?: string; created_at?: string };
 
-/** IngestedEvent with optional refreshed_at (set when event was last written to the pool; used for per-event TTL). */
-export type PoolEventWithRefreshed = IngestedEvent & { refreshed_at?: string };
+/** Row shape for upsert (created_at = first time in pool; refreshed_at = last refresh pass). */
+export type PoolEventWithRefreshed = IngestedEvent & { refreshed_at?: string; created_at?: string };
 
 /**
  * Merge new candidates into existing pool without wiping it.
- * Preserves refreshed_at from existing events so per-event TTL is respected.
+ * Preserves refreshed_at and created_at from existing rows.
  * - If candidate.id is already in existing, skip.
  * - If category has < limitPerCategory: add candidate.
  * - If category has >= limitPerCategory: replace a random event of that category with candidate.
@@ -642,7 +644,7 @@ export type PoolEventWithRefreshed = IngestedEvent & { refreshed_at?: string };
 export function mergeWithExistingPool(
   existing: PoolEventLike[],
   newCandidates: IngestedEvent[],
-  limitPerCategory: number = LIMIT_PER_CATEGORY,
+  limitPerCategory: number = config.eventStoreLimitPerCategory,
 ): PoolEventWithRefreshed[] {
   const byId = new Map<string, PoolEventLike>();
   for (const e of existing) {
@@ -651,6 +653,7 @@ export function mergeWithExistingPool(
   const merged: PoolEventWithRefreshed[] = existing.map((e) => ({
     ...toIngestedEvent(e),
     refreshed_at: e.refreshed_at,
+    created_at: e.created_at,
   }));
   const byTypeIndices = new Map<string, number[]>();
   merged.forEach((e, i) => {
