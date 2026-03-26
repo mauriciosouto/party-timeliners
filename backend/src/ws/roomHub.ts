@@ -14,20 +14,23 @@ function getRoomClients(roomId: string): Set<Client> {
   return set;
 }
 
-/** Broadcast room state to each client with their own hand (private). */
-function broadcastStateUpdate(roomId: string): void {
-  getRoomClients(roomId).forEach((c) => {
-    if (c.ws.readyState !== 1) return;
-    const room = roomService.getRoomState(roomId, c.playerId);
-    if (!room) return;
+async function broadcastStateUpdate(roomId: string): Promise<void> {
+  for (const c of getRoomClients(roomId)) {
+    if (c.ws.readyState !== 1) continue;
+    const room = await roomService.getRoomState(roomId, c.playerId);
+    if (!room) continue;
     c.ws.send(JSON.stringify({ type: "state_update", room }));
-  });
+  }
 }
 
 export function attachRoomHub(ws: WebSocket): void {
   let client: Client | null = null;
 
   ws.on("message", (raw) => {
+    void handleMessage(raw);
+  });
+
+  async function handleMessage(raw: WebSocket.RawData): Promise<void> {
     try {
       const msg = JSON.parse(raw.toString()) as {
         type: string;
@@ -52,7 +55,7 @@ export function attachRoomHub(ws: WebSocket): void {
           );
           return;
         }
-        const existing = roomService.getRoomState(roomId);
+        const existing = await roomService.getRoomState(roomId);
         if (!existing) {
           ws.send(
             JSON.stringify({
@@ -66,7 +69,7 @@ export function attachRoomHub(ws: WebSocket): void {
         let joinedPlayerId: string;
         if (playerId && existing.players.some((p) => p.playerId === playerId)) {
           joinedPlayerId = playerId;
-          roomService.setPlayerConnected(roomId, playerId, true);
+          await roomService.setPlayerConnected(roomId, playerId, true);
         } else if (existing.status !== "lobby") {
           ws.send(
             JSON.stringify({
@@ -77,7 +80,7 @@ export function attachRoomHub(ws: WebSocket): void {
           );
           return;
         } else {
-          const result = roomService.joinRoom(
+          const result = await roomService.joinRoom(
             roomId,
             nickname,
             email ?? undefined,
@@ -97,7 +100,7 @@ export function attachRoomHub(ws: WebSocket): void {
         }
         client = { ws, playerId: joinedPlayerId, roomId };
         getRoomClients(roomId).add(client);
-        const room = roomService.getRoomState(roomId, joinedPlayerId)!;
+        const room = (await roomService.getRoomState(roomId, joinedPlayerId))!;
         ws.send(
           JSON.stringify({
             type: "join_ack",
@@ -106,7 +109,7 @@ export function attachRoomHub(ws: WebSocket): void {
             room,
           }),
         );
-        broadcastStateUpdate(roomId);
+        await broadcastStateUpdate(roomId);
         return;
       }
 
@@ -121,7 +124,7 @@ export function attachRoomHub(ws: WebSocket): void {
       }
 
       if (msg.type === "start_game") {
-        const result = roomService.startGame(client.roomId, client.playerId);
+        const result = await roomService.startGame(client.roomId, client.playerId);
         if ("error" in result) {
           ws.send(
             JSON.stringify({
@@ -132,7 +135,7 @@ export function attachRoomHub(ws: WebSocket): void {
           );
           return;
         }
-        broadcastStateUpdate(client.roomId);
+        await broadcastStateUpdate(client.roomId);
         return;
       }
 
@@ -148,9 +151,9 @@ export function attachRoomHub(ws: WebSocket): void {
           );
           return;
         }
-        let result: ReturnType<typeof roomService.placeEvent>;
+        let result: Awaited<ReturnType<typeof roomService.placeEvent>>;
         try {
-          result = roomService.placeEvent(
+          result = await roomService.placeEvent(
             client.roomId,
             client.playerId,
             eventId,
@@ -165,7 +168,7 @@ export function attachRoomHub(ws: WebSocket): void {
               message: err instanceof Error ? err.message : "Place failed",
             }),
           );
-          broadcastStateUpdate(client.roomId);
+          await broadcastStateUpdate(client.roomId);
           return;
         }
         if ("error" in result) {
@@ -176,10 +179,10 @@ export function attachRoomHub(ws: WebSocket): void {
               message: result.error,
             }),
           );
-          broadcastStateUpdate(client.roomId);
+          await broadcastStateUpdate(client.roomId);
           return;
         }
-        const stateAfter = roomService.getRoomState(client.roomId, client.playerId);
+        const stateAfter = await roomService.getRoomState(client.roomId, client.playerId);
         ws.send(
           JSON.stringify({
             type: "place_result",
@@ -188,12 +191,12 @@ export function attachRoomHub(ws: WebSocket): void {
             lastPlacedEvent: stateAfter?.lastPlacedEvent ?? null,
           }),
         );
-        broadcastStateUpdate(client.roomId);
+        await broadcastStateUpdate(client.roomId);
         return;
       }
 
       if (msg.type === "turn_timeout") {
-        const result = roomService.timeoutTurn(client.roomId, client.playerId);
+        const result = await roomService.timeoutTurn(client.roomId, client.playerId);
         if ("error" in result) {
           ws.send(
             JSON.stringify({
@@ -202,10 +205,10 @@ export function attachRoomHub(ws: WebSocket): void {
               message: result.error,
             }),
           );
-          broadcastStateUpdate(client.roomId);
+          await broadcastStateUpdate(client.roomId);
           return;
         }
-        const state = roomService.getRoomState(client.roomId, client.playerId);
+        const state = await roomService.getRoomState(client.roomId, client.playerId);
         ws.send(
           JSON.stringify({
             type: "place_result",
@@ -217,12 +220,12 @@ export function attachRoomHub(ws: WebSocket): void {
             lastPlacedEvent: state?.lastPlacedEvent ?? null,
           }),
         );
-        broadcastStateUpdate(client.roomId);
+        await broadcastStateUpdate(client.roomId);
         return;
       }
 
       if (msg.type === "end_game") {
-        const result = roomService.endGame(client.roomId, client.playerId);
+        const result = await roomService.endGame(client.roomId, client.playerId);
         if ("error" in result) {
           ws.send(
             JSON.stringify({
@@ -233,12 +236,12 @@ export function attachRoomHub(ws: WebSocket): void {
           );
           return;
         }
-        broadcastStateUpdate(client.roomId);
+        await broadcastStateUpdate(client.roomId);
         return;
       }
 
       if (msg.type === "rematch") {
-        const result = roomService.rematchRoom(client.roomId, client.playerId);
+        const result = await roomService.rematchRoom(client.roomId, client.playerId);
         if ("error" in result) {
           ws.send(
             JSON.stringify({
@@ -249,13 +252,12 @@ export function attachRoomHub(ws: WebSocket): void {
           );
           return;
         }
-        broadcastStateUpdate(client.roomId);
+        await broadcastStateUpdate(client.roomId);
         return;
       }
 
-      /** Non-host leaves the room (lobby or during game). Others get state_update + player_left. */
       if (msg.type === "leave_room") {
-        const result = roomService.leaveRoom(client.roomId, client.playerId);
+        const result = await roomService.leaveRoom(client.roomId, client.playerId);
         if ("error" in result) {
           ws.send(
             JSON.stringify({
@@ -267,7 +269,7 @@ export function attachRoomHub(ws: WebSocket): void {
         }
         const { roomState, leftPlayerNickname } = result;
         getRoomClients(client.roomId).delete(client);
-        broadcastStateUpdate(client.roomId);
+        await broadcastStateUpdate(client.roomId);
         const playerLeftPayload = JSON.stringify({
           type: "player_left",
           nickname: leftPlayerNickname,
@@ -279,22 +281,27 @@ export function attachRoomHub(ws: WebSocket): void {
         return;
       }
 
-      /** Host permanently closes the room (lobby or after game ended). Room is deleted; everyone receives room_closed and should redirect home. */
       if (msg.type === "close_room") {
-        const room = roomService.getRoomState(client.roomId);
+        const room = await roomService.getRoomState(client.roomId);
         if (!room) {
           ws.send(JSON.stringify({ type: "close_room_error", message: "Room not found" }));
           return;
         }
         if (room.status !== "lobby" && room.status !== "ended") {
-          ws.send(JSON.stringify({ type: "close_room_error", message: "Only the host can close the room when in lobby or after the game has ended" }));
+          ws.send(
+            JSON.stringify({
+              type: "close_room_error",
+              message:
+                "Only the host can close the room when in lobby or after the game has ended",
+            }),
+          );
           return;
         }
         if (room.hostPlayerId !== client.playerId) {
           ws.send(JSON.stringify({ type: "close_room_error", message: "Only the host can close the room" }));
           return;
         }
-        const result = roomService.closeRoomPermanently(client.roomId, client.playerId);
+        const result = await roomService.closeRoomPermanently(client.roomId, client.playerId);
         if ("error" in result) {
           ws.send(JSON.stringify({ type: "close_room_error", message: result.error }));
           return;
@@ -318,24 +325,25 @@ export function attachRoomHub(ws: WebSocket): void {
         }),
       );
     }
-  });
+  }
 
   ws.on("close", () => {
-    if (client) {
-      const state = roomService.getRoomState(client.roomId, client.playerId);
-      if (
-        state?.status === "playing" &&
-        state.currentTurnPlayerId === client.playerId
-      ) {
-        const result = roomService.timeoutTurn(client.roomId, client.playerId);
-        if (!("error" in result)) {
-          const roomState = roomService.getRoomState(client.roomId);
-          broadcastStateUpdate(client.roomId);
+    void (async () => {
+      if (client) {
+        const state = await roomService.getRoomState(client.roomId, client.playerId);
+        if (
+          state?.status === "playing" &&
+          state.currentTurnPlayerId === client.playerId
+        ) {
+          const result = await roomService.timeoutTurn(client.roomId, client.playerId);
+          if (!("error" in result)) {
+            await broadcastStateUpdate(client.roomId);
+          }
         }
+        await roomService.setPlayerConnected(client.roomId, client.playerId, false);
+        getRoomClients(client.roomId).delete(client);
+        await broadcastStateUpdate(client.roomId);
       }
-      roomService.setPlayerConnected(client.roomId, client.playerId, false);
-      getRoomClients(client.roomId).delete(client);
-      broadcastStateUpdate(client.roomId);
-    }
+    })();
   });
 }

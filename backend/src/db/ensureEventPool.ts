@@ -1,15 +1,19 @@
 /**
- * Ensures the event pool is populated on server startup.
- * - Refresh: merge all categories in memory, then upsert (no full-table wipe), remove orphans,
- *   then TTL prune (by created_at, with a playable floor and FK safety).
- * - If the pool is empty and a seed file exists: loads from seed synchronously, then background Wikidata refresh.
- * - If the pool is empty and no seed: waits for initial refresh (up to 90s).
- * Call after initDb().
+ * Ensures the event pool is populated on server startup (PostgreSQL).
  */
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getDb } from "./index.js";
+import type { PoolClient } from "pg";
+import {
+  exec,
+  execClient,
+  queryOne,
+  queryOneClient,
+  queryRows,
+  rowCount,
+  withTransaction,
+} from "./index.js";
 import {
   fetchCategoriesIncremental,
   mergeWithExistingPool,
@@ -22,8 +26,6 @@ const backendData = path.join(__dirname, "../../data/eventPool.json");
 const seedPath = process.env.SEED_PATH || (existsSync(backendData) ? backendData : null);
 
 const META_KEY_LAST_REFRESHED = "last_refreshed_at";
-
-/** Minimum events required to start a game. TTL pruning never goes below this if avoidable. */
 const MIN_EVENTS_TO_START = 160;
 
 type PoolEvent = {
@@ -37,23 +39,22 @@ type PoolEvent = {
   popularityScore?: number;
 };
 
-export function loadExistingPool(db: ReturnType<typeof getDb>): PoolEventLike[] {
-  const rows = db
-    .prepare(
-      "SELECT id, title, type, display_title, year, image, wikipedia_url, popularity_score, refreshed_at, created_at FROM events",
-    )
-    .all() as {
-      id: string;
-      title: string;
-      type: string;
-      display_title: string;
-      year: number;
-      image: string | null;
-      wikipedia_url: string | null;
-      popularity_score: number | null;
-      refreshed_at: string | null;
-      created_at: string | null;
-    }[];
+export async function loadExistingPool(): Promise<PoolEventLike[]> {
+  const rows = await queryRows<{
+    id: string;
+    title: string;
+    type: string;
+    display_title: string;
+    year: number;
+    image: string | null;
+    wikipedia_url: string | null;
+    popularity_score: number | null;
+    refreshed_at: string | null;
+    created_at: string | null;
+  }>(
+    "SELECT id, title, type, display_title, year, image, wikipedia_url, popularity_score, refreshed_at, created_at FROM events",
+    [],
+  );
   return rows.map((r) => ({
     id: r.id,
     title: r.title,
@@ -68,78 +69,81 @@ export function loadExistingPool(db: ReturnType<typeof getDb>): PoolEventLike[] 
   }));
 }
 
-function getEventCount(db: ReturnType<typeof getDb>): number {
-  const row = db.prepare("SELECT COUNT(*) as count FROM events").get() as { count: number };
-  return row.count;
+async function getEventCount(): Promise<number> {
+  const row = await queryOne<{ count: unknown }>("SELECT COUNT(*)::int AS count FROM events", []);
+  return rowCount(row, "count");
 }
 
-/** Cutoff ISO: rows with first-seen time before this are TTL-expired. */
 function getTtlCutoff(): string {
   return new Date(Date.now() - config.eventPoolTtlMinutes * 60 * 1000).toISOString();
 }
 
-function isEventReferencedByRoom(db: ReturnType<typeof getDb>, eventId: string): boolean {
-  if (db.prepare("SELECT 1 FROM room_timeline WHERE event_id = ? LIMIT 1").get(eventId)) return true;
-  if (db.prepare("SELECT 1 FROM room_deck WHERE event_id = ? LIMIT 1").get(eventId)) return true;
-  if (db.prepare("SELECT 1 FROM room_hand WHERE event_id = ? LIMIT 1").get(eventId)) return true;
-  if (db.prepare("SELECT 1 FROM rooms WHERE initial_event_id = ? LIMIT 1").get(eventId)) return true;
+async function isEventReferencedByRoomPool(eventId: string): Promise<boolean> {
+  const checks = [
+    "SELECT 1 AS x FROM room_timeline WHERE event_id = ? LIMIT 1",
+    "SELECT 1 AS x FROM room_deck WHERE event_id = ? LIMIT 1",
+    "SELECT 1 AS x FROM room_hand WHERE event_id = ? LIMIT 1",
+    "SELECT 1 AS x FROM rooms WHERE initial_event_id = ? LIMIT 1",
+  ];
+  for (const sql of checks) {
+    const row = await queryOne(sql, [eventId]);
+    if (row) return true;
+  }
   return false;
 }
 
-/**
- * Deletes TTL-expired events (by created_at, fallback refreshed_at), oldest first,
- * without dropping below MIN_EVENTS_TO_START and without deleting rows still referenced by rooms.
- */
-export function deleteExpiredEvents(db: ReturnType<typeof getDb>): number {
+export async function deleteExpiredEvents(): Promise<number> {
   const cutoff = getTtlCutoff();
-  const total = getEventCount(db);
+  const total = await getEventCount();
   const maxDeletable = Math.max(0, total - MIN_EVENTS_TO_START);
 
-  const rows = db
-    .prepare(
-      `SELECT id FROM events
-       WHERE datetime(COALESCE(created_at, refreshed_at, '1970-01-01T00:00:00.000Z')) < datetime(?)
-       ORDER BY datetime(COALESCE(created_at, refreshed_at, '1970-01-01T00:00:00.000Z')) ASC`,
-    )
-    .all(cutoff) as { id: string }[];
+  const rows = await queryRows<{ id: string }>(
+    `SELECT id FROM events
+     WHERE COALESCE(created_at::timestamptz, refreshed_at::timestamptz, '1970-01-01Z'::timestamptz)
+           < ?::timestamptz
+     ORDER BY COALESCE(created_at::timestamptz, refreshed_at::timestamptz, '1970-01-01Z'::timestamptz) ASC`,
+    [cutoff],
+  );
 
   let deleted = 0;
   for (const { id } of rows) {
     if (deleted >= maxDeletable) break;
-    if (isEventReferencedByRoom(db, id)) continue;
-    db.prepare("DELETE FROM events WHERE id = ?").run(id);
+    if (await isEventReferencedByRoomPool(id)) continue;
+    await exec("DELETE FROM events WHERE id = ?", [id]);
     deleted++;
   }
   return deleted;
 }
 
-function setLastRefreshed(db: ReturnType<typeof getDb>): void {
-  const stmt = db.prepare("INSERT OR REPLACE INTO event_pool_meta (key, value) VALUES (?, ?)");
-  stmt.run(META_KEY_LAST_REFRESHED, new Date().toISOString());
+async function setLastRefreshed(client: PoolClient): Promise<void> {
+  await execClient(
+    client,
+    `INSERT INTO event_pool_meta (key, value) VALUES (?, ?)
+     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+    [META_KEY_LAST_REFRESHED, new Date().toISOString()],
+  );
 }
 
 const UPSERT_SQL = `
   INSERT INTO events (id, title, type, display_title, year, image, wikipedia_url, popularity_score, refreshed_at, created_at)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT(id) DO UPDATE SET
-    title = excluded.title,
-    type = excluded.type,
-    display_title = excluded.display_title,
-    year = excluded.year,
-    image = excluded.image,
-    wikipedia_url = excluded.wikipedia_url,
-    popularity_score = excluded.popularity_score,
-    refreshed_at = excluded.refreshed_at,
+  ON CONFLICT (id) DO UPDATE SET
+    title = EXCLUDED.title,
+    type = EXCLUDED.type,
+    display_title = EXCLUDED.display_title,
+    year = EXCLUDED.year,
+    image = EXCLUDED.image,
+    wikipedia_url = EXCLUDED.wikipedia_url,
+    popularity_score = EXCLUDED.popularity_score,
+    refreshed_at = EXCLUDED.refreshed_at,
     created_at = events.created_at
 `;
 
-/** Upsert every row; refreshed_at = now; created_at preserved on conflict, set on new rows. */
-export function upsertMergedPool(db: ReturnType<typeof getDb>, events: PoolEventLike[]): void {
+export async function upsertMergedPool(events: PoolEventLike[]): Promise<void> {
   const now = new Date().toISOString();
-  const runTx = db.transaction(() => {
-    const stmt = db.prepare(UPSERT_SQL);
+  await withTransaction(async (client) => {
     for (const e of events) {
-      stmt.run(
+      await execClient(client, UPSERT_SQL, [
         e.id,
         e.title ?? "",
         e.type,
@@ -150,42 +154,49 @@ export function upsertMergedPool(db: ReturnType<typeof getDb>, events: PoolEvent
         e.popularityScore ?? null,
         now,
         e.created_at ?? now,
-      );
+      ]);
     }
-    setLastRefreshed(db);
+    await setLastRefreshed(client);
   });
-  runTx();
 }
 
-/**
- * Remove DB rows not in keepIds, only if not referenced by any room (FK-safe).
- */
-export function removePoolEventsNotInMerged(db: ReturnType<typeof getDb>, keepIds: Set<string>): number {
-  let removed = 0;
-  const runTx = db.transaction(() => {
-    db.exec("CREATE TEMP TABLE IF NOT EXISTS _pool_keep (id TEXT PRIMARY KEY)");
-    db.exec("DELETE FROM _pool_keep");
-    const ins = db.prepare("INSERT OR IGNORE INTO _pool_keep (id) VALUES (?)");
+export async function removePoolEventsNotInMerged(keepIds: Set<string>): Promise<number> {
+  return withTransaction(async (client) => {
+    await execClient(
+      client,
+      "CREATE TEMP TABLE _pool_keep (id TEXT PRIMARY KEY) ON COMMIT DROP",
+      [],
+    );
+    const ins = "INSERT INTO _pool_keep (id) VALUES (?)";
     for (const id of keepIds) {
-      ins.run(id);
+      await execClient(client, ins, [id]);
     }
-    const before = (db.prepare("SELECT COUNT(*) as c FROM events").get() as { c: number }).c;
-    db.exec(`
-      DELETE FROM events
-      WHERE id NOT IN (SELECT id FROM _pool_keep)
-      AND NOT EXISTS (SELECT 1 FROM room_timeline WHERE room_timeline.event_id = events.id)
-      AND NOT EXISTS (SELECT 1 FROM room_deck WHERE room_deck.event_id = events.id)
-      AND NOT EXISTS (SELECT 1 FROM room_hand WHERE room_hand.event_id = events.id)
-      AND NOT EXISTS (SELECT 1 FROM rooms WHERE rooms.initial_event_id = events.id)
-    `);
-    const after = (db.prepare("SELECT COUNT(*) as c FROM events").get() as { c: number }).c;
-    removed = before - after;
+    const beforeRow = await queryOneClient<{ c: unknown }>(
+      client,
+      "SELECT COUNT(*)::int AS c FROM events",
+      [],
+    );
+    const before = rowCount(beforeRow, "c");
+    await execClient(
+      client,
+      `DELETE FROM events e
+       WHERE NOT EXISTS (SELECT 1 FROM _pool_keep k WHERE k.id = e.id)
+       AND NOT EXISTS (SELECT 1 FROM room_timeline rt WHERE rt.event_id = e.id)
+       AND NOT EXISTS (SELECT 1 FROM room_deck rd WHERE rd.event_id = e.id)
+       AND NOT EXISTS (SELECT 1 FROM room_hand rh WHERE rh.event_id = e.id)
+       AND NOT EXISTS (SELECT 1 FROM rooms r WHERE r.initial_event_id = e.id)`,
+      [],
+    );
+    const afterRow = await queryOneClient<{ c: unknown }>(
+      client,
+      "SELECT COUNT(*)::int AS c FROM events",
+      [],
+    );
+    const after = rowCount(afterRow, "c");
+    return before - after;
   });
-  runTx();
-  return removed;
 }
 
-/** Sort by popularity; optional global cap (config.eventPoolMaxTotal). */
 export function applyMaxTotalToMerged(merged: PoolEventLike[]): PoolEventLike[] {
   const sorted = [...merged].sort((a, b) => (b.popularityScore ?? 0) - (a.popularityScore ?? 0));
   const max = config.eventPoolMaxTotal;
@@ -193,21 +204,18 @@ export function applyMaxTotalToMerged(merged: PoolEventLike[]): PoolEventLike[] 
   return sorted.slice(0, max);
 }
 
-/**
- * After Wikidata merge: upsert canonical set, drop unreferenced orphans, TTL prune.
- */
-export function commitMergedPool(db: ReturnType<typeof getDb>, merged: PoolEventLike[]): {
+export async function commitMergedPool(merged: PoolEventLike[]): Promise<{
   finalCount: number;
   orphansRemoved: number;
   expiredRemoved: number;
-} {
+}> {
   const canonical = applyMaxTotalToMerged(merged);
-  upsertMergedPool(db, canonical);
+  await upsertMergedPool(canonical);
   const keep = new Set(canonical.map((e) => e.id));
-  const orphansRemoved = removePoolEventsNotInMerged(db, keep);
-  const expiredRemoved = deleteExpiredEvents(db);
+  const orphansRemoved = await removePoolEventsNotInMerged(keep);
+  const expiredRemoved = await deleteExpiredEvents();
   return {
-    finalCount: getEventCount(db),
+    finalCount: await getEventCount(),
     orphansRemoved,
     expiredRemoved,
   };
@@ -218,14 +226,12 @@ const INSERT_SEED_SQL = `
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
-/** Replace entire pool (empty DB seed only). */
-export function writePoolToDb(db: ReturnType<typeof getDb>, events: PoolEventLike[]): void {
+export async function writePoolToDb(events: PoolEventLike[]): Promise<void> {
   const now = new Date().toISOString();
-  const runTx = db.transaction(() => {
-    db.exec("DELETE FROM events");
-    const insert = db.prepare(INSERT_SEED_SQL);
+  await withTransaction(async (client) => {
+    await execClient(client, "DELETE FROM events", []);
     for (const e of events) {
-      insert.run(
+      await execClient(client, INSERT_SEED_SQL, [
         e.id,
         e.title ?? "",
         e.type,
@@ -236,33 +242,30 @@ export function writePoolToDb(db: ReturnType<typeof getDb>, events: PoolEventLik
         e.popularityScore ?? null,
         e.refreshed_at ?? now,
         e.created_at ?? e.refreshed_at ?? now,
-      );
+      ]);
     }
-    setLastRefreshed(db);
+    await setLastRefreshed(client);
   });
-  runTx();
 }
 
-/**
- * Fetch all categories, merge in memory, then commit once (upsert + orphan cleanup + TTL).
- */
 export function runRefreshEventPool(): Promise<void> {
   console.log(
     `[events] Refresh started: merge in memory (≤${config.eventStoreLimitPerCategory}/category), then upsert + TTL (~${config.eventPoolTtlMinutes} min).`,
   );
   return (async () => {
-    const db = getDb();
-    let existing = loadExistingPool(db);
+    let existing = await loadExistingPool();
 
     for await (const { categoryKey: _key, events } of fetchCategoriesIncremental()) {
       if (events.length === 0) continue;
       existing = mergeWithExistingPool(existing, events, config.eventStoreLimitPerCategory);
     }
 
-    const { finalCount, orphansRemoved, expiredRemoved } = commitMergedPool(db, existing);
+    const { finalCount, orphansRemoved, expiredRemoved } = await commitMergedPool(existing);
     if (orphansRemoved > 0) console.log(`[events] Removed ${orphansRemoved} orphan pool rows (replaced / over cap).`);
     if (expiredRemoved > 0) {
-      console.log(`[events] Pruned ${expiredRemoved} TTL-expired events (older than ${config.eventPoolTtlMinutes} min, floor ${MIN_EVENTS_TO_START}).`);
+      console.log(
+        `[events] Pruned ${expiredRemoved} TTL-expired events (older than ${config.eventPoolTtlMinutes} min, floor ${MIN_EVENTS_TO_START}).`,
+      );
     }
     console.log(`[events] Refresh done: pool has ${finalCount} events.`);
   })();
@@ -273,18 +276,16 @@ function refreshEventPoolInBackground(): void {
 }
 
 export async function ensureEventPool(): Promise<void> {
-  const db = getDb();
-  const count = getEventCount(db);
+  const count = await getEventCount();
 
   if (count === 0 && seedPath && existsSync(seedPath)) {
     const raw = readFileSync(seedPath, "utf8");
     const pool: PoolEvent[] = JSON.parse(raw);
     const now = new Date().toISOString();
-    const runTx = db.transaction(() => {
-      db.exec("DELETE FROM events");
-      const insert = db.prepare(INSERT_SEED_SQL);
+    await withTransaction(async (client) => {
+      await execClient(client, "DELETE FROM events", []);
       for (const e of pool) {
-        insert.run(
+        await execClient(client, INSERT_SEED_SQL, [
           e.id,
           e.title,
           e.type,
@@ -295,11 +296,10 @@ export async function ensureEventPool(): Promise<void> {
           e.popularityScore ?? null,
           now,
           now,
-        );
+        ]);
       }
-      setLastRefreshed(db);
+      await setLastRefreshed(client);
     });
-    runTx();
     console.log(`[events] Seeded ${pool.length} events from ${seedPath}. Refreshing from Wikidata in background...`);
     refreshEventPoolInBackground();
     return;
@@ -317,7 +317,7 @@ export async function ensureEventPool(): Promise<void> {
       const msg = err instanceof Error && err.message === "timeout" ? "Timeout waiting for events." : err;
       console.warn("[events]", msg);
     }
-    const after = getEventCount(db);
+    const after = await getEventCount();
     if (after >= MIN_EVENTS_TO_START) {
       console.log(`[events] Pool ready: ${after} events.`);
     } else {

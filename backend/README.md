@@ -1,6 +1,6 @@
 # Party Timeliners — Backend
 
-Node.js + Express API, WebSocket server, and SQLite persistence for the **multiplayer** timeline card game.
+Node.js + Express API, WebSocket server, and **PostgreSQL** persistence (Supabase or any Postgres) for the **multiplayer** timeline card game.
 
 ## Setup
 
@@ -11,14 +11,18 @@ npm install
 
 ## Database and seed
 
-1. Create the events pool (one-time). Copy the frontend pool or set `SEED_PATH`:
+1. Set **`DATABASE_URL`** to your Postgres connection string (Supabase: *Project Settings → Database → Connection string*, URI mode).
+
+2. Create tables: either start the server once (auto-migration if `events` is missing), run **`npm run db:migrate`**, or paste **`src/db/schema.pg.sql`** in the Supabase SQL editor.
+
+3. Create the events pool (one-time). Copy the frontend pool or set `SEED_PATH`:
 
    ```bash
    mkdir -p data
    cp ../frontend/data/eventPool.json data/
    ```
 
-2. Seed the database:
+4. Seed the database:
 
    ```bash
    npm run seed
@@ -70,7 +74,7 @@ Connect then send JSON messages:
 
 ## Testing
 
-Tests use [Vitest](https://vitest.dev/): **unit tests** (pure logic) and **integration tests** (room service with SQLite).
+Tests use [Vitest](https://vitest.dev/): **unit tests** (pure logic) and **integration tests** (room service against PostgreSQL).
 
 ### How to run
 
@@ -102,14 +106,15 @@ The workflow [../.github/workflows/test.yml](../.github/workflows/test.yml) runs
 | Event ingestion | `src/services/eventIngestion.test.ts` | `mergeWithExistingPool` |
 | Room (integration) | `src/services/roomService.integration.test.ts` | createRoom, joinRoom, startGame, placeEvent, endGame, rematch with real DB |
 
-Integration tests use `test-data/integration.db`; they seed the `events` table and clear room tables between tests.
+Integration tests run only when **`DATABASE_URL`** or **`TEST_DATABASE_URL`** is set (CI uses a Postgres service). They seed `events` and clear room tables between tests.
 
 ## Env
 
 | Variable   | Default        | Description        |
 |-----------|----------------|--------------------|
 | PORT      | 3001           | Server port        |
-| DB_PATH   | data/game.db   | SQLite file path   |
+| DATABASE_URL | _(required)_ | PostgreSQL URI (Supabase Session/Transaction pooler or direct) |
+| DATABASE_AUTO_MIGRATE | _(unset)_ | Set to `1` to re-apply `schema.pg.sql` on startup |
 | NODE_ENV  | development    | Environment (development / production) |
 | SEED_PATH | data/eventPool.json | Used by `npm run seed` |
 | EVENT_STORE_LIMIT_PER_CATEGORY | 400 | Max events **stored** per category when merging Wikidata into the pool (separate from SPARQL phase1 limits). |
@@ -123,8 +128,10 @@ Integration tests use `test-data/integration.db`; they seed the `events` table a
 Set environment variables (e.g. on Render or in `.env`):
 
 - **PORT** — Port the server will listen on (hosting platforms often set this).
-- **DB_PATH** — Path to the SQLite database file. Use an absolute path in production if needed (e.g. `/data/game.db`).
+- **DATABASE_URL** — Supabase or other Postgres. The event pool and rooms persist across deploys; no disk mount is required for the DB. Use the **pooler** URI if your host recommends it (connection limits).
 - **NODE_ENV** — Set to `production` in production.
+
+First deploy: ensure schema is applied (`db:migrate`, SQL editor, or first boot with empty DB). Optional **`DATABASE_AUTO_MIGRATE=1`** only if you intentionally want startup to re-run the schema file.
 
 Example:
 

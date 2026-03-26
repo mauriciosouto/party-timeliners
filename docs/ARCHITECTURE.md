@@ -55,11 +55,11 @@ Frontend (Next.js on Vercel)
 Backend API + WebSocket (Node.js on Render)
       │
       ▼
-SQLite event database
+PostgreSQL (e.g. Supabase)
 ```
 
-- **Frontend (Vercel):** Serves the Next.js app. Users open the app in the browser and create/join rooms from the home page.
-- **Backend (Render):** Single Node.js process running Express (REST) and a WebSocket server. Handles room creation, game state, event pool, and real-time updates.
+- **Frontend (Vercel):** Serves the Next.js app. Users open the app in the browser and create/join rooms from the home page. **Vercel does not store the event pool** — the pool and room state live in the **backend** database (hosted Postgres).
+- **Backend (Render):** Single Node.js process running Express (REST) and a WebSocket server. Handles room creation, game state, event pool, and real-time updates. Persistence is **PostgreSQL** via **`DATABASE_URL`** (Supabase or any managed Postgres). The event pool survives deploys without mounting a disk on the app container.
 - **Communication:** The frontend uses **REST** for room creation and event data, and **WebSocket** connections for multiplayer game state (joining rooms, state updates, placing events, turn and timeout handling).
 
 ---
@@ -76,7 +76,7 @@ The frontend is responsible for:
 The frontend **does not validate gameplay rules**.  
 All authoritative game logic lives on the server.
 
-**Event pool:** Obtaining events (Wikidata), seeding, storing the pool, and refreshing it are done on the server. Events are stored in the database (`events` table). The pool has a configurable TTL: when the server starts, if the pool is empty or older than the TTL, it is replaced (from JSON or Wikidata). Set `EVENT_POOL_TTL_MINUTES` (default 43200 = 1 month). Per-event TTL: events with `refreshed_at` older than this are pruned on each refresh; new ingestion refills so only the oldest events are lost over time. The backend exposes `GET /api/events/next` (single-player) and builds room decks from the DB when a game starts. To refresh manually: `npm run refresh-events` or `POST /api/admin/refresh-events` (optional `x-refresh-secret` header).
+**Event pool:** Wikidata ingestion, merge, upsert, and TTL pruning run on the **backend**; events live in PostgreSQL (`events` with `created_at` / `refreshed_at`). The backend builds room decks from the DB when a game starts. Manual refresh: `npm run refresh-events` or `POST /api/admin/refresh-events` (optional `x-refresh-secret` header). Schema: `backend/src/db/schema.pg.sql`; optional `npm run db:migrate`.
 
 Frontend stack:
 

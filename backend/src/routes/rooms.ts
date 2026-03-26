@@ -3,7 +3,7 @@ import * as roomService from "../services/roomService.js";
 
 export const roomsRouter = Router();
 
-roomsRouter.post("/", (req, res) => {
+roomsRouter.post("/", async (req, res) => {
   try {
     const nickname =
       (req.body?.nickname as string)?.trim() || "Player";
@@ -26,7 +26,7 @@ roomsRouter.post("/", (req, res) => {
       avatar !== undefined
         ? { maxTimelineSize, pointsToWin, turnTimeLimitSeconds, avatar }
         : undefined;
-    const result = roomService.createRoom(nickname, name || undefined, options);
+    const result = await roomService.createRoom(nickname, name || undefined, options);
     res.status(201).json(result);
   } catch (err) {
     console.error("[POST /rooms]", err);
@@ -36,9 +36,9 @@ roomsRouter.post("/", (req, res) => {
   }
 });
 
-roomsRouter.get("/:id", (req, res) => {
+roomsRouter.get("/:id", async (req, res) => {
   const playerId = (req.query?.playerId as string)?.trim() || undefined;
-  const state = roomService.getRoomState(req.params.id, playerId);
+  const state = await roomService.getRoomState(req.params.id, playerId);
   if (!state) {
     res.status(404).json({ error: "Room not found" });
     return;
@@ -46,12 +46,12 @@ roomsRouter.get("/:id", (req, res) => {
   res.json(state);
 });
 
-roomsRouter.post("/:id/join", (req, res) => {
+roomsRouter.post("/:id/join", async (req, res) => {
   const nickname =
     (req.body?.nickname as string)?.trim() || "Player";
   const email = (req.body?.email as string)?.trim() || undefined;
   const avatar = (req.body?.avatar as string)?.trim() || undefined;
-  const result = roomService.joinRoom(req.params.id, nickname, email, avatar);
+  const result = await roomService.joinRoom(req.params.id, nickname, email, avatar);
   if ("error" in result) {
     res.status(400).json({ error: result.error });
     return;
@@ -59,13 +59,13 @@ roomsRouter.post("/:id/join", (req, res) => {
   res.status(200).json(result);
 });
 
-roomsRouter.post("/:id/start", (req, res) => {
+roomsRouter.post("/:id/start", async (req, res) => {
   const playerId = (req.body?.playerId as string)?.trim();
   if (!playerId) {
     res.status(400).json({ error: "playerId required" });
     return;
   }
-  const result = roomService.startGame(req.params.id, playerId);
+  const result = await roomService.startGame(req.params.id, playerId);
   if ("error" in result) {
     res.status(400).json({ error: result.error });
     return;
@@ -73,13 +73,13 @@ roomsRouter.post("/:id/start", (req, res) => {
   res.json(result);
 });
 
-roomsRouter.get("/:id/next-event", (req, res) => {
+roomsRouter.get("/:id/next-event", async (req, res) => {
   const playerId = (req.query?.playerId as string)?.trim();
   if (!playerId) {
     res.status(400).json({ error: "playerId required" });
     return;
   }
-  const event = roomService.getNextEventForCurrentTurn(
+  const event = await roomService.getNextEventForCurrentTurn(
     req.params.id,
     playerId,
   );
@@ -90,7 +90,7 @@ roomsRouter.get("/:id/next-event", (req, res) => {
   res.json({ event });
 });
 
-roomsRouter.post("/:id/place", (req, res) => {
+roomsRouter.post("/:id/place", async (req, res) => {
   const { eventId, position, playerId } = req.body;
 
   if (
@@ -107,7 +107,7 @@ roomsRouter.post("/:id/place", (req, res) => {
     return;
   }
 
-  const result = roomService.placeEvent(
+  const result = await roomService.placeEvent(
     req.params.id,
     playerId,
     eventId,
@@ -120,13 +120,13 @@ roomsRouter.post("/:id/place", (req, res) => {
   res.json(result);
 });
 
-roomsRouter.post("/:id/turn-timeout", (req, res) => {
+roomsRouter.post("/:id/turn-timeout", async (req, res) => {
   const playerId = (req.body?.playerId as string)?.trim();
   if (!playerId) {
     res.status(400).json({ error: "playerId required" });
     return;
   }
-  const result = roomService.timeoutTurn(req.params.id, playerId);
+  const result = await roomService.timeoutTurn(req.params.id, playerId);
   if ("error" in result) {
     res.status(400).json({ error: result.error });
     return;
@@ -134,13 +134,13 @@ roomsRouter.post("/:id/turn-timeout", (req, res) => {
   res.json(result);
 });
 
-roomsRouter.post("/:id/leave", (req, res) => {
+roomsRouter.post("/:id/leave", async (req, res) => {
   const playerId = (req.body?.playerId as string)?.trim();
   if (!playerId) {
     res.status(400).json({ error: "playerId required" });
     return;
   }
-  const result = roomService.leaveRoom(req.params.id, playerId);
+  const result = await roomService.leaveRoom(req.params.id, playerId);
   if ("error" in result) {
     res.status(400).json({ error: result.error });
     return;

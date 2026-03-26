@@ -1,7 +1,3 @@
-import dotenv from "dotenv";
-dotenv.config();
-
-import path from "node:path";
 import express from "express";
 import cors from "cors";
 import { createServer } from "node:http";
@@ -10,7 +6,7 @@ import { config } from "./config.js";
 import { roomsRouter } from "./routes/rooms.js";
 import { eventsRouter } from "./routes/events.js";
 import { adminRouter } from "./routes/admin.js";
-import { initDb, getDb } from "./db/index.js";
+import { initDb, queryOne, queryRows, rowCount } from "./db/index.js";
 import { ensureEventPool } from "./db/ensureEventPool.js";
 import { attachRoomHub } from "./ws/roomHub.js";
 
@@ -34,23 +30,21 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-function getStatusMetrics(): {
+async function getStatusMetrics(): Promise<{
   eventsCount: number;
   roomsTotal: number;
   roomsInLobby: number;
   roomsPlaying: number;
   roomsEnded: number;
-} {
-  const db = getDb();
-  const eventsRow = db.prepare("SELECT COUNT(*) as count FROM events").get() as { count: number };
-  const eventsCount = eventsRow?.count ?? 0;
-  const roomsByStatus = db
-    .prepare(
-      "SELECT status, COUNT(*) as count FROM rooms GROUP BY status",
-    )
-    .all() as { status: string; count: number }[];
+}> {
+  const eventsRow = await queryOne<{ count: unknown }>("SELECT COUNT(*)::int AS count FROM events", []);
+  const eventsCount = rowCount(eventsRow, "count");
+  const roomsByStatus = await queryRows<{ status: string; count: unknown }>(
+    "SELECT status, COUNT(*)::int AS count FROM rooms GROUP BY status",
+    [],
+  );
   const map = new Map<string, number>();
-  for (const row of roomsByStatus) map.set(row.status, row.count);
+  for (const row of roomsByStatus) map.set(row.status, Number(row.count) || 0);
   const roomsInLobby = map.get("lobby") ?? 0;
   const roomsPlaying = map.get("playing") ?? 0;
   const roomsEnded = map.get("ended") ?? 0;
@@ -64,9 +58,9 @@ function getStatusMetrics(): {
   };
 }
 
-app.get("/", (req, res) => {
+app.get("/", async (req, res) => {
   try {
-    const m = getStatusMetrics();
+    const m = await getStatusMetrics();
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,17 +105,12 @@ wss.on("connection", (ws) => {
   attachRoomHub(ws);
 });
 
-const resolvedDbPath =
-  config.dbPath && path.isAbsolute(config.dbPath)
-    ? config.dbPath
-    : path.resolve(process.cwd(), config.dbPath);
-
 async function start() {
   await initDb();
   await ensureEventPool();
 
   console.log("Environment:", config.nodeEnv);
-  console.log("Database path:", resolvedDbPath);
+  console.log("Database: PostgreSQL (DATABASE_URL)");
   console.log("Server port:", config.port);
 
   server.listen(config.port, "0.0.0.0", () => {

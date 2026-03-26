@@ -3,6 +3,7 @@ node_modules/
 
 # Backend
 backend/dist/
+backend/.env
 backend/data/
 backend/test-data/
 backend/coverage/

@@ -2,7 +2,7 @@
  * Fetch events from Wikidata for all categories, merge in memory, upsert once, TTL prune.
  * Run: npm run refresh-events
  */
-import { initDb, getDb } from "../src/db/index.js";
+import { initDb } from "../src/db/index.js";
 import { loadExistingPool, commitMergedPool } from "../src/db/ensureEventPool.js";
 import { fetchCategoriesIncremental, mergeWithExistingPool } from "../src/services/eventIngestion.js";
 import { config } from "../src/config.js";
@@ -13,8 +13,7 @@ async function main() {
   );
 
   await initDb();
-  const db = getDb();
-  let existing = loadExistingPool(db);
+  let existing = await loadExistingPool();
   const initialCount = existing.length;
 
   for await (const { categoryKey: _key, events } of fetchCategoriesIncremental()) {
@@ -22,7 +21,7 @@ async function main() {
     existing = mergeWithExistingPool(existing, events, config.eventStoreLimitPerCategory);
   }
 
-  const { finalCount, orphansRemoved, expiredRemoved } = commitMergedPool(db, existing);
+  const { finalCount, orphansRemoved, expiredRemoved } = await commitMergedPool(existing);
   console.log(
     `Pool: ${initialCount} → ${finalCount} rows (orphans removed: ${orphansRemoved}, TTL pruned: ${expiredRemoved}).`,
   );

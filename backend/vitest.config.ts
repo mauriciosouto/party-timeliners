@@ -6,9 +6,6 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.ts"],
     globals: false,
-    env: {
-      DB_PATH: "test-data/integration.db",
-    },
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "html", "lcov"],

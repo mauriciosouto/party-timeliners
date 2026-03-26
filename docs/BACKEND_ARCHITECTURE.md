@@ -1,216 +1,68 @@
-# Backend Architecture — Party Timeliners
+# Backend Architecture — Party Timeliners (Node multiplayer server)
 
-Single-player timeline card game backend. Players place historical events in chronological order; the server validates each move and ends the game on first incorrect placement.
-
----
-
-## 1. Database Schema (SQLite)
-
-### Tables
-
-| Table         | Purpose |
-|---------------|---------|
-| `events`      | Global pool of events (from Wikidata ingestion). Read-only at runtime. |
-| `games`       | One row per game. Tracks status, score, and deck cursor. |
-| `game_timeline` | Ordered list of events placed on the timeline for each game. |
-| `game_deck`   | Per-game deck of events to draw. Shuffled at game creation. |
-
-### `events`
-
-| Column         | Type    | Description |
-|----------------|---------|--------------|
-| id             | TEXT PK | Wikidata Q-id (e.g. Q12345). |
-| title          | TEXT    | Event title. |
-| type           | TEXT    | Category (Film, Book, …). |
-| display_title  | TEXT    | `"Title (Type)"` for UI. |
-| year           | INTEGER | Event year (negative = BCE). |
-| image          | TEXT    | Thumbnail URL. |
-| wikipedia_url  | TEXT    | Wikipedia link. |
-
-### `games`
-
-| Column             | Type    | Description |
-|--------------------|---------|-------------|
-| id                 | TEXT PK | UUID. |
-| status             | TEXT    | `active` \| `ended`. |
-| score              | INTEGER | Number of correct placements. |
-| initial_event_id   | TEXT FK | First event on timeline (seed). |
-| next_deck_sequence | INTEGER | Index of next event to draw from deck. |
-| created_at         | TEXT    | ISO 8601. |
-
-### `game_timeline`
-
-| Column    | Type    | Description |
-|-----------|---------|--------------|
-| game_id   | TEXT FK | References games.id. |
-| event_id  | TEXT FK | References events.id. |
-| position  | INTEGER | Order on timeline (0, 1, 2, …). |
-| placed_at | TEXT    | ISO 8601. |
-
-Unique on `(game_id, position)`.
-
-### `game_deck`
-
-| Column   | Type    | Description |
-|----------|---------|--------------|
-| game_id  | TEXT FK | References games.id. |
-| event_id | TEXT FK | References events.id. |
-| sequence | INTEGER | Draw order (0, 1, …). |
-
-Used as a fixed deck: `next_deck_sequence` on `games` points to the next row to serve.
+The `backend/` package is the **Node.js** game server: Express (REST), WebSockets for rooms, and **PostgreSQL** persistence (e.g. **Supabase**). It mirrors the API shape used by the frontend; production real-time hosting may also use Cloudflare Workers + Durable Objects separately.
 
 ---
 
-## 2. API Endpoints
+## 1. Database (PostgreSQL)
 
-Base path: `/api` (e.g. `http://localhost:3001/api`).
+Connection string: **`DATABASE_URL`** (required). The app uses the **`pg`** pool. Schema lives in **`backend/src/db/schema.pg.sql`**.
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST   | /games | Create a new game. Returns game id, initial timeline, and first event to place. |
-| GET    | /games/:id | Get game state (status, score, timeline). |
-| GET    | /games/:id/next-event | Get next event to place. 404 when no more or game ended. |
-| POST   | /games/:id/place | Submit placement. Validates; if wrong, ends game. |
+**Apply schema**
 
-### POST /games
+- On first start, if `public.events` is missing, the server runs `schema.pg.sql` automatically.
+- Or set **`DATABASE_AUTO_MIGRATE=1`** to re-apply (idempotent `CREATE IF NOT EXISTS`).
+- Or run **`npm run db:migrate`** (same SQL file).
 
-**Response** `201`:
+**Main tables**
 
-```json
-{
-  "gameId": "uuid",
-  "status": "active",
-  "score": 0,
-  "timeline": [{ "event": { "id", "title", "year", "displayTitle", "image", "wikipediaUrl" }, "position": 0 }],
-  "nextEvent": { "id", "title", "year", "displayTitle", "image", "wikipediaUrl" }
-}
-```
+| Table | Purpose |
+|-------|---------|
+| `events` | Global event pool (Wikidata ingestion, seed). |
+| `event_pool_meta` | Pool metadata (e.g. last refresh). |
+| `rooms` | One row per room: status, turn, deck cursor, settings. |
+| `room_players` | Players in a room (nickname, score, host, connection). |
+| `room_timeline` | Ordered placed events per room. |
+| `room_deck` | Shuffled deck per room. |
+| `room_hand` | Up to three cards per player per room. |
 
-- Timeline has one event (initial seed).  
-- `nextEvent` is the first card the player must place.
-
-### GET /games/:id
-
-**Response** `200`:
-
-```json
-{
-  "gameId": "uuid",
-  "status": "active",
-  "score": 2,
-  "timeline": [
-    { "event": { "id", "title", "year", "displayTitle", "image", "wikipediaUrl" }, "position": 0 },
-    { "event": { ... }, "position": 1 }
-  ]
-}
-```
-
-### GET /games/:id/next-event
-
-**Response** `200`: same `nextEvent` shape as above.  
-**Response** `404`: no more events or game ended.
-
-### POST /games/:id/place
-
-**Body**:
-
-```json
-{
-  "eventId": "Q12345",
-  "position": 1
-}
-```
-
-`position` = index where the card is inserted (0 = before first, 1 = between first and second, …).
-
-**Response** `200` (correct):
-
-```json
-{
-  "correct": true,
-  "score": 3,
-  "timeline": [ ... ],
-  "nextEvent": { ... }
-}
-```
-
-**Response** `200` (incorrect — game ends):
-
-```json
-{
-  "correct": false,
-  "gameEnded": true,
-  "correctPosition": 2,
-  "score": 2,
-  "timeline": [ ... ]
-}
-```
-
-No `nextEvent` when game has ended.
-
-**Response** `400`: invalid body or game already ended.  
-**Response** `404`: game or event not found.
+Room-scoped tables use **`ON DELETE CASCADE`** from `rooms`.
 
 ---
 
-## 3. Backend Architecture (Layered)
+## 2. API and real-time
+
+See **[backend/README.md](../backend/README.md)** for REST routes (`/api/rooms`, …), WebSocket protocol (`/ws`), env vars (`DATABASE_URL`, pool TTL, refresh secret), and scripts (`seed`, `refresh-events`, `db:migrate`).
+
+---
+
+## 3. Layered layout (approximate)
 
 ```
-backend/
-├── src/
-│   ├── index.ts          # Express app, CORS, mount routes, start server
-│   ├── config.ts         # Port, DB path, env
-│   ├── db/
-│   │   ├── index.ts      # SQLite connection, run schema
-│   │   ├── schema.sql    # CREATE TABLEs
-│   │   └── seed.ts       # Load events from JSON into `events` table
-│   ├── routes/
-│   │   └── games.ts      # POST/GET /games, GET /games/:id/next-event, POST /games/:id/place
-│   ├── services/
-│   │   └── gameService.ts # Create game, get state, draw next, validate place
-│   └── types.ts          # Shared types (Game, Event, etc.)
-├── data/
-│   └── eventPool.json    # Copy or symlink from frontend for seeding
-├── package.json
-└── tsconfig.json
+backend/src/
+├── index.ts           # HTTP + WS server, initDb
+├── config.ts          # PORT, DATABASE_URL, pool/TTL env
+├── db/
+│   ├── index.ts       # pg Pool, initDb, transactions, q(? → $n)
+│   ├── schema.pg.sql
+│   ├── ensureEventPool.ts
+│   └── seed.ts
+├── routes/            # rooms, events, admin
+├── services/          # roomService (authoritative game logic)
+└── ws/roomHub.ts      # WebSocket room hub
 ```
 
-- **Routes**: parse request, call service, send response.  
-- **Services**: all game and persistence logic; use `db` to read/write.  
-- **DB**: run schema, expose a single module that returns a `Database` (e.g. better-sqlite3).  
-- **Seed**: one-time or on-empty load of `eventPool.json` into `events`.
+---
+
+## 4. Scalability notes
+
+- Use a **single** `DATABASE_URL` per deployment; **`pg`** pool is configured for one Node process. Multiple app instances are OK against the same Postgres if you are aware of connection limits (Supabase pooler vs direct).
+- Event pool TTL and merges assume rows persist in Postgres (unlike ephemeral container disk).
 
 ---
 
-## 4. Game Rules (Server)
+## 5. Production deployment
 
-- **Create game**: Pick one random event as `initial_event_id`, insert one row into `game_timeline`. Build deck of N (e.g. 200) other events, shuffle, insert into `game_deck`. Set `next_deck_sequence = 0`.
-- **Next event**: Return `game_deck` row where `game_id` and `sequence = next_deck_sequence`. Increment `next_deck_sequence`. If no row, return 404 (round complete). If `status === 'ended'`, return 404.
-- **Place**:  
-  - Load current timeline (ordered by position).  
-  - Insert new event at `position` (shift positions if needed).  
-  - Check: `timeline[position-1].year <= event.year <= timeline[position].year` (with bounds).  
-  - If invalid: set `games.status = 'ended'`, return `correct: false, gameEnded: true`.  
-  - If valid: insert into `game_timeline`, increment `games.score`, return `correct: true` and next event (if any).
+Example: **[Render](https://render.com)** with **`DATABASE_URL`** pointing at Supabase (Session or Transaction pooler URI from the Supabase dashboard).
 
----
-
-## 5. Scalability Notes
-
-- Single SQLite file per environment; no connection pool. For multiple processes, use a single process or move to PostgreSQL later.
-- Events table is append-only (re-seed by truncate + insert). Games and related tables grow with play; add cleanup or archival if needed.
-- API is stateless; game state is always read from DB. Easy to add auth (e.g. player id or session) and scope games by user later.
-
----
-
-## 6. Production Deployment
-
-**Backend hosting:** [Render](https://render.com)
-
-**Production URL:**  
-https://party-timeliners.onrender.com
-
-**Health check:**  
-`GET /health`
-
-Returns `{ "status": "ok" }`. This endpoint is used for monitoring and uptime checks (e.g. Render health checks or external ping services).
+**Health check:** `GET /health` → `{ "status": "ok" }`.

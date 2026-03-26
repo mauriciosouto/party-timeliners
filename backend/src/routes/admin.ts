@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getDb } from "../db/index.js";
+import { queryOne, rowCount } from "../db/index.js";
 import { loadExistingPool, commitMergedPool } from "../db/ensureEventPool.js";
 import { fetchCategoriesIncremental, mergeWithExistingPool } from "../services/eventIngestion.js";
 import { config } from "../config.js";
@@ -15,16 +15,18 @@ adminRouter.post("/refresh-events", async (req, res) => {
   }
 
   try {
-    const db = getDb();
-    const initialCount = (db.prepare("SELECT COUNT(*) as c FROM events").get() as { c: number }).c;
-    let existing = loadExistingPool(db);
+    const initialCount = rowCount(
+      await queryOne<{ c: unknown }>("SELECT COUNT(*)::int AS c FROM events", []),
+      "c",
+    );
+    let existing = await loadExistingPool();
 
     for await (const { events } of fetchCategoriesIncremental()) {
       if (events.length === 0) continue;
       existing = mergeWithExistingPool(existing, events, config.eventStoreLimitPerCategory);
     }
 
-    const { finalCount } = commitMergedPool(db, existing);
+    const { finalCount } = await commitMergedPool(existing);
 
     res.json({ ok: true, count: finalCount, added: Math.max(0, finalCount - initialCount) });
   } catch (err) {

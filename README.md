@@ -138,7 +138,7 @@ party-timeliners/
 │   └── src/           # Hooks, services (API, WebSocket)
 ├── backend/           # Node.js game server (local dev; mirrors Workers API)
 │   ├── src/
-│   │   ├── db/        # SQLite schema, seed, event pool
+│   │   ├── db/        # Postgres schema, seed, event pool
 │   │   ├── routes/    # REST (rooms, admin, events)
 │   │   ├── services/  # Game and room logic
 │   │   └── ws/        # WebSocket room hub
@@ -166,11 +166,11 @@ Node.js (v18+), npm (or yarn/pnpm).
    npm install --prefix backend
    ```
 
-2. **Backend** — The repo includes a Node.js server (Express + WebSockets + SQLite) that matches the Cloudflare Workers API contract. See [Running the backend](#running-the-backend).
+2. **Backend** — The repo includes a Node.js server (Express + WebSockets + PostgreSQL) that matches the Cloudflare Workers API contract. See [Running the backend](#running-the-backend).
 
 3. **Frontend** — Uses the local backend by default (`NEXT_PUBLIC_API_URL=http://localhost:3001`). See [Running the frontend](#running-the-frontend).
 
-4. **Environment** — Optional: create `backend/.env` or set `PORT`, `DB_PATH`, `SEED_PATH`. No `.env` is required for a basic run after seeding.
+4. **Environment** — Set **`DATABASE_URL`** (Postgres / Supabase). Optional: `backend/.env` with `PORT`, `SEED_PATH`, pool TTL vars. See `backend/README.md`.
 
 ### Local vs production
 
@@ -195,13 +195,15 @@ Open [http://localhost:3000](http://localhost:3000). From the home page you can 
 
 ### Running the backend
 
-The `backend/` app is the **local development** game server (Node.js + Express + WebSockets + SQLite). Production deployment uses **Cloudflare Workers** and **Durable Objects**.
+The `backend/` app is the **local development** game server (Node.js + Express + WebSockets + PostgreSQL). Production deployment may use **Cloudflare Workers** and **Durable Objects** for the edge path; the Node server expects **`DATABASE_URL`**.
 
 **First-time setup:**
 
 ```bash
 cd backend
 npm install
+# Set DATABASE_URL in .env or the shell (local Postgres or Supabase)
+# npm run db:migrate   # if tables are not created yet
 mkdir -p data
 # Optional: copy event pool JSON or set SEED_PATH
 npm run seed    # Populates events table; required before starting games
@@ -237,7 +239,7 @@ The backend includes **unit tests** and **integration tests** ([Vitest](https://
 **What's tested**
 
 - **Unit:** Game logic (event quality, timeline, place validation, deck), event pool merge.
-- **Integration:** Create room, join, start game, place event, end game, rematch (with real SQLite).
+- **Integration:** Create room, join, start game, place event, end game, rematch (with PostgreSQL when `DATABASE_URL` is set; CI runs Postgres).
 
 **Coverage on GitHub**
 

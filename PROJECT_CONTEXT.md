@@ -210,7 +210,7 @@ Preferred sources:
 
 The system should avoid storing a full historical database locally.
 
-**Backend event pool (SQLite):** On each server start the backend fetches Wikidata per category, merges into memory (cap per category via `EVENT_STORE_LIMIT_PER_CATEGORY`, default 400), then **upserts** into `events` (no full-table wipe). Rows have `created_at` (first seen) and `refreshed_at` (last refresh). After all categories, unreferenced orphans are removed (FK-safe), then TTL pruning by age (`EVENT_POOL_TTL_DAYS` / `EVENT_POOL_TTL_MINUTES`) without dropping below a playable floor (~160 events) and without deleting events still referenced by active rooms.
+**Backend event pool (PostgreSQL):** On each server start the backend fetches Wikidata per category, merges into memory (cap per category via `EVENT_STORE_LIMIT_PER_CATEGORY`, default 400), then **upserts** into `events` (no full-table wipe). Rows have `created_at` (first seen) and `refreshed_at` (last refresh). After all categories, unreferenced orphans are removed (FK-safe), then TTL pruning by age (`EVENT_POOL_TTL_DAYS` / `EVENT_POOL_TTL_MINUTES`) without dropping below a playable floor (~160 events) and without deleting events still referenced by active rooms. Requires **`DATABASE_URL`** (e.g. Supabase).
 
 Events must contain:
 

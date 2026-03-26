@@ -1,3 +1,11 @@
+import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Load backend/.env before reading process.env (ESM evaluates imports before index.ts runs dotenv.config()).
+const __configDir = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__configDir, "../.env") });
+
 const env = process.env;
 
 function parseOptionalPositiveInt(raw: string | undefined, fallback: number): number {
@@ -27,7 +35,11 @@ function eventPoolMaxTotalFromEnv(): number | null {
 
 export const config = {
   port: Number(env.PORT) || 3001,
-  dbPath: env.DB_PATH || "data/game.db",
+  /**
+   * Supabase / Postgres connection URI (required).
+   * `TEST_DATABASE_URL` overrides `DATABASE_URL` when set (integration tests / CI isolation).
+   */
+  databaseUrl: (env.TEST_DATABASE_URL || env.DATABASE_URL || "").trim(),
   nodeEnv: env.NODE_ENV || "development",
   /** Optional: set REFRESH_SECRET to require x-refresh-secret header on POST /api/admin/refresh-events */
   refreshSecret: env.REFRESH_SECRET || undefined,
