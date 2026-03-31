@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS room_players (
   is_host INTEGER NOT NULL DEFAULT 0,
   turn_order INTEGER,
   score INTEGER NOT NULL DEFAULT 0,
+  streak INTEGER NOT NULL DEFAULT 0,
   connected INTEGER NOT NULL DEFAULT 1,
   joined_at TEXT NOT NULL DEFAULT (to_char (CURRENT_TIMESTAMP AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')),
   PRIMARY KEY (room_id, player_id)
@@ -79,3 +80,18 @@ CREATE INDEX IF NOT EXISTS idx_room_timeline_room ON room_timeline (room_id);
 CREATE INDEX IF NOT EXISTS idx_room_deck_room ON room_deck (room_id);
 CREATE INDEX IF NOT EXISTS idx_room_hand_room ON room_hand (room_id);
 CREATE INDEX IF NOT EXISTS idx_room_players_room ON room_players (room_id);
+
+-- Idempotent for existing databases created before streak column
+ALTER TABLE room_players ADD COLUMN IF NOT EXISTS streak INTEGER NOT NULL DEFAULT 0;
+
+-- End-of-match snapshots (gameplay state is in-memory; rows inserted when a match finishes or room closes)
+CREATE TABLE IF NOT EXISTS room_match_metrics (
+  id TEXT PRIMARY KEY,
+  room_id TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  ended_at TEXT,
+  winner_player_id TEXT,
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_room_match_metrics_room ON room_match_metrics (room_id);

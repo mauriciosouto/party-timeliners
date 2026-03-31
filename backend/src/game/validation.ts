@@ -1,6 +1,6 @@
 /**
  * Move validation: turn check, event-in-deck check, position check.
- * Pure logic used by roomService before applying DB updates.
+ * Pure logic used by the live room store before applying in-memory updates.
  */
 
 import type { EventLike } from "./eventQuality.js";

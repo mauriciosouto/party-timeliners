@@ -35,6 +35,8 @@ export type RoomPlayer = {
   avatar?: string | null;
   isHost: boolean;
   score: number;
+  /** Consecutive correct placements this match; resets on wrong placement or room reset. */
+  streak: number;
   turnOrder: number | null;
   connected: boolean;
   joinedAt: string;

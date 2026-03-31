@@ -53,6 +53,8 @@ export type TimelineProps = {
   onPlacedCardRef?: (el: HTMLDivElement | null) => void;
   /** When true, timeline shows drag-active glow (set by parent when inside DndContext) */
   dragActive?: boolean;
+  /** Card awaiting server confirmation at this drop slot index. */
+  pendingPlacement?: { slotIndex: number; event: TimelineEvent } | null;
 };
 
 const FLIP_TRANSITION = "transform 0.35s ease-out";
@@ -63,6 +65,7 @@ export function Timeline({
   highlightEventId,
   onPlacedCardRef,
   dragActive = false,
+  pendingPlacement = null,
 }: TimelineProps) {
   const slots = useMemo(
     () => Array.from({ length: events.length + 1 }, (_, i) => i),
@@ -145,7 +148,32 @@ export function Timeline({
               className={`flex-shrink-0 ${events[slotIndex - 1].id === highlightEventId ? "last-placed-highlight" : ""}`}
             />
           ) : null}
-          <TimelineSlot index={slotIndex} />
+          {pendingPlacement && pendingPlacement.slotIndex === slotIndex ? (
+            <div
+              className="relative flex flex-shrink-0 flex-col items-center justify-center"
+              role="status"
+              aria-live="polite"
+              aria-label="Checking placement"
+            >
+              <EventCard
+                event={pendingPlacement.event}
+                showYear={false}
+                revealed={false}
+                className="flex-shrink-0 opacity-95 ring-2 ring-violet-400 ring-offset-2 ring-offset-white"
+              />
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center rounded-[14px] bg-white/85 backdrop-blur-[1px]">
+                <span
+                  className="h-5 w-5 animate-spin rounded-full border-2 border-violet-500 border-t-transparent"
+                  aria-hidden
+                />
+                <span className="mt-2 text-center text-[10px] font-bold uppercase tracking-wide text-violet-800">
+                  Checking…
+                </span>
+              </div>
+            </div>
+          ) : (
+            <TimelineSlot index={slotIndex} />
+          )}
         </div>
       ))}
     </div>

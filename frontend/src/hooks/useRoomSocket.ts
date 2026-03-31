@@ -15,10 +15,29 @@ type WsMessage =
   | { type: "join_error"; code: string; message: string }
   | { type: "state_update"; room: RoomState }
   | { type: "room_state"; roomState: RoomState }
-  | { type: "place_result"; correct: boolean; gameEnded?: boolean; score: number; timeline?: RoomState["timeline"]; correctPosition?: number; nextEvent?: ApiEvent | null; nextTurnPlayerId?: string | null; currentTurnStartedAt?: string | null; nextDeckSequence?: number; lastPlacedEvent?: RoomState["lastPlacedEvent"] }
+  | {
+      type: "place_result";
+      correct: boolean;
+      gameEnded?: boolean;
+      score: number;
+      streak?: number;
+      timeline?: RoomState["timeline"];
+      correctPosition?: number;
+      nextEvent?: ApiEvent | null;
+      nextTurnPlayerId?: string | null;
+      currentTurnStartedAt?: string | null;
+      nextDeckSequence?: number;
+      lastPlacedEvent?: RoomState["lastPlacedEvent"];
+    }
   | { type: "place_error"; code: string; message: string }
+  | { type: "game_starting" }
+  | { type: "game_start_failed"; message: string }
   | { type: "start_error"; code: string; message: string }
+  | { type: "rematch_starting" }
+  | { type: "rematch_failed"; message: string }
   | { type: "rematch_error"; code: string; message: string }
+  | { type: "close_room_starting" }
+  | { type: "close_room_failed"; message: string }
   | { type: "leave_ack" }
   | { type: "leave_error"; message: string }
   | { type: "player_left"; nickname: string }
@@ -51,14 +70,30 @@ export function useRoomSocket(
     correct: boolean;
     gameEnded?: boolean;
     score: number;
+    streak?: number;
     nextTurnPlayerId?: string | null;
     correctPosition?: number;
   } | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const playerIdRef = useRef<string | null>(playerId);
+  playerIdRef.current = playerId;
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
   const prevTurnPlayerIdRef = useRef<string | null>(null);
   const [yourTurnToast, setYourTurnToast] = useState(false);
+  const [gameStarting, setGameStarting] = useState(false);
+  const [rematchStarting, setRematchStarting] = useState(false);
+  const [closeRoomStarting, setCloseRoomStarting] = useState(false);
+  const [placingPending, setPlacingPending] = useState<{
+    eventId: string;
+    position: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!placingPending) return;
+    const t = setTimeout(() => setPlacingPending(null), 25_000);
+    return () => clearTimeout(t);
+  }, [placingPending]);
 
   useEffect(() => {
     if (!roomState || roomState.status !== "playing" || !playerId) {
@@ -110,6 +145,10 @@ export function useRoomSocket(
               timeline: sortTimelineByPosition(state.timeline ?? []),
             });
             setWsReady(true);
+            setGameStarting(false);
+            setRematchStarting(false);
+            setCloseRoomStarting(false);
+            setPlacingPending(null);
           } else if (msg.type === "state_update" || msg.type === "room_state") {
             const state = msg.type === "state_update" ? msg.room : msg.roomState;
             setRoomState({
@@ -118,9 +157,39 @@ export function useRoomSocket(
             });
             setRoomError(null);
             setPlaceError(null);
-          } else if (msg.type === "start_error" || msg.type === "rematch_error") {
+            setPlacingPending(null);
+            if (state.status === "playing" || state.status === "ended") {
+              setGameStarting(false);
+            }
+            if (state.status === "lobby") {
+              setRematchStarting(false);
+            }
+          } else if (msg.type === "game_starting") {
+            setGameStarting(true);
+            setRoomError(null);
+          } else if (msg.type === "game_start_failed") {
+            setGameStarting(false);
+            setRoomError(msg.message);
+          } else if (msg.type === "rematch_starting") {
+            setRematchStarting(true);
+            setRoomError(null);
+          } else if (msg.type === "rematch_failed") {
+            setRematchStarting(false);
+            setRoomError(msg.message);
+          } else if (msg.type === "close_room_starting") {
+            setCloseRoomStarting(true);
+            setRoomError(null);
+          } else if (msg.type === "close_room_failed") {
+            setCloseRoomStarting(false);
+            setRoomError(msg.message);
+          } else if (msg.type === "start_error") {
+            setGameStarting(false);
+            setRoomError(msg.message);
+          } else if (msg.type === "rematch_error") {
+            setRematchStarting(false);
             setRoomError(msg.message);
           } else if (msg.type === "place_error") {
+            setPlacingPending(null);
             setPlaceError(msg.message);
           } else if (msg.type === "place_result") {
             setPlaceError(null);
@@ -128,25 +197,50 @@ export function useRoomSocket(
               correct: msg.correct,
               gameEnded: msg.gameEnded,
               score: msg.score,
+              streak: msg.streak,
               nextTurnPlayerId: msg.nextTurnPlayerId,
               correctPosition: msg.correctPosition,
             });
-            if (msg.timeline && msg.timeline.length > 0) {
+            const pid = playerIdRef.current;
+            if (pid != null && msg.streak !== undefined) {
+              setRoomState((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      players: prev.players.map((p) =>
+                        p.playerId === pid ? { ...p, streak: msg.streak! } : p,
+                      ),
+                      timeline:
+                        msg.timeline && msg.timeline.length > 0
+                          ? sortTimelineByPosition(msg.timeline)
+                          : prev.timeline,
+                      lastPlacedEvent: msg.lastPlacedEvent ?? prev.lastPlacedEvent ?? null,
+                      currentTurnStartedAt:
+                        msg.currentTurnStartedAt ?? prev.currentTurnStartedAt ?? null,
+                    }
+                  : null,
+              );
+            } else if (msg.timeline && msg.timeline.length > 0) {
               setRoomState((prev) =>
                 prev
                   ? {
                       ...prev,
                       timeline: sortTimelineByPosition(msg.timeline!),
                       lastPlacedEvent: msg.lastPlacedEvent ?? prev.lastPlacedEvent ?? null,
+                      currentTurnStartedAt:
+                        msg.currentTurnStartedAt ?? prev.currentTurnStartedAt ?? null,
                     }
                   : null,
               );
             }
           } else if (msg.type === "room_closed") {
+            setRematchStarting(false);
+            setCloseRoomStarting(false);
             setRoomClosed(true);
           } else if (msg.type === "leave_ack") {
             setLeftRoom(true);
           } else if (msg.type === "leave_error" || msg.type === "close_room_error") {
+            setCloseRoomStarting(false);
             setRoomError(msg.message);
           } else if (msg.type === "player_left") {
             setPlayerLeftNotification(msg.nickname);
@@ -186,16 +280,25 @@ export function useRoomSocket(
   }, [roomId, nickname]);
 
   const sendStartGame = () => {
+    setGameStarting(true);
+    setRoomError(null);
     if (wsRef.current?.readyState === 1) {
       wsRef.current.send(JSON.stringify({ type: "start_game" }));
+    } else {
+      setGameStarting(false);
+      setRoomError("Not connected. Try again.");
     }
   };
 
   const sendPlaceEvent = (eventId: string, position: number) => {
+    setPlacingPending({ eventId, position });
     if (wsRef.current?.readyState === 1) {
       wsRef.current.send(
         JSON.stringify({ type: "place_event", eventId, position }),
       );
+    } else {
+      setPlacingPending(null);
+      setPlaceError("Not connected. Try again.");
     }
   };
 
@@ -206,8 +309,13 @@ export function useRoomSocket(
   };
 
   const sendRematch = () => {
+    setRematchStarting(true);
+    setRoomError(null);
     if (wsRef.current?.readyState === 1) {
       wsRef.current.send(JSON.stringify({ type: "rematch" }));
+    } else {
+      setRematchStarting(false);
+      setRoomError("Not connected. Try again.");
     }
   };
 
@@ -218,8 +326,13 @@ export function useRoomSocket(
   };
 
   const sendCloseRoom = () => {
+    setCloseRoomStarting(true);
+    setRoomError(null);
     if (wsRef.current?.readyState === 1) {
       wsRef.current.send(JSON.stringify({ type: "close_room" }));
+    } else {
+      setCloseRoomStarting(false);
+      setRoomError("Not connected. Try again.");
     }
   };
 
@@ -257,5 +370,9 @@ export function useRoomSocket(
     sendCloseRoom,
     sendLeaveRoom,
     clearPlaceResult,
+    gameStarting,
+    rematchStarting,
+    closeRoomStarting,
+    placingPending,
   };
 }

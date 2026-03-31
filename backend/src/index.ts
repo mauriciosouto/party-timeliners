@@ -6,7 +6,8 @@ import { config } from "./config.js";
 import { roomsRouter } from "./routes/rooms.js";
 import { eventsRouter } from "./routes/events.js";
 import { adminRouter } from "./routes/admin.js";
-import { initDb, queryOne, queryRows, rowCount } from "./db/index.js";
+import { initDb, queryOne, rowCount } from "./db/index.js";
+import { getLiveRoomStatusCounts } from "./services/liveRoomStore.js";
 import { ensureEventPool } from "./db/ensureEventPool.js";
 import { attachRoomHub } from "./ws/roomHub.js";
 
@@ -39,16 +40,7 @@ async function getStatusMetrics(): Promise<{
 }> {
   const eventsRow = await queryOne<{ count: unknown }>("SELECT COUNT(*)::int AS count FROM events", []);
   const eventsCount = rowCount(eventsRow, "count");
-  const roomsByStatus = await queryRows<{ status: string; count: unknown }>(
-    "SELECT status, COUNT(*)::int AS count FROM rooms GROUP BY status",
-    [],
-  );
-  const map = new Map<string, number>();
-  for (const row of roomsByStatus) map.set(row.status, Number(row.count) || 0);
-  const roomsInLobby = map.get("lobby") ?? 0;
-  const roomsPlaying = map.get("playing") ?? 0;
-  const roomsEnded = map.get("ended") ?? 0;
-  const roomsTotal = roomsInLobby + roomsPlaying + roomsEnded;
+  const { roomsTotal, roomsInLobby, roomsPlaying, roomsEnded } = getLiveRoomStatusCounts();
   return {
     eventsCount,
     roomsTotal,

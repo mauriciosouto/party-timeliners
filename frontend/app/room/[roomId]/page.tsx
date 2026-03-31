@@ -66,6 +66,10 @@ export default function RoomPage() {
     sendCloseRoom,
     sendLeaveRoom,
     clearPlaceResult,
+    gameStarting,
+    rematchStarting,
+    closeRoomStarting,
+    placingPending,
   } = useRoomSocket(roomId || null, playerId, nickname);
 
   // When the room has ended, clear stored credentials so "rejoin" is not offered on home.
@@ -159,6 +163,8 @@ export default function RoomPage() {
         onStartGame={sendStartGame}
         onLeaveRoom={sendLeaveRoom}
         onCloseRoom={sendCloseRoom}
+        gameStarting={gameStarting}
+        closeRoomStarting={closeRoomStarting}
       />
     );
   }
@@ -214,6 +220,9 @@ export default function RoomPage() {
           onCloseRoom={sendCloseRoom}
           onLeaveRoom={sendLeaveRoom}
           onClearPlaceResult={clearPlaceResult}
+          placingPending={placingPending}
+          rematchStarting={rematchStarting}
+          closeRoomStarting={closeRoomStarting}
         />
       </>
     );

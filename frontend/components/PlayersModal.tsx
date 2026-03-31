@@ -1,10 +1,13 @@
 "use client";
 
+import { formatStreakScoreboardBadge } from "@/lib/streakUi";
+
 type Player = {
   playerId: string;
   nickname: string;
   avatar?: string | null;
   score?: number;
+  streak?: number;
   turnOrder?: number | null;
 };
 
@@ -54,6 +57,7 @@ export function PlayersModal({
           {sorted.map((p) => {
             const isCurrentTurn = currentTurnPlayerId === p.playerId;
             const score = scores[p.playerId] ?? 0;
+            const streakBadge = formatStreakScoreboardBadge(p.streak ?? 0);
             return (
               <li
                 key={p.playerId}
@@ -61,33 +65,38 @@ export function PlayersModal({
                   isCurrentTurn ? "bg-violet-50 ring-1 ring-violet-200" : "bg-zinc-50"
                 }`}
               >
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  {p.avatar ? (
-                    <img
-                      src={p.avatar}
-                      alt=""
-                      className="h-10 w-10 shrink-0 rounded-full object-cover"
-                      width={40}
-                      height={40}
-                    />
-                  ) : (
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-600">
-                      {(p.nickname || "?")[0]?.toUpperCase() ?? "?"}
-                    </div>
-                  )}
-                  <span className="truncate font-medium text-zinc-900">
-                    {p.nickname}
-                    {p.playerId === myPlayerId && " (you)"}
-                  </span>
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {p.avatar ? (
+                      <img
+                        src={p.avatar}
+                        alt=""
+                        className="h-10 w-10 shrink-0 rounded-full object-cover"
+                        width={40}
+                        height={40}
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-600">
+                        {(p.nickname || "?")[0]?.toUpperCase() ?? "?"}
+                      </div>
+                    )}
+                    <span className="truncate font-medium text-zinc-900">
+                      {p.nickname}
+                      {p.playerId === myPlayerId && " (you)"}
+                    </span>
+                  </div>
+                  {streakBadge ? (
+                    <p className="pl-[52px] text-[11px] font-semibold text-orange-700">{streakBadge}</p>
+                  ) : null}
                 </div>
-                <span className="shrink-0 text-sm font-medium text-zinc-600">
-                  {score} pts
-                </span>
-                {isCurrentTurn && (
-                  <span className="shrink-0 rounded-full bg-violet-200/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-800">
-                    Turn
-                  </span>
-                )}
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span className="text-sm font-medium text-zinc-600">{score} pts</span>
+                  {isCurrentTurn && (
+                    <span className="rounded-full bg-violet-200/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-800">
+                      Turn
+                    </span>
+                  )}
+                </div>
               </li>
             );
           })}

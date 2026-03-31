@@ -655,3 +655,29 @@ body {
 .mobile-hand-card:active {
   transform: scale(0.98);
 }
+
+/* Streak milestone: brief celebratory callout (desktop + mobile) */
+@keyframes streak-milestone-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+  14% {
+    opacity: 1;
+    transform: translateY(0) scale(1.06);
+  }
+  24% {
+    transform: translateY(0) scale(1);
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(1);
+  }
+}
+.streak-milestone-callout {
+  animation: streak-milestone-pop 2.2s ease-out forwards;
+  text-shadow: 0 0 18px rgba(251, 191, 36, 0.55);
+}

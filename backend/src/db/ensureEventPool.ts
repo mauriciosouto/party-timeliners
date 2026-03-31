@@ -20,6 +20,8 @@ import {
   type PoolEventLike,
 } from "../services/eventIngestion.js";
 import { config } from "../config.js";
+import { clearEventCache } from "./eventCache.js";
+import { collectLiveRoomReferencedEventIds } from "../services/liveRoomStore.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendData = path.join(__dirname, "../../data/eventPool.json");
@@ -79,6 +81,7 @@ function getTtlCutoff(): string {
 }
 
 async function isEventReferencedByRoomPool(eventId: string): Promise<boolean> {
+  if (collectLiveRoomReferencedEventIds().has(eventId)) return true;
   const checks = [
     "SELECT 1 AS x FROM room_timeline WHERE event_id = ? LIMIT 1",
     "SELECT 1 AS x FROM room_deck WHERE event_id = ? LIMIT 1",
@@ -177,6 +180,9 @@ export async function removePoolEventsNotInMerged(keepIds: Set<string>): Promise
       [],
     );
     const before = rowCount(beforeRow, "c");
+    const liveHeld = [...collectLiveRoomReferencedEventIds()];
+    const liveClause =
+      liveHeld.length === 0 ? "" : " AND NOT (e.id = ANY(?))";
     await execClient(
       client,
       `DELETE FROM events e
@@ -184,8 +190,8 @@ export async function removePoolEventsNotInMerged(keepIds: Set<string>): Promise
        AND NOT EXISTS (SELECT 1 FROM room_timeline rt WHERE rt.event_id = e.id)
        AND NOT EXISTS (SELECT 1 FROM room_deck rd WHERE rd.event_id = e.id)
        AND NOT EXISTS (SELECT 1 FROM room_hand rh WHERE rh.event_id = e.id)
-       AND NOT EXISTS (SELECT 1 FROM rooms r WHERE r.initial_event_id = e.id)`,
-      [],
+       AND NOT EXISTS (SELECT 1 FROM rooms r WHERE r.initial_event_id = e.id)${liveClause}`,
+      liveHeld.length === 0 ? [] : [liveHeld],
     );
     const afterRow = await queryOneClient<{ c: unknown }>(
       client,
@@ -214,6 +220,7 @@ export async function commitMergedPool(merged: PoolEventLike[]): Promise<{
   const keep = new Set(canonical.map((e) => e.id));
   const orphansRemoved = await removePoolEventsNotInMerged(keep);
   const expiredRemoved = await deleteExpiredEvents();
+  clearEventCache();
   return {
     finalCount: await getEventCount(),
     orphansRemoved,
@@ -246,6 +253,7 @@ export async function writePoolToDb(events: PoolEventLike[]): Promise<void> {
     }
     await setLastRefreshed(client);
   });
+  clearEventCache();
 }
 
 export function runRefreshEventPool(): Promise<void> {
@@ -300,6 +308,7 @@ export async function ensureEventPool(): Promise<void> {
       }
       await setLastRefreshed(client);
     });
+    clearEventCache();
     console.log(`[events] Seeded ${pool.length} events from ${seedPath}. Refreshing from Wikidata in background...`);
     refreshEventPoolInBackground();
     return;

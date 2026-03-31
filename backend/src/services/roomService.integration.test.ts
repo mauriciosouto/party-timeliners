@@ -1,6 +1,7 @@
 /**
- * Integration tests for roomService against PostgreSQL (Supabase or local).
- * Set DATABASE_URL or TEST_DATABASE_URL. CI provides Postgres via docker service.
+ * Integration tests for roomService against PostgreSQL.
+ * Set TEST_DATABASE_URL to run them (local docker Postgres or CI — see workflow).
+ * DATABASE_URL alone is not used here so app `.env` does not flip these tests on accidentally.
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import path from "node:path";
@@ -19,11 +20,12 @@ import {
   closeRoomPermanently,
   setPlayerConnected,
 } from "./roomService.js";
+import { __testClearAllLiveRooms, liveRoomTestHelpers } from "./liveRoomStore.js";
 import { findCorrectPosition } from "../game/timeline.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const hasIntegrationDb = Boolean(process.env.TEST_DATABASE_URL || process.env.DATABASE_URL);
+const hasIntegrationDb = Boolean(process.env.TEST_DATABASE_URL);
 const idesc = hasIntegrationDb ? describe : describe.skip;
 
 type RoomStateResolved = NonNullable<Awaited<ReturnType<typeof getRoomState>>>;
@@ -61,6 +63,8 @@ async function seedTestEvents(): Promise<void> {
 }
 
 async function clearRoomTables(): Promise<void> {
+  __testClearAllLiveRooms();
+  await exec("DELETE FROM room_match_metrics", []);
   await exec("DELETE FROM room_hand", []);
   await exec("DELETE FROM room_deck", []);
   await exec("DELETE FROM room_timeline", []);
@@ -72,29 +76,12 @@ async function clearRoomTables(): Promise<void> {
 async function setCurrentPlayerHand(roomId: string, eventIds: string[]): Promise<void> {
   const state = (await getRoomState(roomId))!;
   const currentId = state.currentTurnPlayerId!;
-  await exec("DELETE FROM room_hand WHERE room_id = ? AND player_id = ?", [roomId, currentId]);
-  for (let slot = 0; slot < Math.min(3, eventIds.length); slot++) {
-    const eventId = eventIds[slot]!;
-    await exec(
-      "INSERT INTO room_hand (room_id, player_id, event_id, slot_index) VALUES (?, ?, ?, ?)",
-      [roomId, currentId, eventId, slot],
-    );
-  }
+  liveRoomTestHelpers.setPlayerHand(roomId, currentId, eventIds.slice(0, 3));
 }
 
 /** Replace timeline with exactly these event IDs in order (position 0, 1, ...). Use after startGame for deterministic setups. */
 async function setTimelineToEventIds(roomId: string, eventIds: string[]): Promise<void> {
-  await exec("DELETE FROM room_timeline WHERE room_id = ?", [roomId]);
-  const placedAt = new Date().toISOString();
-  for (let position = 0; position < eventIds.length; position++) {
-    await exec(
-      "INSERT INTO room_timeline (room_id, event_id, position, placed_at) VALUES (?, ?, ?, ?)",
-      [roomId, eventIds[position]!, position, placedAt],
-    );
-  }
-  if (eventIds.length > 0) {
-    await exec("UPDATE rooms SET initial_event_id = ? WHERE id = ?", [eventIds[0], roomId]);
-  }
+  liveRoomTestHelpers.setTimelineEventIds(roomId, eventIds);
 }
 
 idesc("roomService avatar (integration)", () => {
@@ -615,10 +602,7 @@ idesc("roomService (integration)", () => {
     const { roomId, playerId: hostId } = await createRoom("Host");
     await joinRoom(roomId, "P2");
     await startGame(roomId, hostId);
-    await exec(
-      "UPDATE rooms SET status = 'ended', ended_at = ?, winner_player_id = ? WHERE id = ?",
-      [new Date().toISOString(), hostId, roomId],
-    );
+    liveRoomTestHelpers.forceMatchEnded(roomId, hostId);
 
     const result = await rematchRoom(roomId, hostId);
     expect("error" in result).toBe(false);
@@ -647,10 +631,7 @@ idesc("roomService (integration)", () => {
     const join = await joinRoom(roomId, "P2") as { playerId: string };
     const p2Id = join.playerId;
     await startGame(roomId, hostId);
-    await exec(
-      "UPDATE rooms SET status = 'ended', ended_at = ?, winner_player_id = ? WHERE id = ?",
-      [new Date().toISOString(), hostId, roomId],
-    );
+    liveRoomTestHelpers.forceMatchEnded(roomId, hostId);
     await setPlayerConnected(roomId, p2Id, false);
 
     const result = await rematchRoom(roomId, hostId);
@@ -725,16 +706,7 @@ idesc("roomService (integration)", () => {
       await startGame(roomId, hostId);
 
       // Force turn order: host first, then A, then B. Leaver will be A or B (non-host, not current).
-      await exec("UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?", [
-        0, roomId, hostId,
-      ]);
-      await exec("UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?", [
-        1, roomId, idA,
-      ]);
-      await exec("UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?", [
-        2, roomId, idB,
-      ]);
-      await exec("UPDATE rooms SET turn_index = 0 WHERE id = ?", [roomId]);
+      liveRoomTestHelpers.setTurnOrder(roomId, [hostId, idA, idB], 0);
 
       const stateBefore = (await getRoomState(roomId))!;
       const currentId = stateBefore.currentTurnPlayerId!;
@@ -757,16 +729,7 @@ idesc("roomService (integration)", () => {
       await startGame(roomId, hostId);
 
       // Force turn order so a non-host has the turn (host cannot leave)
-      await exec("UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?", [
-        0, roomId, idA,
-      ]);
-      await exec("UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?", [
-        1, roomId, hostId,
-      ]);
-      await exec("UPDATE room_players SET turn_order = ? WHERE room_id = ? AND player_id = ?", [
-        2, roomId, idB,
-      ]);
-      await exec("UPDATE rooms SET turn_index = 0 WHERE id = ?", [roomId]);
+      liveRoomTestHelpers.setTurnOrder(roomId, [idA, hostId, idB], 0);
 
       const stateBefore = (await getRoomState(roomId))!;
       const currentId = stateBefore.currentTurnPlayerId!;
@@ -780,6 +743,102 @@ idesc("roomService (integration)", () => {
       const stateAfter = (await getRoomState(roomId))!;
       expect(stateAfter.players).toHaveLength(2);
       expect(stateAfter.currentTurnPlayerId).toBe(nextId);
+    });
+  });
+
+  describe("streak", () => {
+    it("startGame sets all player streaks to 0", async () => {
+      const { roomId, playerId: hostId } = await createRoom("Host");
+      await joinRoom(roomId, "P2");
+      const st = (await startGame(roomId, hostId)) as RoomStateResolved;
+      for (const p of st.players) {
+        expect(p.streak).toBe(0);
+      }
+    });
+
+    it("correct placement increments only the acting player's streak", async () => {
+      const { roomId, playerId: hostId } = await createRoom("Host");
+      const join = await joinRoom(roomId, "P2") as { playerId: string };
+      const p2 = join.playerId;
+      await startGame(roomId, hostId);
+      const cur = (await getRoomState(roomId))!.currentTurnPlayerId!;
+      const s = (await getRoomState(roomId, cur))!;
+      const ev = s.myHand[0]!;
+      const timelineYears = s.timeline.map((t) => t.event.year);
+      const pos = findCorrectPosition(timelineYears, ev.year);
+      const r = await placeEvent(roomId, cur, ev.id, pos);
+      expect("error" in r).toBe(false);
+      const place = r as { streak: number };
+      expect(place.streak).toBe(1);
+      const after = (await getRoomState(roomId))!;
+      const otherId = cur === hostId ? p2 : hostId;
+      expect(after.players.find((p) => p.playerId === cur)!.streak).toBe(1);
+      expect(after.players.find((p) => p.playerId === otherId)!.streak).toBe(0);
+    });
+
+    it("incorrect placement resets only the acting player's streak", async () => {
+      const { roomId, playerId: hostId } = await createRoom("Host");
+      const join = await joinRoom(roomId, "P2") as { playerId: string };
+      const p2 = join.playerId;
+      await startGame(roomId, hostId);
+      const cur = (await getRoomState(roomId))!.currentTurnPlayerId!;
+      const otherId = cur === hostId ? p2 : hostId;
+      liveRoomTestHelpers.setPlayerStreak(roomId, cur, 3);
+      liveRoomTestHelpers.setPlayerStreak(roomId, otherId, 5);
+      const s = (await getRoomState(roomId, cur))!;
+      const ev = s.myHand[0]!;
+      const timelineYears = s.timeline.map((t) => t.event.year);
+      const correctPos = findCorrectPosition(timelineYears, ev.year);
+      const wrongPos = correctPos === 0 ? 1 : 0;
+      const r = await placeEvent(roomId, cur, ev.id, wrongPos);
+      expect("error" in r).toBe(false);
+      const place = r as { correct: boolean; streak: number };
+      expect(place.correct).toBe(false);
+      expect(place.streak).toBe(0);
+      const after = (await getRoomState(roomId))!;
+      expect(after.players.find((p) => p.playerId === cur)!.streak).toBe(0);
+      expect(after.players.find((p) => p.playerId === otherId)!.streak).toBe(5);
+    });
+
+    it("rematch clears all streaks", async () => {
+      const { roomId, playerId: hostId } = await createRoom("Host");
+      await joinRoom(roomId, "P2");
+      await startGame(roomId, hostId);
+      liveRoomTestHelpers.setAllPlayerStreaks(roomId, 4);
+      liveRoomTestHelpers.forceMatchEnded(roomId, hostId);
+      const rm = await rematchRoom(roomId, hostId);
+      expect("error" in rm).toBe(false);
+      const st = rm as RoomStateResolved;
+      for (const p of st.players) {
+        expect(p.streak).toBe(0);
+      }
+    });
+
+    it("leave causing lobby reset clears streaks for remaining players", async () => {
+      const { roomId, playerId: hostId } = await createRoom("Host");
+      const join = await joinRoom(roomId, "P2") as { playerId: string };
+      const p2 = join.playerId;
+      await startGame(roomId, hostId);
+      liveRoomTestHelpers.setAllPlayerStreaks(roomId, 7);
+      const res = await leaveRoom(roomId, p2);
+      expect("error" in res).toBe(false);
+      const lobby = (res as { roomState: RoomStateResolved }).roomState;
+      expect(lobby.status).toBe("lobby");
+      expect(lobby.players).toHaveLength(1);
+      expect(lobby.players[0]?.streak).toBe(0);
+    });
+
+    it("endGame clears all streaks", async () => {
+      const { roomId, playerId: hostId } = await createRoom("Host");
+      await joinRoom(roomId, "P2");
+      await startGame(roomId, hostId);
+      liveRoomTestHelpers.setAllPlayerStreaks(roomId, 6);
+      const eg = await endGame(roomId, hostId);
+      expect("error" in eg).toBe(false);
+      const st = eg as RoomStateResolved;
+      for (const p of st.players) {
+        expect(p.streak).toBe(0);
+      }
     });
   });
 
@@ -813,10 +872,7 @@ idesc("roomService (integration)", () => {
       const { roomId, playerId: hostId } = await createRoom("Host");
       await joinRoom(roomId, "P2");
       await startGame(roomId, hostId);
-      await exec(
-        "UPDATE rooms SET status = 'ended', ended_at = ?, winner_player_id = ? WHERE id = ?",
-        [new Date().toISOString(), hostId, roomId],
-      );
+      liveRoomTestHelpers.forceMatchEnded(roomId, hostId);
 
       const result = await closeRoomPermanently(roomId, hostId);
       expect(result).toEqual({ ok: true });

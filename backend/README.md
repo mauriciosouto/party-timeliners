@@ -45,6 +45,24 @@ WebSocket: `ws://localhost:3001/ws`
 
 Opening the backend URL in a browser shows a **status page** with basic metrics: events in pool, total rooms, rooms in lobby, active games (playing), and rooms ended.
 
+### Performance timings (`PERF_TIMING`)
+
+To measure **where time goes on each card placement** (and compare before/after refactors), set in `.env`:
+
+```bash
+PERF_TIMING=1
+```
+
+Restart the server, play a few turns, and watch stdout. Each line is a JSON object:
+
+- `roomService.placeEvent` — phases: `parallel_fetch`, `ensure_events`, `score_query`, `validation`, `transaction`, `getRoomState`, `endgame_writes`, `getRoomState_after_endgame` (when applicable), plus `totalMs`.
+- `roomHub.place_event` — `after_placeEvent` (service), `after_getRoomStatesForClients` (single fan-out load, reused for broadcast), `after_broadcast`.
+- `roomHub.broadcastStateUpdate` — `getRoomStatesForClients` or `reuse_states` if the caller passed a prebuilt map; then `ws_send_all`.
+
+**Baseline vs after change:** save logs (e.g. `npm run dev 2>&1 | tee perf-before.log`), implement optimizations, repeat with `perf-after.log`, then compare `totalMs` and the `phases` object for the same `outcome` / `branch`.
+
+Turn off `PERF_TIMING` in production unless you briefly need traces (logs are structured but add noise).
+
 ## API (REST)
 
 - `POST /api/rooms` — Create room. Body: `{ "nickname", "name"?(optional) }`. Returns `roomId`, `playerId`, `roomState`.

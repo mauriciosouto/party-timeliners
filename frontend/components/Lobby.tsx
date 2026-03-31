@@ -14,6 +14,10 @@ type LobbyProps = {
   onStartGame: () => void;
   onLeaveRoom: () => void;
   onCloseRoom: () => void;
+  /** True after host requests start until the room enters playing or the server reports failure. */
+  gameStarting: boolean;
+  /** True while the host is closing the room (WS in flight). */
+  closeRoomStarting: boolean;
 };
 
 export function Lobby({
@@ -26,6 +30,8 @@ export function Lobby({
   onStartGame,
   onLeaveRoom,
   onCloseRoom,
+  gameStarting,
+  closeRoomStarting,
 }: LobbyProps) {
   const isHost = roomState.hostPlayerId === playerId;
   const [copied, setCopied] = useState(false);
@@ -145,27 +151,86 @@ export function Lobby({
             </div>
           )}
 
+          {gameStarting && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="mt-4 flex items-center gap-3 rounded-lg border border-violet-200 bg-violet-50/95 px-4 py-3 text-sm font-medium text-violet-900 shadow-sm"
+            >
+              <span
+                className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-violet-500 border-t-transparent"
+                aria-hidden
+              />
+              <span>Starting game — building the deck…</span>
+            </div>
+          )}
+
+          {closeRoomStarting && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="mt-4 flex items-center gap-3 rounded-lg border border-zinc-300 bg-zinc-100/95 px-4 py-3 text-sm font-medium text-zinc-800 shadow-sm"
+            >
+              <span
+                className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent"
+                aria-hidden
+              />
+              <span>
+                {isHost ? "Closing the room…" : "The host is closing the room…"}
+              </span>
+            </div>
+          )}
+
           {isHost && wsReady && (
             <div className="mt-8 flex flex-col gap-3">
               <button
+                type="button"
                 onClick={onStartGame}
-                className="w-full rounded-[10px] bg-violet-600 px-[18px] py-2.5 font-semibold text-white shadow-sm transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.15)] hover:bg-violet-700"
+                disabled={gameStarting || closeRoomStarting}
+                className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-violet-600 px-[18px] py-2.5 font-semibold text-white shadow-sm transition-all duration-200 ease enabled:hover:-translate-y-px enabled:hover:shadow-[0_6px_12px_rgba(0,0,0,0.15)] enabled:hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Start game
+                {gameStarting ? (
+                  <>
+                    <span
+                      className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-white border-t-transparent"
+                      aria-hidden
+                    />
+                    Starting…
+                  </>
+                ) : (
+                  "Start game"
+                )}
               </button>
               <button
                 type="button"
                 onClick={onCloseRoom}
-                className="w-full rounded-[10px] border border-zinc-300 bg-zinc-100 px-[18px] py-2.5 text-sm font-semibold text-zinc-600 transition-all duration-200 ease hover:bg-zinc-200"
+                disabled={closeRoomStarting || gameStarting}
+                className={`flex w-full items-center justify-center gap-2 rounded-[10px] border border-zinc-300 bg-zinc-100 px-[18px] py-2.5 text-sm font-semibold text-zinc-600 transition-all duration-200 ease hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-70`}
               >
-                Close room
+                {closeRoomStarting ? (
+                  <>
+                    <span
+                      className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent"
+                      aria-hidden
+                    />
+                    Closing…
+                  </>
+                ) : (
+                  "Close room"
+                )}
               </button>
             </div>
           )}
 
           {!isHost && (
             <>
-              <p className="mt-4 text-sm text-slate-300">Waiting for the host to start the game…</p>
+              <p className="mt-4 text-sm text-slate-300">
+                {closeRoomStarting
+                  ? "The host is closing the room…"
+                  : gameStarting
+                    ? "The game is starting — hang tight…"
+                    : "Waiting for the host to start the game…"}
+              </p>
               {wsReady && (
                 <button
                   type="button"

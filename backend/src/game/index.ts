@@ -5,7 +5,7 @@
  * - Timeline validation (position, correct placement)
  * - Move validation (turn, event, position)
  *
- * roomService uses this module; DB writes stay in roomService.
+ * Room runtime uses this module; gameplay state is held in memory (liveRoomStore).
  */
 
 export { isGoodEvent, filterGoodEvents } from "./eventQuality.js";

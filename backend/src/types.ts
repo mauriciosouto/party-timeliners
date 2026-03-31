@@ -44,6 +44,8 @@ export type RoomPlayerState = {
   avatar?: string | null;
   isHost: boolean;
   score: number;
+  /** Consecutive correct placements this match. */
+  streak: number;
   turnOrder: number | null;
   connected: boolean;
   joinedAt: string;
@@ -79,7 +81,12 @@ export type PlaceResult = {
   gameEnded?: boolean;
   correctPosition?: number;
   score: number;
+  /** Acting player's streak after this resolution. */
+  streak: number;
   timeline: ApiTimelineEntry[];
   nextEvent?: ApiEvent | null;
   nextTurnPlayerId?: string | null;
+  /** Same as in RoomState after this resolution (avoids an extra getRoomState in WS hub). */
+  currentTurnStartedAt: string | null;
+  lastPlacedEvent: LastPlacedEvent | null;
 };

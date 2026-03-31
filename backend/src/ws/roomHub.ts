@@ -1,4 +1,6 @@
 import type { WebSocket } from "ws";
+import { createPerfSpan } from "../perf.js";
+import type { RoomState } from "../types.js";
 import * as roomService from "../services/roomService.js";
 
 type Client = { ws: WebSocket; playerId: string; roomId: string };
@@ -14,13 +16,40 @@ function getRoomClients(roomId: string): Set<Client> {
   return set;
 }
 
-async function broadcastStateUpdate(roomId: string): Promise<void> {
-  for (const c of getRoomClients(roomId)) {
+function broadcastToRoom(roomId: string, payload: Record<string, unknown>): void {
+  const clients = getRoomClients(roomId);
+  const raw = JSON.stringify(payload);
+  for (const c of clients) {
     if (c.ws.readyState !== 1) continue;
-    const room = await roomService.getRoomState(roomId, c.playerId);
+    c.ws.send(raw);
+  }
+}
+
+async function broadcastStateUpdate(
+  roomId: string,
+  prebuiltStates?: Map<string, RoomState>,
+): Promise<void> {
+  const b = createPerfSpan("roomHub.broadcastStateUpdate", {
+    roomIdShort: roomId.slice(0, 8),
+    prebuilt: Boolean(prebuiltStates),
+  });
+  const clients = getRoomClients(roomId);
+  if (clients.size === 0) {
+    b.end({ skipped: true, reason: "no_clients" });
+    return;
+  }
+  const ids = [...clients].map((c) => c.playerId);
+  const states =
+    prebuiltStates ?? (await roomService.getRoomStatesForClients(roomId, ids));
+  b.mark(prebuiltStates ? "reuse_states" : "getRoomStatesForClients");
+  for (const c of clients) {
+    if (c.ws.readyState !== 1) continue;
+    const room = states.get(c.playerId);
     if (!room) continue;
     c.ws.send(JSON.stringify({ type: "state_update", room }));
   }
+  b.mark("ws_send_all");
+  b.end({ clientCount: ids.length });
 }
 
 export function attachRoomHub(ws: WebSocket): void {
@@ -124,15 +153,13 @@ export function attachRoomHub(ws: WebSocket): void {
       }
 
       if (msg.type === "start_game") {
+        broadcastToRoom(client.roomId, { type: "game_starting" });
         const result = await roomService.startGame(client.roomId, client.playerId);
         if ("error" in result) {
-          ws.send(
-            JSON.stringify({
-              type: "start_error",
-              code: "failed",
-              message: result.error,
-            }),
-          );
+          broadcastToRoom(client.roomId, {
+            type: "game_start_failed",
+            message: result.error,
+          });
           return;
         }
         await broadcastStateUpdate(client.roomId);
@@ -151,6 +178,9 @@ export function attachRoomHub(ws: WebSocket): void {
           );
           return;
         }
+        const hubPerf = createPerfSpan("roomHub.place_event", {
+          roomIdShort: client.roomId.slice(0, 8),
+        });
         let result: Awaited<ReturnType<typeof roomService.placeEvent>>;
         try {
           result = await roomService.placeEvent(
@@ -161,6 +191,8 @@ export function attachRoomHub(ws: WebSocket): void {
           );
         } catch (err) {
           console.error("[roomHub] place_event threw", err);
+          hubPerf.mark("after_placeEvent");
+          hubPerf.end({ outcome: "throw" });
           ws.send(
             JSON.stringify({
               type: "place_error",
@@ -171,6 +203,7 @@ export function attachRoomHub(ws: WebSocket): void {
           await broadcastStateUpdate(client.roomId);
           return;
         }
+        hubPerf.mark("after_placeEvent");
         if ("error" in result) {
           ws.send(
             JSON.stringify({
@@ -180,18 +213,18 @@ export function attachRoomHub(ws: WebSocket): void {
             }),
           );
           await broadcastStateUpdate(client.roomId);
+          hubPerf.mark("after_broadcast");
+          hubPerf.end({ outcome: "service_error" });
           return;
         }
-        const stateAfter = await roomService.getRoomState(client.roomId, client.playerId);
-        ws.send(
-          JSON.stringify({
-            type: "place_result",
-            ...result,
-            currentTurnStartedAt: stateAfter?.currentTurnStartedAt ?? null,
-            lastPlacedEvent: stateAfter?.lastPlacedEvent ?? null,
-          }),
-        );
-        await broadcastStateUpdate(client.roomId);
+        const clients = getRoomClients(client.roomId);
+        const ids = [...clients].map((c) => c.playerId);
+        const states = await roomService.getRoomStatesForClients(client.roomId, ids);
+        hubPerf.mark("after_getRoomStatesForClients");
+        ws.send(JSON.stringify({ type: "place_result", ...result }));
+        await broadcastStateUpdate(client.roomId, states);
+        hubPerf.mark("after_broadcast");
+        hubPerf.end({ outcome: "ok" });
         return;
       }
 
@@ -208,19 +241,24 @@ export function attachRoomHub(ws: WebSocket): void {
           await broadcastStateUpdate(client.roomId);
           return;
         }
-        const state = await roomService.getRoomState(client.roomId, client.playerId);
+        const clientsT = getRoomClients(client.roomId);
+        const idsT = [...clientsT].map((c) => c.playerId);
+        const statesT = await roomService.getRoomStatesForClients(client.roomId, idsT);
+        const actorT = statesT.get(client.playerId);
         ws.send(
           JSON.stringify({
             type: "place_result",
             correct: false,
-            score: state?.scores[client.playerId] ?? 0,
-            timeline: result.timeline ?? state?.timeline ?? [],
+            score: actorT?.scores[client.playerId] ?? 0,
+            streak: 0,
+            timeline: result.timeline ?? actorT?.timeline ?? [],
             nextTurnPlayerId: result.nextTurnPlayerId,
             gameEnded: result.gameEnded,
-            lastPlacedEvent: state?.lastPlacedEvent ?? null,
+            lastPlacedEvent: actorT?.lastPlacedEvent ?? null,
+            currentTurnStartedAt: actorT?.currentTurnStartedAt ?? null,
           }),
         );
-        await broadcastStateUpdate(client.roomId);
+        await broadcastStateUpdate(client.roomId, statesT);
         return;
       }
 
@@ -241,15 +279,13 @@ export function attachRoomHub(ws: WebSocket): void {
       }
 
       if (msg.type === "rematch") {
+        broadcastToRoom(client.roomId, { type: "rematch_starting" });
         const result = await roomService.rematchRoom(client.roomId, client.playerId);
         if ("error" in result) {
-          ws.send(
-            JSON.stringify({
-              type: "rematch_error",
-              code: "failed",
-              message: result.error,
-            }),
-          );
+          broadcastToRoom(client.roomId, {
+            type: "rematch_failed",
+            message: result.error,
+          });
           return;
         }
         await broadcastStateUpdate(client.roomId);
@@ -301,9 +337,13 @@ export function attachRoomHub(ws: WebSocket): void {
           ws.send(JSON.stringify({ type: "close_room_error", message: "Only the host can close the room" }));
           return;
         }
+        broadcastToRoom(client.roomId, { type: "close_room_starting" });
         const result = await roomService.closeRoomPermanently(client.roomId, client.playerId);
         if ("error" in result) {
-          ws.send(JSON.stringify({ type: "close_room_error", message: result.error }));
+          broadcastToRoom(client.roomId, {
+            type: "close_room_failed",
+            message: result.error,
+          });
           return;
         }
         const payload = JSON.stringify({ type: "room_closed" });

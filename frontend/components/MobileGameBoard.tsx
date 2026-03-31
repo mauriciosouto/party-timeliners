@@ -13,6 +13,7 @@ import { getMobileResultsGroups, ordinal } from "@/src/utils/mobileResults";
 import { fireSuccessConfetti } from "@/src/utils/confetti";
 import { fireVictoryConfetti } from "@/src/utils/victoryConfetti";
 import { playSound, stopTickSound } from "@/src/utils/sound";
+import { StreakMilestoneBanner } from "@/components/StreakMilestoneBanner";
 
 function timelineEventsFromRoomState(state: RoomState): TimelineEvent[] {
   return [...state.timeline]
@@ -36,9 +37,12 @@ export type MobileGameBoardProps = {
     correct: boolean;
     gameEnded?: boolean;
     score: number;
+    streak?: number;
     nextTurnPlayerId?: string | null;
     correctPosition?: number;
   } | null;
+  /** From parent useStreakMilestoneCallout(placeResult) */
+  streakMilestoneMessage?: string | null;
   placeError: string | null;
   onClearPlaceError: () => void;
   roomError: string | null;
@@ -50,6 +54,9 @@ export type MobileGameBoardProps = {
   onCloseRoom?: () => void;
   onLeaveRoom?: () => void;
   onClearPlaceResult: () => void;
+  placingPending: { eventId: string; position: number } | null;
+  rematchStarting: boolean;
+  closeRoomStarting: boolean;
 };
 
 export function MobileGameBoard({
@@ -69,7 +76,12 @@ export function MobileGameBoard({
   onCloseRoom,
   onLeaveRoom,
   onClearPlaceResult,
+  streakMilestoneMessage = null,
+  placingPending,
+  rematchStarting,
+  closeRoomStarting,
 }: MobileGameBoardProps) {
+  const resultsCtaBusy = rematchStarting || closeRoomStarting;
   const timeline = timelineEventsFromRoomState(roomState);
   const sortedTimelineEntries = useMemo(
     () => [...roomState.timeline].sort((a, b) => a.position - b.position),
@@ -128,7 +140,7 @@ export function MobileGameBoard({
 
   useEffect(() => {
     if (!placeResult) return;
-    const t = setTimeout(onClearPlaceResult, 1000);
+    const t = setTimeout(onClearPlaceResult, 2800);
     return () => clearTimeout(t);
   }, [placeResult, onClearPlaceResult]);
 
@@ -176,6 +188,18 @@ export function MobileGameBoard({
     [myHand],
   );
 
+  const handCardsForUi = useMemo(
+    () =>
+      placingPending
+        ? myHandAsTimelineEvents.filter((e) => e.id !== placingPending.eventId)
+        : myHandAsTimelineEvents,
+    [myHandAsTimelineEvents, placingPending],
+  );
+
+  useEffect(() => {
+    if (placingPending) setSelectedEventId(null);
+  }, [placingPending]);
+
   const lastPlacedEvent = roomState.lastPlacedEvent ?? null;
   const isEnded = roomState.status === "ended";
   const winner = roomState.players.find(
@@ -189,11 +213,48 @@ export function MobileGameBoard({
 
   const handlePlaceAt = useCallback(
     (position: number) => {
-      if (selectedEventId == null || !isMyTurn) return;
+      if (selectedEventId == null || !isMyTurn || placingPending) return;
       onPlaceEvent(selectedEventId, position);
     },
-    [selectedEventId, isMyTurn, onPlaceEvent],
+    [selectedEventId, isMyTurn, onPlaceEvent, placingPending],
   );
+
+  const placeSlotClassName =
+    "mobile-place-slot flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border-2 border-dashed border-violet-300 bg-violet-50/80 text-violet-700 disabled:border-zinc-200 disabled:bg-zinc-50 disabled:text-zinc-400";
+
+  const renderMobilePlaceSlot = (position: number, slotKey: string) => {
+    if (placingPending?.position === position) {
+      return (
+        <div
+          key={slotKey}
+          className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border-2 border-violet-400 bg-violet-100/90 text-violet-800 shadow-sm ring-2 ring-violet-300"
+          role="status"
+          aria-live="polite"
+          aria-label="Checking placement"
+        >
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-violet-600 border-t-transparent" />
+          <span className="mt-1 text-center text-[8px] font-bold uppercase leading-tight text-violet-900">
+            Wait
+          </span>
+        </div>
+      );
+    }
+    return (
+      <button
+        key={slotKey}
+        type="button"
+        disabled={!isMyTurn || !selectedEventId || placingPending != null}
+        onClick={() => handlePlaceAt(position)}
+        className={placeSlotClassName}
+        aria-label="Place here"
+      >
+        <span className="text-[11px] leading-none" aria-hidden>
+          ↑
+        </span>
+        <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide">here</span>
+      </button>
+    );
+  };
 
   function openEventDetail(event: TimelineEvent, placedByPlayerId: string | null) {
     const nickname = placedByPlayerId
@@ -207,6 +268,7 @@ export function MobileGameBoard({
     <div className="game-room-root flex min-h-screen flex-col text-zinc-900">
       <div className="game-background" aria-hidden />
       <div className="game-background-overlay" aria-hidden />
+      <StreakMilestoneBanner message={streakMilestoneMessage} className="max-sm:top-16" />
 
       {(placeError || roomError) && (
         <div className="error-toast-container" role="alert" aria-live="polite">
@@ -277,7 +339,9 @@ export function MobileGameBoard({
                 }`}
               >
                 {isMyTurn
-                  ? "Your turn"
+                  ? placingPending
+                    ? "Checking play…"
+                    : "Your turn"
                   : currentTurnPlayer
                     ? `${currentTurnPlayer.nickname}'s turn`
                     : "Loading…"}
@@ -395,42 +459,21 @@ export function MobileGameBoard({
             </h2>
             {isMyTurn && (
               <p className="shrink-0 text-center text-sm font-medium text-zinc-700">
-                {selectedEventId
-                  ? "Tap a slot on the timeline to place the card"
-                  : "Select a card"}
+                {placingPending
+                  ? "Checking your play…"
+                  : selectedEventId
+                    ? "Tap a slot on the timeline to place the card"
+                    : "Select a card"}
               </p>
             )}
 
             <div className="min-h-0 flex-1 overflow-x-auto overflow-y-visible pb-1">
               <div className="mobile-timeline flex items-center gap-1 py-1" style={{ minWidth: "min-content" }}>
               {sortedTimelineEntries.length === 0 ? (
-                <button
-                  type="button"
-                  disabled={!isMyTurn || !selectedEventId}
-                  onClick={() => handlePlaceAt(0)}
-                  className="mobile-place-slot flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border-2 border-dashed border-violet-300 bg-violet-50/80 text-violet-700 disabled:border-zinc-200 disabled:bg-zinc-50 disabled:text-zinc-400"
-                  aria-label="Place here"
-                >
-                  <span className="text-[11px] leading-none" aria-hidden>↑</span>
-                  <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide">
-                    here
-                  </span>
-                </button>
+                renderMobilePlaceSlot(0, "slot-0")
               ) : (
                 <>
-                  {/* Place slot before first event */}
-                  <button
-                    type="button"
-                    disabled={!isMyTurn || !selectedEventId}
-                    onClick={() => handlePlaceAt(0)}
-                    className="mobile-place-slot flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border-2 border-dashed border-violet-300 bg-violet-50/80 text-violet-700 disabled:border-zinc-200 disabled:bg-zinc-50 disabled:text-zinc-400"
-                    aria-label="Place here"
-                  >
-                    <span className="text-[11px] leading-none" aria-hidden>↑</span>
-                    <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide">
-                      here
-                    </span>
-                  </button>
+                  {renderMobilePlaceSlot(0, "slot-0")}
 
                   {sortedTimelineEntries.map((entry, index) => {
                     const event = timeline.find((e) => e.id === entry.event.id) ?? {
@@ -459,19 +502,7 @@ export function MobileGameBoard({
                           </span>
                         </button>
 
-                        {/* Place slot after this event (between years) */}
-                        <button
-                          type="button"
-                          disabled={!isMyTurn || !selectedEventId}
-                          onClick={() => handlePlaceAt(positionAfter)}
-                          className="mobile-place-slot flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border-2 border-dashed border-violet-300 bg-violet-50/80 text-violet-700 disabled:border-zinc-200 disabled:bg-zinc-50 disabled:text-zinc-400"
-                          aria-label="Place here"
-                        >
-                          <span className="text-[11px] leading-none" aria-hidden>↑</span>
-                          <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide">
-                            here
-                          </span>
-                        </button>
+                        {renderMobilePlaceSlot(positionAfter, `slot-after-${entry.event.id}`)}
                       </div>
                     );
                   })}
@@ -495,18 +526,22 @@ export function MobileGameBoard({
             <>
               {isMyTurn && (
                 <p className="text-sm text-zinc-600">
-                  {selectedEventId
-                    ? "Tap a slot on the timeline to place the card"
-                    : "Select a card"}
+                  {placingPending
+                    ? "Hang on — verifying your card…"
+                    : selectedEventId
+                      ? "Tap a slot on the timeline to place the card"
+                      : "Select a card"}
                 </p>
               )}
               <div className="flex gap-3 overflow-x-auto pb-2">
-              {myHandAsTimelineEvents.map((ev) => (
+              {handCardsForUi.map((ev) => (
                 <button
                   key={ev.id}
                   type="button"
                   onClick={() =>
-                    isMyTurn && setSelectedEventId((id) => (id === ev.id ? null : ev.id))
+                    isMyTurn &&
+                    !placingPending &&
+                    setSelectedEventId((id) => (id === ev.id ? null : ev.id))
                   }
                   className={`mobile-hand-card shrink-0 transition ${
                     selectedEventId === ev.id
@@ -553,6 +588,25 @@ export function MobileGameBoard({
             </div>
 
             <div className="p-4">
+              {(rematchStarting || closeRoomStarting) && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="mb-3 flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2.5 text-xs font-medium text-violet-900"
+                >
+                  <span
+                    className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-violet-500 border-t-transparent"
+                    aria-hidden
+                  />
+                  <span>
+                    {closeRoomStarting
+                      ? isHost
+                        ? "Closing the room…"
+                        : "The host is closing the room…"
+                      : "Returning to lobby…"}
+                  </span>
+                </div>
+              )}
               {winner ? (
                 <div className="mb-4 rounded-xl bg-violet-50/80 p-3 ring-1 ring-violet-200/60">
                   <div className="flex items-center gap-3">
@@ -689,9 +743,20 @@ export function MobileGameBoard({
                       onClick={() => {
                         onCloseRoom();
                       }}
-                      className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700"
+                      disabled={resultsCtaBusy}
+                      className="flex items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-65"
                     >
-                      End
+                      {closeRoomStarting ? (
+                        <>
+                          <span
+                            className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent"
+                            aria-hidden
+                          />
+                          Closing…
+                        </>
+                      ) : (
+                        "End"
+                      )}
                     </button>
                   )}
                   <button
@@ -699,9 +764,20 @@ export function MobileGameBoard({
                     onClick={() => {
                       onRematch();
                     }}
-                    className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white"
+                    disabled={resultsCtaBusy}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-65"
                   >
-                    Play again
+                    {rematchStarting ? (
+                      <>
+                        <span
+                          className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white border-t-transparent"
+                          aria-hidden
+                        />
+                        Wait…
+                      </>
+                    ) : (
+                      "Play again"
+                    )}
                   </button>
                 </div>
               ) : (
@@ -715,7 +791,11 @@ export function MobileGameBoard({
                     </Link>
                   )}
                   <p className="text-xs text-zinc-500 sm:pl-3">
-                    The host can start a rematch
+                    {rematchStarting
+                      ? "Returning to lobby…"
+                      : closeRoomStarting
+                        ? "The host is closing the room…"
+                        : "The host can start a rematch"}
                   </p>
                 </div>
               )}

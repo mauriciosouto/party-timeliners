@@ -33,8 +33,15 @@ function eventPoolMaxTotalFromEnv(): number | null {
   return Number.isFinite(n) && n > 0 ? n : 10_000;
 }
 
+function perfTimingFromEnv(): boolean {
+  const v = (env.PERF_TIMING || "").toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
 export const config = {
   port: Number(env.PORT) || 3001,
+  /** Log structured timings for place_event (and hub). Set PERF_TIMING=1. */
+  perfTiming: perfTimingFromEnv(),
   /**
    * Supabase / Postgres connection URI (required).
    * `TEST_DATABASE_URL` overrides `DATABASE_URL` when set (integration tests / CI isolation).

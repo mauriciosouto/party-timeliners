@@ -13,12 +13,15 @@ import { useIsMobile } from "@/src/hooks/useIsMobile";
 import { fireSuccessConfetti } from "@/src/utils/confetti";
 import { fireVictoryConfetti } from "@/src/utils/victoryConfetti";
 import { playSound, stopTickSound } from "@/src/utils/sound";
+import { useStreakMilestoneCallout } from "@/src/hooks/useStreakMilestoneCallout";
+import { StreakMilestoneBanner } from "@/components/StreakMilestoneBanner";
+import { formatStreakScoreboardBadge } from "@/lib/streakUi";
 
 
 /** Wrapper so Timeline can show drag-active glow; must be used inside DndContext. */
 function TimelineWithDragState(props: Omit<TimelineProps, "dragActive">) {
   const { active } = useDndContext();
-  return <Timeline {...props} dragActive={active != null} />;
+  return <Timeline {...props} dragActive={active != null && props.pendingPlacement == null} />;
 }
 
 function timelineFromRoomState(state: RoomState): TimelineEvent[] {
@@ -43,6 +46,7 @@ type RoomGameBoardProps = {
     correct: boolean;
     gameEnded?: boolean;
     score: number;
+    streak?: number;
     nextTurnPlayerId?: string | null;
     correctPosition?: number;
   } | null;
@@ -57,6 +61,10 @@ type RoomGameBoardProps = {
   onCloseRoom?: () => void;
   onLeaveRoom?: () => void;
   onClearPlaceResult: () => void;
+  /** Non-null while the server is resolving a place_event (card hidden from hand, shown on timeline). */
+  placingPending: { eventId: string; position: number } | null;
+  rematchStarting: boolean;
+  closeRoomStarting: boolean;
 };
 
 export function RoomGameBoard(props: RoomGameBoardProps) {
@@ -77,7 +85,12 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
     onCloseRoom,
     onLeaveRoom,
     onClearPlaceResult,
+    placingPending,
+    rematchStarting,
+    closeRoomStarting,
   } = props;
+
+  const resultsCtaBusy = rematchStarting || closeRoomStarting;
 
   const isMobile = useIsMobile();
   const timeline = timelineFromRoomState(roomState);
@@ -183,6 +196,29 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
     [myHand],
   );
 
+  const handCardsForUi = useMemo(
+    () =>
+      placingPending
+        ? myHandAsTimelineEvents.filter((e) => e.id !== placingPending.eventId)
+        : myHandAsTimelineEvents,
+    [myHandAsTimelineEvents, placingPending],
+  );
+
+  const pendingPlacementForTimeline = useMemo(() => {
+    if (!placingPending) return null;
+    const api = roomState.myHand?.find((e) => e.id === placingPending.eventId);
+    if (!api) return null;
+    const event: TimelineEvent = {
+      id: api.id,
+      title: api.title,
+      year: api.year,
+      description: api.displayTitle ?? api.title,
+      image: api.image,
+      wikipediaUrl: api.wikipediaUrl,
+    };
+    return { slotIndex: placingPending.position, event };
+  }, [placingPending, roomState.myHand]);
+
   useEffect(() => {
     if (!placeResult) return;
     const t = setTimeout(onClearPlaceResult, 3000);
@@ -256,6 +292,7 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      if (placingPending) return;
       const eventId = event.active.id as string;
       const handIds = new Set(myHand.map((e) => e.id));
       if (!handIds.has(eventId)) return;
@@ -272,7 +309,7 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
       setLastPlacedId(eventId);
       onPlaceEvent(eventId, slotIndex);
     },
-    [myHand, onPlaceEvent, timeline.length],
+    [myHand, onPlaceEvent, timeline.length, placingPending],
   );
 
   const isEnded = roomState.status === "ended";
@@ -304,14 +341,17 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
     }
   }
 
+  const streakMilestoneMessage = useStreakMilestoneCallout(placeResult);
+
   if (isMobile) {
-    return <MobileGameBoard {...props} />;
+    return <MobileGameBoard {...props} streakMilestoneMessage={streakMilestoneMessage} />;
   }
 
   return (
     <div className="game-room-root flex min-h-screen flex-col text-zinc-900">
       <div className="game-background" aria-hidden />
       <div className="game-background-overlay" aria-hidden />
+      <StreakMilestoneBanner message={streakMilestoneMessage} />
 
       {(placeError || roomError) && (
         <div className="error-toast-container" role="alert" aria-live="polite">
@@ -358,11 +398,13 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
                 ? winner
                   ? `Game over — ${winner.nickname} wins`
                   : "Game over — Tie"
-                : isMyTurn
-                  ? "Your turn — place the card on the timeline"
-                  : currentTurnPlayer
-                    ? `Waiting for ${currentTurnPlayer.nickname}…`
-                    : "Loading…"}
+                : placingPending && isMyTurn
+                  ? "Checking your play…"
+                  : isMyTurn
+                    ? "Your turn — place the card on the timeline"
+                    : currentTurnPlayer
+                      ? `Waiting for ${currentTurnPlayer.nickname}…`
+                      : "Loading…"}
             </p>
             {!isEnded && isMyTurn && turnTimeLimitSeconds != null && secondsLeft != null && (() => {
               const { bar: timerBarClass } = getTimerClasses(secondsLeft);
@@ -486,14 +528,45 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
               </>
             )}
 
+            {(rematchStarting || closeRoomStarting) && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="mb-4 flex items-center gap-3 rounded-lg border border-violet-200 bg-violet-50/95 px-4 py-3 text-sm font-medium text-violet-900"
+              >
+                <span
+                  className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-violet-500 border-t-transparent"
+                  aria-hidden
+                />
+                <span>
+                  {closeRoomStarting
+                    ? isHost
+                      ? "Closing the room…"
+                      : "The host is closing the room…"
+                    : "Returning to lobby…"}
+                </span>
+              </div>
+            )}
+
             <div className="results-actions flex flex-wrap items-center justify-center gap-4">
               {isHost && onCloseRoom ? (
                 <button
                   type="button"
                   onClick={onCloseRoom}
-                  className="rounded-[10px] border border-zinc-300 bg-white px-[18px] py-2.5 font-semibold text-zinc-700 transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.1)] hover:bg-zinc-50"
+                  disabled={resultsCtaBusy}
+                  className="flex min-w-[7rem] items-center justify-center gap-2 rounded-[10px] border border-zinc-300 bg-white px-[18px] py-2.5 font-semibold text-zinc-700 transition-all duration-200 ease enabled:hover:-translate-y-px enabled:hover:shadow-[0_6px_12px_rgba(0,0,0,0.1)] enabled:hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-65"
                 >
-                  End
+                  {closeRoomStarting ? (
+                    <>
+                      <span
+                        className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent"
+                        aria-hidden
+                      />
+                      Closing…
+                    </>
+                  ) : (
+                    "End"
+                  )}
                 </button>
               ) : (
                 <Link
@@ -507,13 +580,30 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
                 <button
                   type="button"
                   onClick={onRematch}
-                  className="rounded-[10px] bg-violet-600 px-[18px] py-2.5 font-semibold text-white shadow-sm transition-all duration-200 ease hover:-translate-y-px hover:shadow-[0_6px_12px_rgba(0,0,0,0.15)] hover:bg-violet-700"
+                  disabled={resultsCtaBusy}
+                  className="flex min-w-[9rem] items-center justify-center gap-2 rounded-[10px] bg-violet-600 px-[18px] py-2.5 font-semibold text-white shadow-sm transition-all duration-200 ease enabled:hover:-translate-y-px enabled:hover:shadow-[0_6px_12px_rgba(0,0,0,0.15)] enabled:hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-65"
                 >
-                  Play again
+                  {rematchStarting ? (
+                    <>
+                      <span
+                        className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white border-t-transparent"
+                        aria-hidden
+                      />
+                      Wait…
+                    </>
+                  ) : (
+                    "Play again"
+                  )}
                 </button>
               )}
               {!isHost && (
-                <p className="text-sm text-zinc-500">The host can start a rematch</p>
+                <p className="text-sm text-zinc-500">
+                  {rematchStarting
+                    ? "Returning to lobby…"
+                    : closeRoomStarting
+                      ? "The host is closing the room…"
+                      : "The host can start a rematch"}
+                </p>
               )}
             </div>
           </section>
@@ -621,6 +711,7 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
                   onPlacedCardRef={(el) => {
                     placedCardRef.current = el;
                   }}
+                  pendingPlacement={pendingPlacementForTimeline}
                 />
               </div>
             </section>
@@ -638,7 +729,11 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
                 </h2>
                 {currentTurnPlayer && (
                   <p className={isMyTurn ? "text-sm font-semibold text-violet-700" : "text-xs text-zinc-500"}>
-                    {isMyTurn ? "Your turn — drag a card to the timeline" : `Active: ${currentTurnPlayer.nickname}`}
+                    {isMyTurn
+                      ? placingPending
+                        ? "Verifying placement…"
+                        : "Your turn — drag a card to the timeline"
+                      : `Active: ${currentTurnPlayer.nickname}`}
                   </p>
                 )}
               </div>
@@ -648,13 +743,13 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
                 </div>
               ) : myHand.length > 0 ? (
                 <div className="flex flex-wrap justify-center gap-3 md:justify-start">
-                  {myHandAsTimelineEvents.map((ev) => (
+                  {handCardsForUi.map((ev) => (
                     <EventCard
                       key={ev.id}
                       event={ev}
                       showYear={false}
                       revealed={false}
-                      draggable={isMyTurn}
+                      draggable={isMyTurn && !placingPending}
                       draggableId={ev.id}
                       className={isMyTurn ? "touch-manipulation ring-2 ring-violet-400 ring-offset-2 ring-offset-white" : undefined}
                     />
@@ -716,6 +811,9 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
               .map((p) => {
                 const isCurrentTurn = roomState.status === "playing" && roomState.currentTurnPlayerId === p.playerId;
                 const score = roomState.scores[p.playerId] ?? 0;
+                const streakBadge =
+                  (roomState.status === "playing" || roomState.status === "ended") &&
+                  formatStreakScoreboardBadge(p.streak ?? 0);
                 return (
                   <li
                     key={p.playerId}
@@ -743,9 +841,14 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
                           {p.playerId === playerId && " (you)"}
                         </span>
                       </div>
-                      <span className="flex-shrink-0 text-sm font-medium text-zinc-600">
-                        {score} pts
-                      </span>
+                      <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+                        <span className="text-sm font-medium text-zinc-600">{score} pts</span>
+                        {streakBadge ? (
+                          <span className="max-w-[9rem] truncate text-[11px] font-semibold text-orange-700">
+                            {streakBadge}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                     {isCurrentTurn && (
                       <span className="inline-block w-fit rounded-full bg-violet-200/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-800">
