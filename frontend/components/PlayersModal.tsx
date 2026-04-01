@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { formatStreakScoreboardBadge } from "@/lib/streakUi";
 
 type Player = {
@@ -68,12 +69,12 @@ export function PlayersModal({
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <div className="flex min-w-0 items-center gap-3">
                     {p.avatar ? (
-                      <img
+                      <Image
                         src={p.avatar}
                         alt=""
-                        className="h-10 w-10 shrink-0 rounded-full object-cover"
                         width={40}
                         height={40}
+                        className="h-10 w-10 shrink-0 rounded-full object-cover"
                       />
                     ) : (
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-600">

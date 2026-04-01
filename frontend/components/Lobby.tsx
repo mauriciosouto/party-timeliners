@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { RoomState } from "@/src/services/roomApi";
 import { playJoinSound } from "@/src/utils/sound";
@@ -97,12 +98,12 @@ export function Lobby({
               >
                 <div className="flex items-center gap-3">
                   {p.avatar ? (
-                    <img
+                    <Image
                       src={p.avatar}
                       alt=""
-                      className="player-avatar h-9 w-9 shrink-0 rounded-full object-cover"
                       width={36}
                       height={36}
+                      className="player-avatar h-9 w-9 shrink-0 rounded-full object-cover"
                     />
                   ) : (
                     <div

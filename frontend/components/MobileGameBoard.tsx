@@ -196,9 +196,8 @@ export function MobileGameBoard({
     [myHandAsTimelineEvents, placingPending],
   );
 
-  useEffect(() => {
-    if (placingPending) setSelectedEventId(null);
-  }, [placingPending]);
+  /** While a place is in flight, hide selection in the UI without syncing state in an effect. */
+  const effectiveSelectedEventId = placingPending ? null : selectedEventId;
 
   const lastPlacedEvent = roomState.lastPlacedEvent ?? null;
   const isEnded = roomState.status === "ended";
@@ -213,10 +212,10 @@ export function MobileGameBoard({
 
   const handlePlaceAt = useCallback(
     (position: number) => {
-      if (selectedEventId == null || !isMyTurn || placingPending) return;
-      onPlaceEvent(selectedEventId, position);
+      if (effectiveSelectedEventId == null || !isMyTurn || placingPending) return;
+      onPlaceEvent(effectiveSelectedEventId, position);
     },
-    [selectedEventId, isMyTurn, onPlaceEvent, placingPending],
+    [effectiveSelectedEventId, isMyTurn, onPlaceEvent, placingPending],
   );
 
   const placeSlotClassName =
@@ -243,7 +242,7 @@ export function MobileGameBoard({
       <button
         key={slotKey}
         type="button"
-        disabled={!isMyTurn || !selectedEventId || placingPending != null}
+        disabled={!isMyTurn || effectiveSelectedEventId == null}
         onClick={() => handlePlaceAt(position)}
         className={placeSlotClassName}
         aria-label="Place here"
@@ -461,7 +460,7 @@ export function MobileGameBoard({
               <p className="shrink-0 text-center text-sm font-medium text-zinc-700">
                 {placingPending
                   ? "Checking your play…"
-                  : selectedEventId
+                  : effectiveSelectedEventId
                     ? "Tap a slot on the timeline to place the card"
                     : "Select a card"}
               </p>
@@ -528,7 +527,7 @@ export function MobileGameBoard({
                 <p className="text-sm text-zinc-600">
                   {placingPending
                     ? "Hang on — verifying your card…"
-                    : selectedEventId
+                    : effectiveSelectedEventId
                       ? "Tap a slot on the timeline to place the card"
                       : "Select a card"}
                 </p>
@@ -544,7 +543,7 @@ export function MobileGameBoard({
                     setSelectedEventId((id) => (id === ev.id ? null : ev.id))
                   }
                   className={`mobile-hand-card shrink-0 transition ${
-                    selectedEventId === ev.id
+                    effectiveSelectedEventId === ev.id
                       ? "ring-2 ring-violet-500 ring-offset-2 scale-[1.02]"
                       : ""
                   }`}

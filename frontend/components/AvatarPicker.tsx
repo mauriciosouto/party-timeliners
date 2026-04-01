@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { AVAILABLE_AVATARS } from "@/lib/avatars";
 
 type AvatarPickerProps = {
@@ -39,7 +40,14 @@ export function AvatarPicker({
           aria-pressed={selectedAvatar === src}
           aria-label={selectedAvatar === src ? "Selected avatar" : "Select avatar"}
         >
-          <img src={src} alt="" className="block w-full" width={64} height={64} />
+          <Image
+            src={src}
+            alt=""
+            width={64}
+            height={64}
+            className="block h-auto w-full"
+            sizes="(max-width: 768px) 12vw, 64px"
+          />
         </button>
       ))}
     </div>

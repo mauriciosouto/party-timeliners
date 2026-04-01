@@ -110,7 +110,7 @@ export function useRoomSocket(
       setYourTurnToast(true);
     }
     prevTurnPlayerIdRef.current = current;
-  }, [roomState?.currentTurnPlayerId, roomState?.status, playerId]);
+  }, [roomState, playerId]);
 
   useEffect(() => {
     if (!roomId || !nickname) return;

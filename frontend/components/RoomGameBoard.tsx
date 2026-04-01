@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { DndContext, pointerWithin, useDndContext, type DragEndEvent } from "@dnd-kit/core";
 import type { TimelineEvent } from "@/lib/types";
@@ -465,12 +466,12 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
                 <div className="winner-card">
                   <div className="winner-icon" aria-hidden>🏆</div>
                   {winner.avatar ? (
-                    <img
+                    <Image
                       src={winner.avatar}
                       alt=""
-                      className="mx-auto mb-2 h-16 w-16 rounded-full object-cover"
                       width={64}
                       height={64}
+                      className="mx-auto mb-2 h-16 w-16 rounded-full object-cover"
                     />
                   ) : null}
                   <div className="winner-name">
@@ -487,12 +488,12 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
                     {restRanked.map((p, i) => (
                       <li key={p.playerId} className="flex items-center gap-3">
                         {p.avatar ? (
-                          <img
+                          <Image
                             src={p.avatar}
                             alt=""
-                            className="h-9 w-9 shrink-0 rounded-full object-cover"
                             width={36}
                             height={36}
+                            className="h-9 w-9 shrink-0 rounded-full object-cover"
                           />
                         ) : (
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-xs font-medium text-zinc-600">
@@ -824,12 +825,12 @@ export function RoomGameBoard(props: RoomGameBoardProps) {
                     <div className="flex min-w-0 items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-2">
                         {p.avatar ? (
-                          <img
+                          <Image
                             src={p.avatar}
                             alt=""
-                            className="h-9 w-9 shrink-0 rounded-full object-cover"
                             width={36}
                             height={36}
+                            className="h-9 w-9 shrink-0 rounded-full object-cover"
                           />
                         ) : (
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-xs font-medium text-zinc-600">
